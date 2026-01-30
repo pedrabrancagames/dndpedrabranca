@@ -433,9 +433,14 @@ export class ARSceneManager extends SceneManager {
      * Cria uma barra de HP flutuante usando Sprite 3D
      */
     createEnemyHPBar(enemy, model) {
-        // Calcular altura do modelo para posicionar a barra acima
+        // Calcular altura do modelo no espaço do mundo
         const box = new THREE.Box3().setFromObject(model);
-        const modelHeight = box.max.y - box.min.y;
+        const worldHeight = box.max.y - box.min.y;
+
+        // Converter para coordenadas locais (dividir pela escala do modelo)
+        // O modelo está escalado em 0.5, então a altura local é 2x maior
+        const modelScale = model.scale.y || 1;
+        const localHeight = worldHeight / modelScale;
 
         // Criar canvas para desenhar a barra
         const canvas = document.createElement('canvas');
@@ -459,10 +464,9 @@ export class ARSceneManager extends SceneManager {
         const sprite = new THREE.Sprite(material);
         sprite.scale.set(0.5, 0.18, 1); // Tamanho da barra no mundo
 
-        // Posicionar acima da cabeça do modelo (altura + margem)
-        // Como o modelo está escalado em 0.5, a altura real é modelHeight
-        // Mas a posição do sprite é relativa ao modelo já escalado
-        sprite.position.set(0, modelHeight + 0.15, 0);
+        // Posicionar acima da cabeça do modelo em coordenadas locais
+        // Adicionar margem de 0.3 unidades locais acima do topo
+        sprite.position.set(0, localHeight + 0.3, 0);
         sprite.renderOrder = 999; // Renderizar por cima
 
         model.add(sprite);
