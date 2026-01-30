@@ -75,6 +75,11 @@ export class ARSceneManager extends SceneManager {
             this.flashDamage(targetId);
             this.updateEnemyHPBar(targetId);
         });
+
+        // Animação de morte
+        eventBus.on('enemyDied', ({ enemyId }) => {
+            this.playDeathAnimation(enemyId);
+        });
     }
 
     async startSession() {
@@ -400,7 +405,9 @@ export class ARSceneManager extends SceneManager {
                 const z = this.arenaPosition.z + Math.cos(angle) * distance;
 
                 model.position.set(x, this.arenaPosition.y, z);
-                model.scale.set(0.5, 0.5, 0.5);
+
+                // Iniciar com escala 0 para animação
+                model.scale.set(0, 0, 0);
 
                 // Rotacionar para olhar para o jogador (direção oposta)
                 const lookAtPos = new THREE.Vector3(
@@ -416,8 +423,13 @@ export class ARSceneManager extends SceneManager {
                 // Guardar referência no objeto inimigo
                 enemy.model = model;
 
-                // Criar barra de HP flutuante
-                this.createEnemyHPBar(enemy, model);
+                // Criar barra de HP flutuante (após animação)
+                setTimeout(() => {
+                    this.createEnemyHPBar(enemy, model);
+                }, 500);
+
+                // Animar entrada com delay escalonado
+                this.animateSpawn(model, 0.5, i * 200);
 
                 console.log(`Spawned ${enemy.name} at`, model.position);
 
@@ -560,5 +572,128 @@ export class ARSceneManager extends SceneManager {
             sprite.material.dispose();
         });
         this.enemyHPSprites.clear();
+    }
+
+    /**
+     * Anima a entrada de um modelo (spawn)
+     * @param {THREE.Object3D} model - Modelo a animar
+     * @param {number} targetScale - Escala final
+     * @param {number} delay - Delay em ms antes de iniciar
+     */
+    animateSpawn(model, targetScale = 0.5, delay = 0) {
+        setTimeout(() => {
+            const duration = 400; // ms
+            const startTime = performance.now();
+            const startY = model.position.y - 0.3; // Começa um pouco abaixo
+            const targetY = model.position.y;
+
+            model.position.y = startY;
+
+            const animate = () => {
+                const elapsed = performance.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                // Easing: easeOutBack para efeito de "bounce"
+                const eased = this.easeOutBack(progress);
+
+                // Escala
+                const scale = targetScale * eased;
+                model.scale.set(scale, scale, scale);
+
+                // Posição Y (subir do chão)
+                model.position.y = startY + (targetY - startY) * this.easeOutCubic(progress);
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
+            };
+
+            animate();
+        }, delay);
+    }
+
+    /**
+     * Anima a morte de um modelo
+     * @param {THREE.Object3D} model - Modelo a animar
+     * @param {Function} onComplete - Callback após animação
+     */
+    animateDeath(model, onComplete) {
+        const duration = 600; // ms
+        const startTime = performance.now();
+        const startScale = model.scale.x;
+        const startY = model.position.y;
+        const startRotation = model.rotation.z;
+
+        const animate = () => {
+            const elapsed = performance.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+
+            // Easing: easeInBack para efeito de "sugar"
+            const eased = this.easeInCubic(progress);
+
+            // Escala diminui
+            const scale = startScale * (1 - eased);
+            model.scale.set(scale, scale, scale);
+
+            // Rotaciona e cai
+            model.rotation.z = startRotation + (Math.PI * 0.5) * eased;
+            model.position.y = startY - 0.3 * eased;
+
+            // Transparência (se material suportar)
+            model.traverse(child => {
+                if (child.isMesh && child.material) {
+                    child.material.transparent = true;
+                    child.material.opacity = 1 - eased;
+                }
+            });
+
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            } else {
+                if (onComplete) onComplete();
+            }
+        };
+
+        animate();
+    }
+
+    /**
+     * Executa animação de morte para um inimigo
+     */
+    playDeathAnimation(enemyId) {
+        // Encontrar inimigo pelo ID
+        const enemy = this.gameManager.combatManager.enemies.find(e => e.id === enemyId);
+        if (!enemy?.model) return;
+
+        // Esconder barra de HP
+        const spriteData = this.enemyHPSprites.get(enemyId);
+        if (spriteData) {
+            spriteData.sprite.visible = false;
+        }
+
+        // Animar morte
+        this.animateDeath(enemy.model, () => {
+            this.scene.remove(enemy.model);
+            const index = this.spawnedModels.indexOf(enemy.model);
+            if (index > -1) {
+                this.spawnedModels.splice(index, 1);
+            }
+        });
+    }
+
+    // ===== Funções de Easing =====
+
+    easeOutBack(x) {
+        const c1 = 1.70158;
+        const c3 = c1 + 1;
+        return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+    }
+
+    easeOutCubic(x) {
+        return 1 - Math.pow(1 - x, 3);
+    }
+
+    easeInCubic(x) {
+        return x * x * x;
     }
 }

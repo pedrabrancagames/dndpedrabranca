@@ -115,6 +115,9 @@ export class CombatManager {
             this.turnManager.killUnit(target.id);
             console.log(`${target.name} died!`);
 
+            // Emitir evento de morte para animação
+            eventBus.emit('enemyDied', { enemyId: target.id });
+
             // Verificar condição de vitória
             this.checkVictoryCondition();
         }
