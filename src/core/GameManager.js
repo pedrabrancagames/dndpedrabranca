@@ -9,6 +9,7 @@ import { SaveManager } from './SaveManager.js';
 import { AssetLoader } from './AssetLoader.js';
 import { UIManager } from '../ui/UIManager.js';
 import { MapManager } from '../map/MapManager.js';
+import { CombatManager } from '../combat/CombatManager.js';
 
 export class GameManager {
     constructor() {
@@ -17,6 +18,7 @@ export class GameManager {
         this.saveManager = new SaveManager();
         this.assetLoader = new AssetLoader();
         this.mapManager = new MapManager(this);
+        this.combatManager = new CombatManager(this);
 
         // Estado do jogo
         this.gameData = {
@@ -32,7 +34,6 @@ export class GameManager {
         this.uiManager = null;
 
         // Referências para outros managers
-        this.combatManager = null;
         this.arSceneManager = null;
 
         this.isInitialized = false;
@@ -178,9 +179,14 @@ export class GameManager {
             this.updateLoadingProgress(progress);
         });
 
-        eventBus.on('stateChange', ({ from, to }) => {
+        eventBus.on('stateChange', ({ from, to, data }) => {
             if (from && (from !== GameState.SPLASH && from !== GameState.LOADING)) {
                 this.saveGame();
+            }
+
+            // Iniciar combate ao entrar no estado
+            if (to === GameState.COMBAT && data && data.missionId) {
+                this.combatManager.startEncounter(data.missionId);
             }
         });
     }
