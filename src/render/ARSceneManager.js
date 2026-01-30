@@ -1,15 +1,17 @@
 /**
  * ARSceneManager - Gerenciador de Realidade Aumentada
- * Lida com sessão WebXR, Hit Test e posicionamento
+ * Lida com sessão WebXR, Hit Test, posicionamento e modelos 3D
  */
 import * as THREE from 'three';
 import { SceneManager } from './SceneManager.js';
+import { ModelLoader } from './ModelLoader.js';
 import { eventBus } from '../core/EventEmitter.js';
 
 export class ARSceneManager extends SceneManager {
     constructor(canvasId, gameManager) {
         super(canvasId);
         this.gameManager = gameManager;
+        this.modelLoader = new ModelLoader();
 
         this.reticle = null;
         this.hitTestSource = null;
@@ -19,18 +21,24 @@ export class ARSceneManager extends SceneManager {
         this.controller = null;
         this.currentSession = null;
 
-        // Config inicial do canvas para não bloquear UI
+        // Modelos spawned na cena
+        this.spawnedModels = [];
+        this.arenaPlaced = false;
+        this.arenaPosition = null;
+
+        // Config inicial do canvas
         this.canvas.style.pointerEvents = 'none';
         this.canvas.style.zIndex = '-1';
 
         this.setupAR();
         this.setupInteraction();
+        this.setupEventListeners();
     }
 
     setupAR() {
         this.reticle = new THREE.Mesh(
             new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
-            new THREE.MeshBasicMaterial({ color: 0xffffff })
+            new THREE.MeshBasicMaterial({ color: 0x00ff88 })
         );
         this.reticle.matrixAutoUpdate = false;
         this.reticle.visible = false;
@@ -41,6 +49,14 @@ export class ARSceneManager extends SceneManager {
         this.controller = this.renderer.xr.getController(0);
         this.controller.addEventListener('select', () => this.onSelect());
         this.scene.add(this.controller);
+    }
+
+    setupEventListeners() {
+        eventBus.on('arSurfaceSelected', async (data) => {
+            if (!this.arenaPlaced) {
+                await this.placeArena(data.position);
+            }
+        });
     }
 
     async startSession() {
@@ -62,10 +78,10 @@ export class ARSceneManager extends SceneManager {
                 this.currentSession = session;
                 this.isSessionActive = true;
                 this.hitTestSourceRequested = false;
+                this.arenaPlaced = false;
 
-                // Ativar interação no canvas
                 this.canvas.style.pointerEvents = 'auto';
-                this.canvas.style.zIndex = '1'; // Abaixo do HUD (z-index 100+), mas visível
+                this.canvas.style.zIndex = '1';
 
                 this.renderer.setAnimationLoop((timestamp, frame) => this.render(timestamp, frame));
 
@@ -92,12 +108,23 @@ export class ARSceneManager extends SceneManager {
 
         this.renderer.setAnimationLoop(null);
 
-        // Resetar canvas
+        // Limpar modelos spawned
+        this.clearArena();
+
         this.canvas.style.pointerEvents = 'none';
         this.canvas.style.zIndex = '-1';
 
         console.log('AR Session ended');
         eventBus.emit('arSessionEnded');
+    }
+
+    clearArena() {
+        this.spawnedModels.forEach(model => {
+            this.scene.remove(model);
+        });
+        this.spawnedModels = [];
+        this.arenaPlaced = false;
+        this.arenaPosition = null;
     }
 
     render(timestamp, frame) {
@@ -106,8 +133,8 @@ export class ARSceneManager extends SceneManager {
             const session = this.renderer.xr.getSession();
 
             if (this.hitTestSourceRequested === false) {
-                session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                    session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                session.requestReferenceSpace('viewer').then((viewerSpace) => {
+                    session.requestHitTestSource({ space: viewerSpace }).then((source) => {
                         this.hitTestSource = source;
                     });
                 });
@@ -115,7 +142,7 @@ export class ARSceneManager extends SceneManager {
                 this.hitTestSourceRequested = true;
             }
 
-            if (this.hitTestSource) {
+            if (this.hitTestSource && !this.arenaPlaced) {
                 const hitTestResults = frame.getHitTestResults(this.hitTestSource);
 
                 if (hitTestResults.length > 0) {
@@ -125,6 +152,8 @@ export class ARSceneManager extends SceneManager {
                 } else {
                     this.reticle.visible = false;
                 }
+            } else {
+                this.reticle.visible = false;
             }
         }
 
@@ -136,7 +165,7 @@ export class ARSceneManager extends SceneManager {
     }
 
     onSelect() {
-        if (this.reticle.visible) {
+        if (this.reticle.visible && !this.arenaPlaced) {
             const position = new THREE.Vector3();
             const quaternion = new THREE.Quaternion();
             const scale = new THREE.Vector3();
@@ -149,5 +178,70 @@ export class ARSceneManager extends SceneManager {
                 quaternion
             });
         }
+    }
+
+    /**
+     * Posiciona a arena de combate na superfície selecionada
+     */
+    async placeArena(position) {
+        this.arenaPosition = position.clone();
+        this.arenaPlaced = true;
+
+        console.log('Placing arena at:', position);
+
+        // Esconder hint de reticle
+        const hint = document.getElementById('reticle-hint');
+        if (hint) hint.style.display = 'none';
+
+        // Spawnar inimigos do combate atual
+        await this.spawnEnemies();
+
+        eventBus.emit('arenaPlaced', { position });
+    }
+
+    /**
+     * Spawna os inimigos do combate na cena AR
+     */
+    async spawnEnemies() {
+        const combatManager = this.gameManager.combatManager;
+        if (!combatManager || !combatManager.enemies) return;
+
+        const enemies = combatManager.enemies;
+        const spacing = 0.5; // Espaçamento entre inimigos (metros)
+
+        for (let i = 0; i < enemies.length; i++) {
+            const enemy = enemies[i];
+            const modelPath = ModelLoader.getEnemyModelPath(enemy.type || 'goblin');
+
+            try {
+                const model = await this.modelLoader.load(modelPath);
+
+                // Posicionar em semicírculo à frente do jogador
+                const angle = (Math.PI / 4) + (i * Math.PI / 4); // 45° a 135°
+                const distance = 1.5; // 1.5m do centro
+
+                const x = this.arenaPosition.x + Math.cos(angle) * distance;
+                const z = this.arenaPosition.z + Math.sin(angle) * distance;
+
+                model.position.set(x, this.arenaPosition.y, z);
+                model.scale.set(0.5, 0.5, 0.5); // Escala para AR (ajustar conforme modelo)
+
+                // Rotacionar para olhar para o centro
+                model.lookAt(this.arenaPosition);
+
+                this.scene.add(model);
+                this.spawnedModels.push(model);
+
+                // Guardar referência no objeto inimigo
+                enemy.model = model;
+
+                console.log(`Spawned ${enemy.name} at`, model.position);
+
+            } catch (error) {
+                console.error(`Failed to spawn ${enemy.name}:`, error);
+            }
+        }
+
+        eventBus.emit('enemiesSpawned', { count: enemies.length });
     }
 }

@@ -46,16 +46,16 @@ export class CombatManager {
 
         const heroes = this.gameManager.gameData.heroes;
 
-        // Mock inimigos para MVP
-        const enemies = [
-            { id: 'goblin_1', name: 'Goblin', hp: 30, maxHp: 30, atk: 10 },
-            { id: 'goblin_2', name: 'Goblin Arqueiro', hp: 25, maxHp: 25, atk: 12 }
+        // Mock inimigos para MVP - com type para modelo 3D
+        this.enemies = [
+            { id: 'goblin_1', name: 'Goblin', type: 'goblin', hp: 30, maxHp: 30, atk: 10 },
+            { id: 'goblin_2', name: 'Goblin Arqueiro', type: 'goblin_archer', hp: 25, maxHp: 25, atk: 12 }
         ];
 
         this.activeEncounter = {
             missionId,
             heroes,
-            enemies
+            enemies: this.enemies
         };
 
         // Transitar UI para combate (já feito pelo MapManager, mas reforçando sub-estado)
