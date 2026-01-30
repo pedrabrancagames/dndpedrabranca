@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="description" content="RPG tático em Realidade Aumentada - Explore seu bairro e combata inimigos em AR">
+  
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+        crossorigin="anonymous">
+  
+  <title>D&D Pedra Branca</title>
+</head>
+<body>
+  <!-- Container Principal -->
+  <div id="app">
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="screen active">
+      <div class="splash-content">
+        <h1 class="game-title">D&D Pedra Branca</h1>
+        <p class="game-subtitle">Crônicas do Bairro</p>
+        <div class="loading-container">
+          <div class="loading-bar">
+            <div class="loading-progress" id="loading-progress"></div>
+          </div>
+          <p class="loading-text" id="loading-text">Carregando...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Home Screen -->
+    <div id="home-screen" class="screen">
+      <header class="home-header">
+        <h1>Crônicas do Bairro</h1>
+      </header>
+      <nav class="home-menu">
+        <button class="menu-btn" id="btn-combat">
+          <span class="btn-icon">⚔️</span>
+          <span class="btn-label">Combate & Exploração</span>
+        </button>
+        <button class="menu-btn" id="btn-gm">
+          <span class="btn-icon">🎭</span>
+          <span class="btn-label">Game Master</span>
+        </button>
+        <button class="menu-btn" id="btn-heroes">
+          <span class="btn-icon">👥</span>
+          <span class="btn-label">Heróis</span>
+        </button>
+        <button class="menu-btn" id="btn-inventory">
+          <span class="btn-icon">🎒</span>
+          <span class="btn-label">Inventário</span>
+        </button>
+        <button class="menu-btn" id="btn-config">
+          <span class="btn-icon">⚙️</span>
+          <span class="btn-label">Configurações</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Map Screen -->
+    <div id="map-screen" class="screen">
+      <div id="map-container"></div>
+      <button class="back-btn" id="btn-map-back">← Voltar</button>
+    </div>
+
+    <!-- Heroes Screen -->
+    <div id="heroes-screen" class="screen">
+      <header class="screen-header">
+        <button class="back-btn" id="btn-heroes-back">←</button>
+        <h2>Heróis</h2>
+      </header>
+      <div class="heroes-grid" id="heroes-grid"></div>
+    </div>
+
+    <!-- Inventory Screen -->
+    <div id="inventory-screen" class="screen">
+      <header class="screen-header">
+        <button class="back-btn" id="btn-inventory-back">←</button>
+        <h2>Inventário</h2>
+      </header>
+      <div class="inventory-grid" id="inventory-grid"></div>
+    </div>
+
+    <!-- Config Screen -->
+    <div id="config-screen" class="screen">
+      <header class="screen-header">
+        <button class="back-btn" id="btn-config-back">←</button>
+        <h2>Configurações</h2>
+      </header>
+      <div class="config-options">
+        <label class="config-toggle">
+          <span>Modo Teste (sem GPS)</span>
+          <input type="checkbox" id="toggle-test-mode">
+        </label>
+        <label class="config-toggle">
+          <span>Efeitos Sonoros</span>
+          <input type="checkbox" id="toggle-sound" checked>
+        </label>
+      </div>
+    </div>
+
+    <!-- Game Master Screen -->
+    <div id="gm-screen" class="screen">
+      <header class="screen-header">
+        <button class="back-btn" id="btn-gm-back">←</button>
+        <h2>Game Master</h2>
+      </header>
+      <div class="gm-panel" id="gm-panel">
+        <div class="gm-avatar">🎭</div>
+        <div class="gm-text" id="gm-text"></div>
+        <div class="gm-actions" id="gm-actions"></div>
+      </div>
+    </div>
+
+    <!-- Combat HUD (DOM Overlay para AR) -->
+    <div id="combat-hud" class="screen">
+      <!-- Menu superior -->
+      <div class="combat-top-bar">
+        <button class="hud-btn" id="btn-pause">≡</button>
+        <div class="turn-indicator" id="turn-indicator">Turno: Guerreiro</div>
+        <button class="hud-btn" id="btn-exit-combat">✕</button>
+      </div>
+
+      <!-- Painel de heróis (esquerda) -->
+      <div class="hero-panel" id="hero-panel"></div>
+
+      <!-- Indicador de PA -->
+      <div class="pa-indicator" id="pa-indicator">
+        <span class="pa-label">PA:</span>
+        <span class="pa-dots" id="pa-dots">●●●</span>
+      </div>
+
+      <!-- Carrossel de cartas (inferior) -->
+      <div class="card-carousel" id="card-carousel"></div>
+
+      <!-- Botão de passar turno -->
+      <button class="pass-turn-btn" id="btn-pass-turn">Passar Turno</button>
+
+      <!-- Reticle indicator -->
+      <div class="reticle-hint" id="reticle-hint">Aponte para uma superfície plana</div>
+
+      <!-- Pause Menu -->
+      <div class="pause-menu hidden" id="pause-menu">
+        <h3>⏸️ Pausado</h3>
+        <button class="pause-btn" id="btn-resume">▶️ Continuar</button>
+        <button class="pause-btn" id="btn-restart">🔄 Reiniciar</button>
+        <button class="pause-btn" id="btn-combat-log">📜 Log de Combate</button>
+        <button class="pause-btn" id="btn-exit-to-home">🚪 Sair</button>
+      </div>
+    </div>
+
+    <!-- Canvas 3D (para Three.js) -->
+    <canvas id="three-canvas"></canvas>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
