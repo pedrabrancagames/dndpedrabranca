@@ -2,8 +2,8 @@
  * UIManager - Gerenciador de Interface
  * Coordena as telas e interações do usuário
  */
-import { eventBus } from '../../core/EventEmitter.js';
-import { GameState } from '../../core/StateManager.js';
+import { eventBus } from '../core/EventEmitter.js';
+import { GameState } from '../core/StateManager.js';
 import { HomeScreen } from './screens/HomeScreen.js';
 import { HeroesScreen } from './screens/HeroesScreen.js';
 import { InventoryScreen } from './screens/InventoryScreen.js';
