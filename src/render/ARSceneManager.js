@@ -1,6 +1,6 @@
 /**
  * ARSceneManager - Gerenciador de Realidade Aumentada
- * Lida com sessão WebXR, Hit Test, posicionamento e modelos 3D
+ * Lida com sessão WebXR, Hit Test, posicionamento, modelos 3D e interação
  */
 import * as THREE from 'three';
 import { SceneManager } from './SceneManager.js';
@@ -26,9 +26,16 @@ export class ARSceneManager extends SceneManager {
         this.arenaPlaced = false;
         this.arenaPosition = null;
 
+        // Raycaster para seleção de inimigos
+        this.raycaster = new THREE.Raycaster();
+        this.selectedEnemy = null;
+
         // Config inicial do canvas
         this.canvas.style.pointerEvents = 'none';
         this.canvas.style.zIndex = '-1';
+
+        // Flag para controlar renderização
+        this.canRender = false;
 
         this.setupAR();
         this.setupInteraction();
@@ -57,6 +64,11 @@ export class ARSceneManager extends SceneManager {
                 await this.placeArena(data.position);
             }
         });
+
+        // Feedback visual de dano
+        eventBus.on('damageTaken', ({ targetId, amount }) => {
+            this.flashDamage(targetId);
+        });
     }
 
     async startSession() {
@@ -79,11 +91,18 @@ export class ARSceneManager extends SceneManager {
                 this.isSessionActive = true;
                 this.hitTestSourceRequested = false;
                 this.arenaPlaced = false;
+                this.canRender = false; // Apenas renderizar dentro do XR frame
 
                 this.canvas.style.pointerEvents = 'auto';
                 this.canvas.style.zIndex = '1';
 
-                this.renderer.setAnimationLoop((timestamp, frame) => this.render(timestamp, frame));
+                // Usar setAnimationLoop do XR - isso garante render apenas dentro do frame callback
+                this.renderer.setAnimationLoop((timestamp, frame) => {
+                    if (frame) {
+                        this.canRender = true;
+                        this.render(timestamp, frame);
+                    }
+                });
 
                 console.log('AR Session started');
                 eventBus.emit('arSessionStarted');
@@ -105,6 +124,7 @@ export class ARSceneManager extends SceneManager {
         this.hitTestSource = null;
         this.isSessionActive = false;
         this.currentSession = null;
+        this.canRender = false;
 
         this.renderer.setAnimationLoop(null);
 
@@ -125,39 +145,39 @@ export class ARSceneManager extends SceneManager {
         this.spawnedModels = [];
         this.arenaPlaced = false;
         this.arenaPosition = null;
+        this.selectedEnemy = null;
     }
 
     render(timestamp, frame) {
-        if (frame) {
-            const referenceSpace = this.renderer.xr.getReferenceSpace();
-            const session = this.renderer.xr.getSession();
+        // Só renderizar se tiver frame XR válido
+        if (!frame || !this.canRender) return;
 
-            if (this.hitTestSourceRequested === false) {
-                session.requestReferenceSpace('viewer').then((viewerSpace) => {
-                    session.requestHitTestSource({ space: viewerSpace }).then((source) => {
-                        this.hitTestSource = source;
-                    });
+        const referenceSpace = this.renderer.xr.getReferenceSpace();
+        const session = this.renderer.xr.getSession();
+
+        if (this.hitTestSourceRequested === false) {
+            session.requestReferenceSpace('viewer').then((viewerSpace) => {
+                session.requestHitTestSource({ space: viewerSpace }).then((source) => {
+                    this.hitTestSource = source;
                 });
+            });
 
-                this.hitTestSourceRequested = true;
-            }
+            this.hitTestSourceRequested = true;
+        }
 
-            if (this.hitTestSource && !this.arenaPlaced) {
-                const hitTestResults = frame.getHitTestResults(this.hitTestSource);
+        if (this.hitTestSource && !this.arenaPlaced) {
+            const hitTestResults = frame.getHitTestResults(this.hitTestSource);
 
-                if (hitTestResults.length > 0) {
-                    const hit = hitTestResults[0];
-                    this.reticle.visible = true;
-                    this.reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
-                } else {
-                    this.reticle.visible = false;
-                }
+            if (hitTestResults.length > 0) {
+                const hit = hitTestResults[0];
+                this.reticle.visible = true;
+                this.reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
             } else {
                 this.reticle.visible = false;
             }
+        } else {
+            this.reticle.visible = false;
         }
-
-        if (!this.renderer.xr.isPresenting) return;
 
         const dt = this.clock.getDelta();
         this.update(dt);
@@ -166,6 +186,7 @@ export class ARSceneManager extends SceneManager {
 
     onSelect() {
         if (this.reticle.visible && !this.arenaPlaced) {
+            // Posicionar arena
             const position = new THREE.Vector3();
             const quaternion = new THREE.Quaternion();
             const scale = new THREE.Vector3();
@@ -177,6 +198,121 @@ export class ARSceneManager extends SceneManager {
                 position,
                 quaternion
             });
+        } else if (this.arenaPlaced) {
+            // Tentar selecionar inimigo
+            this.trySelectEnemy();
+        }
+    }
+
+    /**
+     * Tenta selecionar um inimigo via raycast do controller
+     */
+    trySelectEnemy() {
+        if (this.spawnedModels.length === 0) return;
+
+        // Pegar posição do controller
+        const controllerPos = new THREE.Vector3();
+        const controllerDir = new THREE.Vector3(0, 0, -1);
+
+        this.controller.getWorldPosition(controllerPos);
+        controllerDir.applyQuaternion(this.controller.quaternion);
+
+        this.raycaster.set(controllerPos, controllerDir);
+
+        // Checar interseção com modelos
+        const intersects = this.raycaster.intersectObjects(this.spawnedModels, true);
+
+        if (intersects.length > 0) {
+            // Encontrar o modelo raiz (pai do mesh intersectado)
+            let target = intersects[0].object;
+            while (target.parent && !this.spawnedModels.includes(target)) {
+                target = target.parent;
+            }
+
+            this.selectEnemy(target);
+        }
+    }
+
+    /**
+     * Seleciona um inimigo e destaca visualmente
+     */
+    selectEnemy(model) {
+        // Desselecionar anterior
+        if (this.selectedEnemy) {
+            this.highlightModel(this.selectedEnemy, false);
+        }
+
+        this.selectedEnemy = model;
+        this.highlightModel(model, true);
+
+        // Encontrar dados do inimigo
+        const enemies = this.gameManager.combatManager?.enemies || [];
+        const enemy = enemies.find(e => e.model === model);
+
+        if (enemy) {
+            console.log(`Selected enemy: ${enemy.name}`);
+            eventBus.emit('enemySelected', { enemy, model });
+        }
+    }
+
+    /**
+     * Destaca ou remove destaque de um modelo
+     */
+    highlightModel(model, highlight) {
+        model.traverse((child) => {
+            if (child.isMesh && child.material) {
+                if (highlight) {
+                    child.material._originalEmissive = child.material.emissive?.clone();
+                    child.material.emissive = new THREE.Color(0xff4444);
+                    child.material.emissiveIntensity = 0.5;
+                } else {
+                    if (child.material._originalEmissive) {
+                        child.material.emissive = child.material._originalEmissive;
+                    } else {
+                        child.material.emissive = new THREE.Color(0x000000);
+                    }
+                    child.material.emissiveIntensity = 0;
+                }
+            }
+        });
+    }
+
+    /**
+     * Flash vermelho quando inimigo toma dano
+     */
+    flashDamage(targetId) {
+        const enemies = this.gameManager.combatManager?.enemies || [];
+        const enemy = enemies.find(e => e.id === targetId);
+
+        if (enemy && enemy.model) {
+            const model = enemy.model;
+
+            // Flash vermelho
+            model.traverse((child) => {
+                if (child.isMesh && child.material) {
+                    const originalColor = child.material.color.clone();
+                    child.material.color.set(0xff0000);
+
+                    setTimeout(() => {
+                        child.material.color.copy(originalColor);
+                    }, 150);
+                }
+            });
+
+            // Shake effect
+            const originalPos = model.position.clone();
+            const shakeIntensity = 0.05;
+
+            const shake = () => {
+                model.position.x = originalPos.x + (Math.random() - 0.5) * shakeIntensity;
+                model.position.z = originalPos.z + (Math.random() - 0.5) * shakeIntensity;
+            };
+
+            const shakeInterval = setInterval(shake, 30);
+            setTimeout(() => {
+                clearInterval(shakeInterval);
+                model.position.copy(originalPos);
+            }, 200);
         }
     }
 
@@ -207,7 +343,6 @@ export class ARSceneManager extends SceneManager {
         if (!combatManager || !combatManager.enemies) return;
 
         const enemies = combatManager.enemies;
-        const spacing = 0.5; // Espaçamento entre inimigos (metros)
 
         for (let i = 0; i < enemies.length; i++) {
             const enemy = enemies[i];
@@ -224,7 +359,7 @@ export class ARSceneManager extends SceneManager {
                 const z = this.arenaPosition.z + Math.sin(angle) * distance;
 
                 model.position.set(x, this.arenaPosition.y, z);
-                model.scale.set(0.5, 0.5, 0.5); // Escala para AR (ajustar conforme modelo)
+                model.scale.set(0.5, 0.5, 0.5);
 
                 // Rotacionar para olhar para o centro
                 model.lookAt(this.arenaPosition);
