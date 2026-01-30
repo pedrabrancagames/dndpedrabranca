@@ -234,10 +234,23 @@ export class ARSceneManager extends SceneManager {
         this.controller.getWorldPosition(controllerPos);
         controllerDir.applyQuaternion(this.controller.quaternion);
 
+        // Configurar camera para raycast em sprites (necessário pelo Three.js)
+        const xrCamera = this.renderer.xr.getCamera();
+        this.raycaster.camera = xrCamera;
         this.raycaster.set(controllerPos, controllerDir);
 
-        // Checar interseção com modelos
-        const intersects = this.raycaster.intersectObjects(this.spawnedModels, true);
+        // Filtrar apenas meshes, ignorando sprites (barras de HP)
+        const meshesToCheck = [];
+        this.spawnedModels.forEach(model => {
+            model.traverse(child => {
+                if (child.isMesh) {
+                    meshesToCheck.push(child);
+                }
+            });
+        });
+
+        // Checar interseção apenas com meshes
+        const intersects = this.raycaster.intersectObjects(meshesToCheck, false);
 
         if (intersects.length > 0) {
             // Encontrar o modelo raiz (pai do mesh intersectado)
@@ -420,6 +433,10 @@ export class ARSceneManager extends SceneManager {
      * Cria uma barra de HP flutuante usando Sprite 3D
      */
     createEnemyHPBar(enemy, model) {
+        // Calcular altura do modelo para posicionar a barra acima
+        const box = new THREE.Box3().setFromObject(model);
+        const modelHeight = box.max.y - box.min.y;
+
         // Criar canvas para desenhar a barra
         const canvas = document.createElement('canvas');
         canvas.width = 128;
@@ -440,8 +457,12 @@ export class ARSceneManager extends SceneManager {
         });
 
         const sprite = new THREE.Sprite(material);
-        sprite.scale.set(0.4, 0.15, 1); // Tamanho da barra no mundo
-        sprite.position.set(0, 0.7, 0); // Acima do modelo
+        sprite.scale.set(0.5, 0.18, 1); // Tamanho da barra no mundo
+
+        // Posicionar acima da cabeça do modelo (altura + margem)
+        // Como o modelo está escalado em 0.5, a altura real é modelHeight
+        // Mas a posição do sprite é relativa ao modelo já escalado
+        sprite.position.set(0, modelHeight + 0.15, 0);
         sprite.renderOrder = 999; // Renderizar por cima
 
         model.add(sprite);
