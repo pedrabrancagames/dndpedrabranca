@@ -1,11 +1,25 @@
 /**
  * ARSceneManager - Gerenciador de Realidade Aumentada
- * Lida com sessão WebXR, Hit Test, posicionamento, modelos 3D e interação
+ * Classe orquestradora que compõe módulos especializados
+ * 
+ * Módulos:
+ * - ARSession: Ciclo de vida da sessão WebXR
+ * - ARInteraction: Raycasting e seleção de inimigos
+ * - ARVisuals: Barras de HP e efeitos visuais
+ * - AnimationUtils: Funções de easing e animações
  */
 import * as THREE from 'three';
 import { SceneManager } from './SceneManager.js';
 import { ModelLoader } from './ModelLoader.js';
 import { eventBus } from '../core/EventEmitter.js';
+
+// Mixins
+import { applyARSessionMixin } from './ARSession.js';
+import { applyARInteractionMixin } from './ARInteraction.js';
+import { applyARVisualsMixin } from './ARVisuals.js';
+
+// Animações
+import * as AnimationUtils from './AnimationUtils.js';
 
 export class ARSceneManager extends SceneManager {
     constructor(canvasId, gameManager) {
@@ -15,7 +29,6 @@ export class ARSceneManager extends SceneManager {
 
         // Sprites de HP (3D nativo)
         this.enemyHPSprites = new Map();
-
 
         this.reticle = null;
         this.hitTestSource = null;
@@ -29,7 +42,7 @@ export class ARSceneManager extends SceneManager {
         this.spawnedModels = [];
         this.arenaPlaced = false;
         this.arenaPosition = null;
-        this.cameraDirection = null; // Direção que o usuário estava olhando ao posicionar
+        this.cameraDirection = null;
 
         // Raycaster para seleção de inimigos
         this.raycaster = new THREE.Raycaster();
@@ -47,22 +60,9 @@ export class ARSceneManager extends SceneManager {
         this.setupEventListeners();
     }
 
-    setupAR() {
-        this.reticle = new THREE.Mesh(
-            new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
-            new THREE.MeshBasicMaterial({ color: 0x00ff88 })
-        );
-        this.reticle.matrixAutoUpdate = false;
-        this.reticle.visible = false;
-        this.scene.add(this.reticle);
-    }
-
-    setupInteraction() {
-        this.controller = this.renderer.xr.getController(0);
-        this.controller.addEventListener('select', () => this.onSelect());
-        this.scene.add(this.controller);
-    }
-
+    /**
+     * Configura listeners de eventos do sistema
+     */
     setupEventListeners() {
         eventBus.on('arSurfaceSelected', async (data) => {
             if (!this.arenaPlaced) {
@@ -82,73 +82,9 @@ export class ARSceneManager extends SceneManager {
         });
     }
 
-    async startSession() {
-        if (this.isSessionActive) return;
-
-        if (navigator.xr) {
-            try {
-                const session = await navigator.xr.requestSession('immersive-ar', {
-                    requiredFeatures: ['hit-test'],
-                    optionalFeatures: ['dom-overlay'],
-                    domOverlay: { root: document.getElementById('combat-hud') }
-                });
-
-                session.addEventListener('end', () => this.onSessionEnded());
-
-                this.renderer.xr.setReferenceSpaceType('local');
-                await this.renderer.xr.setSession(session);
-
-                this.currentSession = session;
-                this.isSessionActive = true;
-                this.hitTestSourceRequested = false;
-                this.arenaPlaced = false;
-                this.canRender = false; // Apenas renderizar dentro do XR frame
-
-                this.canvas.style.pointerEvents = 'auto';
-                this.canvas.style.zIndex = '1';
-
-                // Usar setAnimationLoop do XR - isso garante render apenas dentro do frame callback
-                this.renderer.setAnimationLoop((timestamp, frame) => {
-                    if (frame) {
-                        this.canRender = true;
-                        this.render(timestamp, frame);
-                    }
-                });
-
-                console.log('AR Session started');
-                eventBus.emit('arSessionStarted');
-
-            } catch (error) {
-                console.error('Failed to start AR session:', error);
-            }
-        }
-    }
-
-    async endSession() {
-        if (this.currentSession) {
-            await this.currentSession.end();
-        }
-    }
-
-    onSessionEnded() {
-        this.hitTestSourceRequested = false;
-        this.hitTestSource = null;
-        this.isSessionActive = false;
-        this.currentSession = null;
-        this.canRender = false;
-
-        this.renderer.setAnimationLoop(null);
-
-        // Limpar modelos spawned
-        this.clearArena();
-
-        this.canvas.style.pointerEvents = 'none';
-        this.canvas.style.zIndex = '-1';
-
-        console.log('AR Session ended');
-        eventBus.emit('arSessionEnded');
-    }
-
+    /**
+     * Limpa a arena e todos os modelos
+     */
     clearArena() {
         this.spawnedModels.forEach(model => {
             this.scene.remove(model);
@@ -160,199 +96,10 @@ export class ARSceneManager extends SceneManager {
         this.clearEnemyLabels();
     }
 
-    render(timestamp, frame) {
-        // Só renderizar se tiver frame XR válido
-        if (!frame || !this.canRender) return;
-
-        const referenceSpace = this.renderer.xr.getReferenceSpace();
-        const session = this.renderer.xr.getSession();
-
-        if (this.hitTestSourceRequested === false) {
-            session.requestReferenceSpace('viewer').then((viewerSpace) => {
-                session.requestHitTestSource({ space: viewerSpace }).then((source) => {
-                    this.hitTestSource = source;
-                });
-            });
-
-            this.hitTestSourceRequested = true;
-        }
-
-        if (this.hitTestSource && !this.arenaPlaced) {
-            const hitTestResults = frame.getHitTestResults(this.hitTestSource);
-
-            if (hitTestResults.length > 0) {
-                const hit = hitTestResults[0];
-                this.reticle.visible = true;
-                this.reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
-            } else {
-                this.reticle.visible = false;
-            }
-        } else {
-            this.reticle.visible = false;
-        }
-
-        const dt = this.clock.getDelta();
-        this.update(dt);
-        this.renderer.render(this.scene, this.camera);
-    }
-
-    onSelect() {
-        if (this.reticle.visible && !this.arenaPlaced) {
-            // Posicionar arena
-            const position = new THREE.Vector3();
-            const quaternion = new THREE.Quaternion();
-            const scale = new THREE.Vector3();
-
-            this.reticle.matrix.decompose(position, quaternion, scale);
-
-            // Capturar direção da câmera XR (onde o usuário está olhando)
-            const xrCamera = this.renderer.xr.getCamera();
-            const cameraPos = new THREE.Vector3();
-            xrCamera.getWorldPosition(cameraPos);
-
-            // Direção do jogador para o reticle (para onde ele está olhando)
-            const direction = new THREE.Vector3().subVectors(position, cameraPos).normalize();
-            direction.y = 0; // Manter no plano horizontal
-
-            eventBus.emit('arSurfaceSelected', {
-                matrix: this.reticle.matrix.clone(),
-                position,
-                quaternion,
-                cameraDirection: direction
-            });
-        } else if (this.arenaPlaced) {
-            // Tentar selecionar inimigo
-            this.trySelectEnemy();
-        }
-    }
-
-    /**
-     * Tenta selecionar um inimigo via raycast do controller
-     */
-    trySelectEnemy() {
-        if (this.spawnedModels.length === 0) return;
-
-        // Pegar posição do controller
-        const controllerPos = new THREE.Vector3();
-        const controllerDir = new THREE.Vector3(0, 0, -1);
-
-        this.controller.getWorldPosition(controllerPos);
-        controllerDir.applyQuaternion(this.controller.quaternion);
-
-        // Configurar camera para raycast em sprites (necessário pelo Three.js)
-        const xrCamera = this.renderer.xr.getCamera();
-        this.raycaster.camera = xrCamera;
-        this.raycaster.set(controllerPos, controllerDir);
-
-        // Filtrar apenas meshes, ignorando sprites (barras de HP)
-        const meshesToCheck = [];
-        this.spawnedModels.forEach(model => {
-            model.traverse(child => {
-                if (child.isMesh) {
-                    meshesToCheck.push(child);
-                }
-            });
-        });
-
-        // Checar interseção apenas com meshes
-        const intersects = this.raycaster.intersectObjects(meshesToCheck, false);
-
-        if (intersects.length > 0) {
-            // Encontrar o modelo raiz (pai do mesh intersectado)
-            let target = intersects[0].object;
-            while (target.parent && !this.spawnedModels.includes(target)) {
-                target = target.parent;
-            }
-
-            this.selectEnemy(target);
-        }
-    }
-
-    /**
-     * Seleciona um inimigo e destaca visualmente
-     */
-    selectEnemy(model) {
-        // Desselecionar anterior
-        if (this.selectedEnemy) {
-            this.highlightModel(this.selectedEnemy, false);
-        }
-
-        this.selectedEnemy = model;
-        this.highlightModel(model, true);
-
-        // Encontrar dados do inimigo
-        const enemies = this.gameManager.combatManager?.enemies || [];
-        const enemy = enemies.find(e => e.model === model);
-
-        if (enemy) {
-            console.log(`Selected enemy: ${enemy.name}`);
-            eventBus.emit('enemySelected', { enemy, model });
-        }
-    }
-
-    /**
-     * Destaca ou remove destaque de um modelo
-     */
-    highlightModel(model, highlight) {
-        model.traverse((child) => {
-            if (child.isMesh && child.material) {
-                if (highlight) {
-                    child.material._originalEmissive = child.material.emissive?.clone();
-                    child.material.emissive = new THREE.Color(0xff4444);
-                    child.material.emissiveIntensity = 0.5;
-                } else {
-                    if (child.material._originalEmissive) {
-                        child.material.emissive = child.material._originalEmissive;
-                    } else {
-                        child.material.emissive = new THREE.Color(0x000000);
-                    }
-                    child.material.emissiveIntensity = 0;
-                }
-            }
-        });
-    }
-
-    /**
-     * Flash vermelho quando inimigo toma dano
-     */
-    flashDamage(targetId) {
-        const enemies = this.gameManager.combatManager?.enemies || [];
-        const enemy = enemies.find(e => e.id === targetId);
-
-        if (enemy && enemy.model) {
-            const model = enemy.model;
-
-            // Flash vermelho
-            model.traverse((child) => {
-                if (child.isMesh && child.material) {
-                    const originalColor = child.material.color.clone();
-                    child.material.color.set(0xff0000);
-
-                    setTimeout(() => {
-                        child.material.color.copy(originalColor);
-                    }, 150);
-                }
-            });
-
-            // Shake effect
-            const originalPos = model.position.clone();
-            const shakeIntensity = 0.05;
-
-            const shake = () => {
-                model.position.x = originalPos.x + (Math.random() - 0.5) * shakeIntensity;
-                model.position.z = originalPos.z + (Math.random() - 0.5) * shakeIntensity;
-            };
-
-            const shakeInterval = setInterval(shake, 30);
-            setTimeout(() => {
-                clearInterval(shakeInterval);
-                model.position.copy(originalPos);
-            }, 200);
-        }
-    }
-
     /**
      * Posiciona a arena de combate na superfície selecionada
+     * @param {THREE.Vector3} position - Posição da arena
+     * @param {THREE.Vector3} cameraDirection - Direção da câmera
      */
     async placeArena(position, cameraDirection) {
         this.arenaPosition = position.clone();
@@ -386,7 +133,7 @@ export class ARSceneManager extends SceneManager {
         const baseAngle = Math.atan2(this.cameraDirection.x, this.cameraDirection.z);
 
         // Espalhar inimigos em arco de 60° (30° para cada lado)
-        const spreadAngle = Math.PI / 3; // 60 graus total
+        const spreadAngle = Math.PI / 3;
         const startAngle = baseAngle - spreadAngle / 2;
         const angleStep = numEnemies > 1 ? spreadAngle / (numEnemies - 1) : 0;
 
@@ -399,7 +146,7 @@ export class ARSceneManager extends SceneManager {
 
                 // Calcular posição baseada na direção da câmera
                 const angle = numEnemies === 1 ? baseAngle : startAngle + (i * angleStep);
-                const distance = 1.5; // 1.5m do ponto de arena
+                const distance = 1.5;
 
                 const x = this.arenaPosition.x + Math.sin(angle) * distance;
                 const z = this.arenaPosition.z + Math.cos(angle) * distance;
@@ -409,7 +156,7 @@ export class ARSceneManager extends SceneManager {
                 // Iniciar com escala 0 para animação
                 model.scale.set(0, 0, 0);
 
-                // Rotacionar para olhar para o jogador (direção oposta)
+                // Rotacionar para olhar para o jogador
                 const lookAtPos = new THREE.Vector3(
                     this.arenaPosition.x - this.cameraDirection.x,
                     this.arenaPosition.y,
@@ -428,8 +175,11 @@ export class ARSceneManager extends SceneManager {
                     this.createEnemyHPBar(enemy, model);
                 }, 500);
 
-                // Animar entrada com delay escalonado
-                this.animateSpawn(model, 0.5, i * 200);
+                // Animar entrada com delay escalonado (usando AnimationUtils)
+                AnimationUtils.animateSpawn(model, {
+                    targetScale: 0.5,
+                    delay: i * 200
+                });
 
                 console.log(`Spawned ${enemy.name} at`, model.position);
 
@@ -442,223 +192,8 @@ export class ARSceneManager extends SceneManager {
     }
 
     /**
-     * Cria uma barra de HP flutuante usando Sprite 3D
-     */
-    createEnemyHPBar(enemy, model) {
-        // Calcular altura do modelo no espaço do mundo
-        const box = new THREE.Box3().setFromObject(model);
-        const worldHeight = box.max.y - box.min.y;
-
-        // Converter para coordenadas locais (dividir pela escala do modelo)
-        // O modelo está escalado em 0.5, então a altura local é 2x maior
-        const modelScale = model.scale.y || 1;
-        const localHeight = worldHeight / modelScale;
-
-        // Criar canvas para desenhar a barra
-        const canvas = document.createElement('canvas');
-        canvas.width = 128;
-        canvas.height = 48;
-
-        const ctx = canvas.getContext('2d');
-        this.drawHPBar(ctx, enemy, canvas.width, canvas.height);
-
-        // Criar textura e sprite
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.needsUpdate = true;
-
-        const material = new THREE.SpriteMaterial({
-            map: texture,
-            transparent: true,
-            depthTest: false,
-            depthWrite: false
-        });
-
-        const sprite = new THREE.Sprite(material);
-        sprite.scale.set(0.5, 0.18, 1); // Tamanho da barra no mundo
-
-        // Posicionar acima da cabeça do modelo em coordenadas locais
-        // Adicionar margem de 0.3 unidades locais acima do topo
-        sprite.position.set(0, localHeight + 0.3, 0);
-        sprite.renderOrder = 999; // Renderizar por cima
-
-        model.add(sprite);
-
-        // Guardar referência
-        this.enemyHPSprites.set(enemy.id, { sprite, canvas, ctx, texture, enemy });
-    }
-
-    /**
-     * Desenha a barra de HP no canvas
-     */
-    drawHPBar(ctx, enemy, width, height) {
-        const hpPercent = Math.max(0, enemy.hp / enemy.maxHp);
-
-        // Limpar canvas
-        ctx.clearRect(0, 0, width, height);
-
-        // Background
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.roundRect(0, 0, width, height, 6);
-        ctx.fill();
-
-        // Nome
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(enemy.name, width / 2, 14);
-
-        // Barra de fundo
-        const barX = 8;
-        const barY = 20;
-        const barWidth = width - 16;
-        const barHeight = 12;
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.roundRect(barX, barY, barWidth, barHeight, 4);
-        ctx.fill();
-
-        // Barra de HP
-        const fillWidth = barWidth * hpPercent;
-        if (fillWidth > 0) {
-            // Cor baseada no HP
-            let color = '#22c55e'; // Verde
-            if (hpPercent <= 0.25) {
-                color = '#ef4444'; // Vermelho
-            } else if (hpPercent <= 0.5) {
-                color = '#f59e0b'; // Amarelo
-            }
-
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.roundRect(barX, barY, fillWidth, barHeight, 4);
-            ctx.fill();
-        }
-
-        // Texto HP
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '10px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${enemy.hp}/${enemy.maxHp}`, width / 2, 42);
-    }
-
-    /**
-     * Atualiza a barra de HP de um inimigo
-     */
-    updateEnemyHPBar(enemyId) {
-        const spriteData = this.enemyHPSprites.get(enemyId);
-        if (!spriteData) return;
-
-        const { ctx, canvas, texture, enemy } = spriteData;
-
-        // Redesenhar
-        this.drawHPBar(ctx, enemy, canvas.width, canvas.height);
-        texture.needsUpdate = true;
-
-        // Se morto, esconder sprite
-        if (enemy.hp <= 0) {
-            spriteData.sprite.visible = false;
-        }
-    }
-
-    /**
-     * Limpa todos os sprites de HP
-     */
-    clearEnemyLabels() {
-        this.enemyHPSprites.forEach(({ sprite }) => {
-            if (sprite.parent) {
-                sprite.parent.remove(sprite);
-            }
-            sprite.material.map?.dispose();
-            sprite.material.dispose();
-        });
-        this.enemyHPSprites.clear();
-    }
-
-    /**
-     * Anima a entrada de um modelo (spawn)
-     * @param {THREE.Object3D} model - Modelo a animar
-     * @param {number} targetScale - Escala final
-     * @param {number} delay - Delay em ms antes de iniciar
-     */
-    animateSpawn(model, targetScale = 0.5, delay = 0) {
-        setTimeout(() => {
-            const duration = 400; // ms
-            const startTime = performance.now();
-            const startY = model.position.y - 0.3; // Começa um pouco abaixo
-            const targetY = model.position.y;
-
-            model.position.y = startY;
-
-            const animate = () => {
-                const elapsed = performance.now() - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-
-                // Easing: easeOutBack para efeito de "bounce"
-                const eased = this.easeOutBack(progress);
-
-                // Escala
-                const scale = targetScale * eased;
-                model.scale.set(scale, scale, scale);
-
-                // Posição Y (subir do chão)
-                model.position.y = startY + (targetY - startY) * this.easeOutCubic(progress);
-
-                if (progress < 1) {
-                    requestAnimationFrame(animate);
-                }
-            };
-
-            animate();
-        }, delay);
-    }
-
-    /**
-     * Anima a morte de um modelo
-     * @param {THREE.Object3D} model - Modelo a animar
-     * @param {Function} onComplete - Callback após animação
-     */
-    animateDeath(model, onComplete) {
-        const duration = 600; // ms
-        const startTime = performance.now();
-        const startScale = model.scale.x;
-        const startY = model.position.y;
-        const startRotation = model.rotation.z;
-
-        const animate = () => {
-            const elapsed = performance.now() - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-
-            // Easing: easeInBack para efeito de "sugar"
-            const eased = this.easeInCubic(progress);
-
-            // Escala diminui
-            const scale = startScale * (1 - eased);
-            model.scale.set(scale, scale, scale);
-
-            // Rotaciona e cai
-            model.rotation.z = startRotation + (Math.PI * 0.5) * eased;
-            model.position.y = startY - 0.3 * eased;
-
-            // Transparência (se material suportar)
-            model.traverse(child => {
-                if (child.isMesh && child.material) {
-                    child.material.transparent = true;
-                    child.material.opacity = 1 - eased;
-                }
-            });
-
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            } else {
-                if (onComplete) onComplete();
-            }
-        };
-
-        animate();
-    }
-
-    /**
      * Executa animação de morte para um inimigo
+     * @param {string} enemyId - ID do inimigo
      */
     playDeathAnimation(enemyId) {
         // Encontrar inimigo pelo ID
@@ -671,29 +206,20 @@ export class ARSceneManager extends SceneManager {
             spriteData.sprite.visible = false;
         }
 
-        // Animar morte
-        this.animateDeath(enemy.model, () => {
-            this.scene.remove(enemy.model);
-            const index = this.spawnedModels.indexOf(enemy.model);
-            if (index > -1) {
-                this.spawnedModels.splice(index, 1);
+        // Animar morte usando AnimationUtils
+        AnimationUtils.animateDeath(enemy.model, {
+            onComplete: () => {
+                this.scene.remove(enemy.model);
+                const index = this.spawnedModels.indexOf(enemy.model);
+                if (index > -1) {
+                    this.spawnedModels.splice(index, 1);
+                }
             }
         });
     }
-
-    // ===== Funções de Easing =====
-
-    easeOutBack(x) {
-        const c1 = 1.70158;
-        const c3 = c1 + 1;
-        return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
-    }
-
-    easeOutCubic(x) {
-        return 1 - Math.pow(1 - x, 3);
-    }
-
-    easeInCubic(x) {
-        return x * x * x;
-    }
 }
+
+// Aplicar mixins para injetar funcionalidades
+applyARSessionMixin(ARSceneManager);
+applyARInteractionMixin(ARSceneManager);
+applyARVisualsMixin(ARSceneManager);

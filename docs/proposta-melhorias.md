@@ -33,28 +33,6 @@
 
 ## 2. Correções Prioritárias
 
-### 2.1 📍 GPS - Localização Real do Jogador
-
-**Problema Atual:** O mapa mostra um local genérico, não a posição real do jogador.
-
-**Solução:**
-1. Implementar solicitação de permissão de geolocalização (`navigator.geolocation`)
-2. Mostrar posição real do jogador no mapa
-3. Atualizar posição em tempo real enquanto o jogador anda
-4. Mostrar mensagem de erro amigável se permissão for negada
-
-```javascript
-// Exemplo de implementação
-navigator.geolocation.getCurrentPosition(
-    (position) => {
-        const { latitude, longitude } = position.coords;
-        // Centralizar mapa na posição real
-    },
-    (error) => {
-        // Mostrar mensagem de erro
-    }
-);
-```
 
 ---
 
@@ -85,19 +63,6 @@ Arqueiro atira → Mago congela → Guerreiro quebra = COMBO SHATTER (2x dano)
 - **Eventos Climáticos**: Chuva = mais inimigos de água
 - **Eventos de Horário**: Mortos-vivos à noite, fadas ao amanhecer
 
-#### **Facções do Bairro**
-Diferentes partes do bairro são "controladas" por grupos diferentes no mundo do jogo:
-
-| Região Real | Facção do Jogo | Benefícios |
-|-------------|----------------|------------|
-| Praça Central | Goblins | Missões de emboscada |
-| Parque | Elfos da Floresta | Descontos em poções |
-| Igreja | Ordem Sagrada | Missões de purificação |
-
-- **Reputação**: Completar missões de uma facção aumenta sua reputação com ela
-- **Benefícios**: Boa reputação = preços melhores, missões exclusivas
-- **Guerras**: Facções podem estar em conflito (escolha um lado!)
-
 ### 3.4 🃏 Sistema de Cartas Expandido
 
 #### **Cartas Raras com Efeitos Especiais**
@@ -107,21 +72,6 @@ Diferentes partes do bairro são "controladas" por grupos diferentes no mundo do
 | Raro | Partículas | Bola de Fogo+ |
 | Épico | Animação AR | Meteoro Supremo |
 | Lendário | Altera ambiente | Apocalipse (escurece tudo) |
-
-#### **Sistema de Fusão de Cartas**
-Sistema de upgrade que combina cartas iguais para criar versões mais fortes:
-
-```
-┌─────────────┐   ┌─────────────┐   ┌─────────────┐       ┌─────────────┐
-│   GOLPE     │ + │   GOLPE     │ + │   GOLPE     │  →    │   GOLPE+    │
-│   15 dano   │   │   15 dano   │   │   15 dano   │       │   25 dano   │
-│   1 PA      │   │   1 PA      │   │   1 PA      │       │   1 PA      │
-└─────────────┘   └─────────────┘   └─────────────┘       └─────────────┘
-```
-
-- **3 cartas iguais** = versão aprimorada (+dano, -custo, ou efeito extra)
-- **Fragmentos de Alma** podem ser adicionados para efeitos secundários (ex: +QUEIMANDO)
-- Interface visual mostrando árvore de evolução da carta
 
 ### 3.5 👥 Sistema de Heróis
 
@@ -175,21 +125,18 @@ Isso adiciona profundidade e replayability - o jogador pode fazer escolhas que a
 ## 4. Roadmap Sugerido
 
 ### Fase 1: Correções e Polimento (1-2 meses)
-- [ ] **GPS real do jogador** (PRIORITÁRIO)
 - [ ] Refatoração do ARSceneManager
 - [ ] Object Pooling
 - [ ] Error Boundaries
 - [ ] Combos visuais básicos
 
 ### Fase 2: Profundidade (2-3 meses)
-- [ ] Sistema de Fusão de Cartas
 - [ ] Especialização de Classe
 - [ ] Loja física no mapa
 - [ ] Voz gravada do Game Master
 - [ ] Sistema de Conquistas
 
 ### Fase 3: Mundo Vivo (3-4 meses)
-- [ ] Sistema de Facções
 - [ ] Eventos de Horário/Clima
 - [ ] Dungeons Temporárias
 - [ ] Sistema de Crafting
@@ -206,15 +153,13 @@ Isso adiciona profundidade e replayability - o jogador pode fazer escolhas que a
 5. QoL: Skip Animações
 
 ### 🟡 Média Prioridade
-1. Sistema de Fusão de Cartas
-2. Especialização de Classe
-3. Loja Física
-4. Sistema de Conquistas
+1. Especialização de Classe
+2. Loja Física
+3. Sistema de Conquistas
 
 ### 🟢 Longo Prazo
-1. Sistema de Facções
-2. Eventos Dinâmicos
-3. Dungeons Temporárias
+1. Eventos Dinâmicos
+2. Dungeons Temporárias
 4. Crafting
 
 ---
@@ -224,9 +169,9 @@ Isso adiciona profundidade e replayability - o jogador pode fazer escolhas que a
 O projeto D&D Pedra Branca possui uma base técnica sólida. As melhorias propostas focam em:
 
 1. **Correção do GPS** - Funcionalidade essencial para o core loop
-2. **Profundidade de Progressão** - Fusão de cartas e especialização
+2. **Profundidade de Progressão** - Especialização de classes
 3. **Imersão** - Voz gravada e conquistas
-4. **Mundo Vivo** - Facções e eventos dinâmicos
+4. **Mundo Vivo** - Eventos dinâmicos
 
 ---
 
