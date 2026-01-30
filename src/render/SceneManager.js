@@ -12,12 +12,12 @@ export class SceneManager {
 
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvas,
-            alpha: true, // Importante para AR
+            alpha: true,
             antialias: true
         });
 
         this.clock = new THREE.Clock();
-        this.mixers = []; // Animation mixers
+        this.mixers = [];
 
         this.init();
     }
@@ -31,15 +31,13 @@ export class SceneManager {
     setupRenderer() {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.xr.enabled = true; // Habilitar WebXR
+        this.renderer.xr.enabled = true;
     }
 
     setupLights() {
-        // Luz ambiente suave
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(ambientLight);
 
-        // Luz direcional (sol)
         const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
         directionalLight.position.set(5, 10, 7.5);
         this.scene.add(directionalLight);
@@ -47,28 +45,19 @@ export class SceneManager {
 
     setupResize() {
         window.addEventListener('resize', () => {
+            // Bloquear resize durante XR para evitar crash WebGL
+            if (this.renderer.xr.isPresenting) return;
+
             this.camera.aspect = window.innerWidth / window.innerHeight;
             this.camera.updateProjectionMatrix();
             this.renderer.setSize(window.innerWidth, window.innerHeight);
         });
     }
 
-    /**
-     * Adiciona objeto à cena
-     */
-    add(object) {
-        this.scene.add(object);
-    }
-
-    /**
-     * Remove objeto da cena
-     */
-    remove(object) {
-        this.scene.remove(object);
-    }
+    add(object) { this.scene.add(object); }
+    remove(object) { this.scene.remove(object); }
 
     update(dt) {
-        // Atualizar animações
         this.mixers.forEach(mixer => mixer.update(dt));
     }
 }

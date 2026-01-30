@@ -13,22 +13,24 @@ export class MapScreen extends BaseScreen {
     }
 
     onShow() {
-        // Inicializar mapa na primeira vez que a tela for mostrada
-        // Isso garante que o container DIV já tenha tamanho definido
+        // Inicializar mapa na primeira vez
         if (!this.mapInitialized && this.gameManager.mapManager) {
             setTimeout(() => {
                 this.gameManager.mapManager.init('map-container');
                 this.mapInitialized = true;
-
-                // Adicionar missões de teste
                 this.addTestMissions();
-
-            }, 100); // Pequeno delay para garantir renderização do layout
+            }, 100);
+        } else {
+            // Se já inicializado, invalidar tamanho para corrigir renderização
+            setTimeout(() => {
+                if (this.gameManager.mapManager.map) {
+                    this.gameManager.mapManager.map.invalidateSize();
+                }
+            }, 100);
         }
     }
 
     addTestMissions() {
-        // Adicionar um marcador de combate perto da posição inicial do modo teste
         if (this.gameManager.gameData.testMode) {
             this.gameManager.mapManager.addMissionMarker({
                 id: 'test_combat',
