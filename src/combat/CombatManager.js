@@ -13,7 +13,7 @@ export class CombatManager {
         this.gameManager = gameManager;
 
         this.turnManager = new TurnManager();
-        this.cardSystem = new CardSystem();
+        this.cardSystem = new CardSystem(this);
         this.statusEffects = new StatusEffects();
 
         this.activeEncounter = null;

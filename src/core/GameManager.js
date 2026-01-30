@@ -11,6 +11,7 @@ import { UIManager } from '../ui/UIManager.js';
 import { MapManager } from '../map/MapManager.js';
 import { CombatManager } from '../combat/CombatManager.js';
 import { ARSceneManager } from '../render/ARSceneManager.js';
+import { CombatHUD } from '../ui/CombatHUD.js';
 
 export class GameManager {
     constructor() {
@@ -22,6 +23,7 @@ export class GameManager {
 
         // Inicializado após DOM
         this.arSceneManager = null;
+        this.combatHUD = null;
 
         this.gameData = {
             heroes: [],
@@ -50,6 +52,7 @@ export class GameManager {
 
             // Managers dependentes de DOM
             this.arSceneManager = new ARSceneManager('three-canvas', this);
+            this.combatHUD = new CombatHUD(this);
             this.uiManager = new UIManager(this);
 
             this.updateLoadingText('Pronto!');
@@ -66,8 +69,6 @@ export class GameManager {
     }
 
     initNewGame() {
-        // ... mantido igual (simplificado aqui para economizar tokens, 
-        // mas na prática vou reescrever tudo para garantir integridade)
         this.gameData = {
             heroes: this.createDefaultHeroes(),
             inventory: [],
@@ -79,12 +80,47 @@ export class GameManager {
     }
 
     createDefaultHeroes() {
-        // Mesma lógica anterior, mantendo código completo
         return [
-            { id: 'warrior', name: 'Guerreiro', class: 'warrior', icon: '⚔️', hp: 120, maxHp: 120, pa: 3, maxPa: 3, atk: 25, def: 15, level: 1, xp: 0, deck: ['golpe', 'golpe_brutal', 'escudo', 'provocar', 'investida', 'furia'] },
-            { id: 'mage', name: 'Mago', class: 'mage', icon: '🔮', hp: 60, maxHp: 60, pa: 3, maxPa: 3, atk: 10, mag: 30, def: 5, level: 1, xp: 0, deck: ['missil_arcano', 'bola_de_fogo', 'cone_de_gelo', 'escudo_arcano', 'raio', 'meteoro'] },
-            { id: 'rogue', name: 'Ladino', class: 'rogue', icon: '🗡️', hp: 80, maxHp: 80, pa: 3, maxPa: 3, atk: 20, def: 8, crit: 15, level: 1, xp: 0, deck: ['punhalada', 'golpe_nas_costas', 'veneno', 'evasao', 'sombras', 'execucao'] },
-            { id: 'cleric', name: 'Clérigo', class: 'cleric', icon: '✨', hp: 90, maxHp: 90, pa: 3, maxPa: 3, atk: 15, mag: 25, def: 10, level: 1, xp: 0, deck: ['cura_menor', 'cura_em_grupo', 'bencao', 'luz_sagrada', 'purificar', 'ressurreicao'] }
+            {
+                id: 'warrior', name: 'Guerreiro', class: 'warrior', icon: '⚔️',
+                hp: 120, maxHp: 120, pa: 3, maxPa: 3, atk: 25, def: 15, level: 1, xp: 0,
+                deck: [
+                    { name: 'Golpe', icon: '⚔️', cost: 1, damage: 15, description: 'Ataque básico' },
+                    { name: 'Golpe Brutal', icon: '💥', cost: 2, damage: 30, description: '+30 dano' },
+                    { name: 'Escudo', icon: '🛡️', cost: 1, defense: 10, description: '+10 defesa' },
+                    { name: 'Investida', icon: '🏃', cost: 2, damage: 25, description: 'Avança e ataca' }
+                ]
+            },
+            {
+                id: 'mage', name: 'Mago', class: 'mage', icon: '🔮',
+                hp: 60, maxHp: 60, pa: 3, maxPa: 3, atk: 10, mag: 30, def: 5, level: 1, xp: 0,
+                deck: [
+                    { name: 'Míssil Arcano', icon: '✨', cost: 1, damage: 20, description: 'Projétil mágico' },
+                    { name: 'Bola de Fogo', icon: '🔥', cost: 2, damage: 40, aoe: true, description: 'Ataque em área' },
+                    { name: 'Raio', icon: '⚡', cost: 2, damage: 35, description: 'Ataque elétrico' },
+                    { name: 'Escudo Arcano', icon: '🔮', cost: 1, defense: 15, description: 'Barreira mágica' }
+                ]
+            },
+            {
+                id: 'rogue', name: 'Ladino', class: 'rogue', icon: '🗡️',
+                hp: 80, maxHp: 80, pa: 3, maxPa: 3, atk: 20, def: 8, crit: 15, level: 1, xp: 0,
+                deck: [
+                    { name: 'Punhalada', icon: '🗡️', cost: 1, damage: 18, description: 'Ataque rápido' },
+                    { name: 'Golpe Furtivo', icon: '👤', cost: 2, damage: 45, description: 'Crítico garantido' },
+                    { name: 'Veneno', icon: '☠️', cost: 1, dot: 5, duration: 3, description: '5 dano/turno' },
+                    { name: 'Evasão', icon: '💨', cost: 1, dodge: true, description: 'Esquiva próximo ataque' }
+                ]
+            },
+            {
+                id: 'cleric', name: 'Clérigo', class: 'cleric', icon: '✨',
+                hp: 90, maxHp: 90, pa: 3, maxPa: 3, atk: 15, mag: 25, def: 10, level: 1, xp: 0,
+                deck: [
+                    { name: 'Cura Menor', icon: '💚', cost: 1, heal: 20, description: 'Cura 20 HP' },
+                    { name: 'Luz Sagrada', icon: '☀️', cost: 2, damage: 25, description: 'Dano sagrado' },
+                    { name: 'Bênção', icon: '🙏', cost: 1, buff: { atk: 5 }, description: '+5 ataque' },
+                    { name: 'Purificar', icon: '💫', cost: 1, cleanse: true, description: 'Remove debuffs' }
+                ]
+            }
         ];
     }
 
@@ -99,10 +135,28 @@ export class GameManager {
             // Iniciar combate
             if (to === GameState.COMBAT && data && data.missionId) {
                 this.combatManager.startEncounter(data.missionId);
-                // Iniciar AR Session
                 this.arSceneManager.startSession();
             }
         });
+
+        // Toast messages
+        eventBus.on('showMessage', ({ text, type }) => this.showToast(text, type));
+    }
+
+    showToast(text, type = 'info') {
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = text;
+        container.appendChild(toast);
+
+        setTimeout(() => toast.remove(), 3000);
     }
 
     async saveGame() { await this.saveManager.save(this.gameData); }

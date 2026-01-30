@@ -860,3 +860,123 @@ button {
 .animate-slide-up {
   animation: slideUp var(--transition-normal);
 }
+
+/* ==== Hero Panel Melhorado ==== */
+.hero-portrait {
+  width: 70px;
+  padding: var(--space-xs);
+  height: auto;
+}
+
+.hero-portrait .hero-icon {
+  font-size: 1.75rem;
+  margin-bottom: 2px;
+}
+
+.hero-portrait .hero-info {
+  width: 100%;
+}
+
+.hero-portrait .hero-name {
+  font-size: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hero-portrait .hero-hp-bar {
+  height: 4px;
+  background: var(--color-bg-dark);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: 2px;
+}
+
+.hero-portrait .hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-danger), var(--color-hp));
+  border-radius: var(--radius-full);
+  transition: width var(--transition-fast);
+}
+
+.hero-portrait .hero-hp-text {
+  font-size: 0.5rem;
+  color: var(--color-text-muted);
+}
+
+.hero-portrait.damage-flash {
+  animation: damageFlash 0.3s ease;
+}
+
+@keyframes damageFlash {
+
+  0%,
+  100% {
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  50% {
+    background: rgba(239, 68, 68, 0.8);
+  }
+}
+
+/* ==== Card Effect Text ==== */
+.combat-card .card-effect {
+  font-size: 0.5rem;
+  color: var(--color-text-muted);
+  margin-top: auto;
+}
+
+/* ==== No Cards Message ==== */
+.no-cards {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+/* ==== Toast Messages ==== */
+.toast-container {
+  position: fixed;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  pointer-events: none;
+}
+
+.toast {
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(10px);
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  animation: toastSlide 0.3s ease;
+}
+
+.toast.error {
+  border-left: 3px solid var(--color-danger);
+}
+
+.toast.success {
+  border-left: 3px solid var(--color-success);
+}
+
+@keyframes toastSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
