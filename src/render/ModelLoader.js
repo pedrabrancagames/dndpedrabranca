@@ -1,15 +1,22 @@
 /**
  * ModelLoader - Carregador de Modelos 3D
- * Gerencia carregamento, cache e clonagem de modelos GLB
+ * Gerencia carregamento, cache e clonagem de modelos GLB com Draco
  */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
 export class ModelLoader {
     constructor() {
+        // Configurar DRACOLoader (necessário para modelos comprimidos)
+        this.dracoLoader = new DRACOLoader();
+        this.dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+
         this.loader = new GLTFLoader();
-        this.cache = new Map(); // modelPath -> gltf
-        this.loadingPromises = new Map(); // para evitar carregar duplicado
+        this.loader.setDRACOLoader(this.dracoLoader);
+
+        this.cache = new Map();
+        this.loadingPromises = new Map();
     }
 
     /**
@@ -86,7 +93,7 @@ export class ModelLoader {
     static getEnemyModelPath(enemyType) {
         const modelMap = {
             'goblin': '/models/enemies/goblin.glb',
-            'goblin_archer': '/models/enemies/goblin.glb', // Mesmo modelo, pode trocar depois
+            'goblin_archer': '/models/enemies/goblin.glb',
             'orc': '/models/enemies/orc.glb',
             'skeleton': '/models/enemies/skeleton.glb',
             'zombie': '/models/enemies/zombie.glb',

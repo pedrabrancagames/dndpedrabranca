@@ -64,7 +64,7 @@ export class CombatManager {
         // Iniciar turnos
         setTimeout(() => {
             this.gameManager.stateManager.setCombatState('player_turn');
-            this.turnManager.startCombat(heroes, enemies);
+            this.turnManager.startCombat(heroes, this.enemies);
         }, 2000); // Delay simulando animação de entrada
     }
 
