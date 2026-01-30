@@ -5,8 +5,10 @@
 import { TurnManager } from './TurnManager.js';
 import { CardSystem } from './CardSystem.js';
 import { StatusEffects } from './StatusEffects.js';
+import { EnemyAI } from './EnemyAI.js';
 import { eventBus } from '../core/EventEmitter.js';
 import { GameState } from '../core/StateManager.js';
+import { createEnemyInstance, EnemyBehavior } from '../data/EnemyDatabase.js';
 
 export class CombatManager {
     constructor(gameManager) {
@@ -15,8 +17,10 @@ export class CombatManager {
         this.turnManager = new TurnManager();
         this.cardSystem = new CardSystem(this);
         this.statusEffects = new StatusEffects();
+        this.enemyAI = new EnemyAI(this);
 
         this.activeEncounter = null;
+        this.enemies = [];
 
         this.setupEvents();
     }
@@ -46,10 +50,10 @@ export class CombatManager {
 
         const heroes = this.gameManager.gameData.heroes;
 
-        // Mock inimigos para MVP - com type para modelo 3D
+        // Criar inimigos usando o banco de dados
         this.enemies = [
-            { id: 'goblin_1', name: 'Goblin', type: 'goblin', hp: 30, maxHp: 30, atk: 10 },
-            { id: 'goblin_2', name: 'Goblin Arqueiro', type: 'goblin_archer', hp: 25, maxHp: 25, atk: 12 }
+            createEnemyInstance('goblin', 'goblin_1'),
+            createEnemyInstance('goblin_archer', 'goblin_2')
         ];
 
         this.activeEncounter = {
@@ -58,36 +62,45 @@ export class CombatManager {
             enemies: this.enemies
         };
 
-        // Transitar UI para combate (já feito pelo MapManager, mas reforçando sub-estado)
+        // Transitar UI para combate
         this.gameManager.stateManager.setCombatState('setup');
 
         // Iniciar turnos
         setTimeout(() => {
             this.gameManager.stateManager.setCombatState('player_turn');
             this.turnManager.startCombat(heroes, this.enemies);
-        }, 2000); // Delay simulando animação de entrada
+        }, 2000);
     }
 
     handleTurnStart(unit) {
         if (unit.type === 'hero') {
             console.log(`Player turn: ${unit.name}`);
-            // Atualizar UI de combate com PA cheio
             unit.pa = unit.maxPa;
-            // Notificar UI
-            // TODO: update HUD
+            eventBus.emit('heroTurnStart', { hero: unit });
         } else {
             console.log(`Enemy turn: ${unit.name}`);
-            this.executeEnemyAI(unit);
+            this.executeEnemyTurn(unit);
         }
     }
 
-    executeEnemyAI(enemy) {
-        // IA Simples: Ataca herói aleatório
+    /**
+     * Executa o turno de um inimigo usando a IA
+     */
+    executeEnemyTurn(enemy) {
         setTimeout(() => {
-            console.log(`${enemy.name} attacks!`);
-            // Aplicar dano (mock)
-            const target = this.activeEncounter.heroes[0]; // Sempre ataca o primeiro
-            this.applyDamage(target, enemy.atk);
+            // Usar sistema de IA para decidir ação
+            const action = this.enemyAI.executeAction(enemy);
+
+            if (action) {
+                this.enemyAI.applyAction(action);
+            }
+
+            // Limpar efeitos temporários
+            if (enemy.defending) {
+                enemy.defending = false;
+                enemy.tempDef = 0;
+            }
+
             this.turnManager.nextTurn();
         }, 1500);
     }
