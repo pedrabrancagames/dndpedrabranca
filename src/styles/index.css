@@ -1190,3 +1190,78 @@ button {
 .choice-btn:active {
   transform: translateX(2px) scale(0.98);
 }
+
+/* ==== PWA Install Button ==== */
+.pwa-install-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none;
+  border-radius: 50px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+  transition: all 0.3s ease;
+  z-index: 9000;
+  opacity: 0;
+}
+
+.pwa-install-btn.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.pwa-install-btn:hover {
+  transform: translateX(-50%) scale(1.05);
+  box-shadow: 0 6px 30px rgba(16, 185, 129, 0.5);
+}
+
+.pwa-install-btn .install-icon {
+  font-size: 1.25rem;
+}
+
+/* ==== Online Status Indicator ==== */
+.online-indicator {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  z-index: 8000;
+  transition: all 0.3s ease;
+}
+
+.online-indicator .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+}
+
+.online-indicator.online .status-dot {
+  background: #22c55e;
+  box-shadow: 0 0 8px #22c55e;
+}
+
+.online-indicator.offline .status-dot {
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+}
+
+.online-indicator .status-text {
+  color: rgba(255, 255, 255, 0.9);
+}
