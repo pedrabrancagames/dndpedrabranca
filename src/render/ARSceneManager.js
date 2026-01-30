@@ -25,6 +25,7 @@ export class ARSceneManager extends SceneManager {
         this.spawnedModels = [];
         this.arenaPlaced = false;
         this.arenaPosition = null;
+        this.cameraDirection = null; // Direção que o usuário estava olhando ao posicionar
 
         // Raycaster para seleção de inimigos
         this.raycaster = new THREE.Raycaster();
@@ -61,7 +62,7 @@ export class ARSceneManager extends SceneManager {
     setupEventListeners() {
         eventBus.on('arSurfaceSelected', async (data) => {
             if (!this.arenaPlaced) {
-                await this.placeArena(data.position);
+                await this.placeArena(data.position, data.cameraDirection);
             }
         });
 
@@ -193,10 +194,20 @@ export class ARSceneManager extends SceneManager {
 
             this.reticle.matrix.decompose(position, quaternion, scale);
 
+            // Capturar direção da câmera XR (onde o usuário está olhando)
+            const xrCamera = this.renderer.xr.getCamera();
+            const cameraPos = new THREE.Vector3();
+            xrCamera.getWorldPosition(cameraPos);
+
+            // Direção do jogador para o reticle (para onde ele está olhando)
+            const direction = new THREE.Vector3().subVectors(position, cameraPos).normalize();
+            direction.y = 0; // Manter no plano horizontal
+
             eventBus.emit('arSurfaceSelected', {
                 matrix: this.reticle.matrix.clone(),
                 position,
-                quaternion
+                quaternion,
+                cameraDirection: direction
             });
         } else if (this.arenaPlaced) {
             // Tentar selecionar inimigo
@@ -319,11 +330,12 @@ export class ARSceneManager extends SceneManager {
     /**
      * Posiciona a arena de combate na superfície selecionada
      */
-    async placeArena(position) {
+    async placeArena(position, cameraDirection) {
         this.arenaPosition = position.clone();
+        this.cameraDirection = cameraDirection || new THREE.Vector3(0, 0, -1);
         this.arenaPlaced = true;
 
-        console.log('Placing arena at:', position);
+        console.log('Placing arena at:', position, 'direction:', this.cameraDirection);
 
         // Esconder hint de reticle
         const hint = document.getElementById('reticle-hint');
@@ -337,12 +349,22 @@ export class ARSceneManager extends SceneManager {
 
     /**
      * Spawna os inimigos do combate na cena AR
+     * Posiciona em arco na direção que o usuário estava olhando
      */
     async spawnEnemies() {
         const combatManager = this.gameManager.combatManager;
         if (!combatManager || !combatManager.enemies) return;
 
         const enemies = combatManager.enemies;
+        const numEnemies = enemies.length;
+
+        // Calcular ângulo base a partir da direção da câmera
+        const baseAngle = Math.atan2(this.cameraDirection.x, this.cameraDirection.z);
+
+        // Espalhar inimigos em arco de 60° (30° para cada lado)
+        const spreadAngle = Math.PI / 3; // 60 graus total
+        const startAngle = baseAngle - spreadAngle / 2;
+        const angleStep = numEnemies > 1 ? spreadAngle / (numEnemies - 1) : 0;
 
         for (let i = 0; i < enemies.length; i++) {
             const enemy = enemies[i];
@@ -351,18 +373,23 @@ export class ARSceneManager extends SceneManager {
             try {
                 const model = await this.modelLoader.load(modelPath);
 
-                // Posicionar em semicírculo à frente do jogador
-                const angle = (Math.PI / 4) + (i * Math.PI / 4); // 45° a 135°
-                const distance = 1.5; // 1.5m do centro
+                // Calcular posição baseada na direção da câmera
+                const angle = numEnemies === 1 ? baseAngle : startAngle + (i * angleStep);
+                const distance = 1.5; // 1.5m do ponto de arena
 
-                const x = this.arenaPosition.x + Math.cos(angle) * distance;
-                const z = this.arenaPosition.z + Math.sin(angle) * distance;
+                const x = this.arenaPosition.x + Math.sin(angle) * distance;
+                const z = this.arenaPosition.z + Math.cos(angle) * distance;
 
                 model.position.set(x, this.arenaPosition.y, z);
                 model.scale.set(0.5, 0.5, 0.5);
 
-                // Rotacionar para olhar para o centro
-                model.lookAt(this.arenaPosition);
+                // Rotacionar para olhar para o jogador (direção oposta)
+                const lookAtPos = new THREE.Vector3(
+                    this.arenaPosition.x - this.cameraDirection.x,
+                    this.arenaPosition.y,
+                    this.arenaPosition.z - this.cameraDirection.z
+                );
+                model.lookAt(lookAtPos);
 
                 this.scene.add(model);
                 this.spawnedModels.push(model);
