@@ -105,6 +105,7 @@ export class MapManager {
 
         // Verificar proximidade de missões
         this.checkProximity();
+        eventBus.emit('gps:update', { lat: latitude, lng: longitude });
     }
 
     /**
