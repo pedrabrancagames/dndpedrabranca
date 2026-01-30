@@ -12,6 +12,7 @@ import { MapManager } from '../map/MapManager.js';
 import { CombatManager } from '../combat/CombatManager.js';
 import { ARSceneManager } from '../render/ARSceneManager.js';
 import { CombatHUD } from '../ui/CombatHUD.js';
+import { ProgressionSystem } from '../systems/ProgressionSystem.js';
 
 export class GameManager {
     constructor() {
@@ -20,6 +21,7 @@ export class GameManager {
         this.assetLoader = new AssetLoader();
         this.mapManager = new MapManager(this);
         this.combatManager = new CombatManager(this);
+        this.progressionSystem = new ProgressionSystem(this);
 
         // Inicializado após DOM
         this.arSceneManager = null;
@@ -28,7 +30,8 @@ export class GameManager {
         this.gameData = {
             heroes: [],
             inventory: [],
-            gold: 0,
+            gold: 100,
+            fragments: 0,
             currentMission: null,
             chapter: 1,
             testMode: true

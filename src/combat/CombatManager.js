@@ -101,20 +101,63 @@ export class CombatManager {
             target.hp = 0;
             this.turnManager.killUnit(target.id);
             console.log(`${target.name} died!`);
+
+            // Verificar condição de vitória
+            this.checkVictoryCondition();
         }
         console.log(`${target.name} took ${amount} damage. HP: ${target.hp}`);
         // Emitir evento para visual
         eventBus.emit('damageTaken', { targetId: target.id, amount, currentHp: target.hp });
     }
 
+    /**
+     * Verifica se o combate terminou
+     */
+    checkVictoryCondition() {
+        if (!this.activeEncounter) return;
+
+        const aliveEnemies = this.enemies.filter(e => e.hp > 0);
+        const aliveHeroes = this.activeEncounter.heroes.filter(h => h.hp > 0);
+
+        if (aliveEnemies.length === 0) {
+            // Vitória!
+            setTimeout(() => this.handleCombatEnd(true), 1000);
+        } else if (aliveHeroes.length === 0) {
+            // Derrota
+            setTimeout(() => this.handleCombatEnd(false), 1000);
+        }
+    }
+
     handleCombatEnd(victory) {
-        alert(victory ? "Vitória!" : "Derrota!");
-        this.gameManager.stateManager.setState(GameState.HOME);
-        // Dar loot, xp, etc
+        if (victory) {
+            // Processar recompensas
+            const rewards = this.gameManager.progressionSystem.processVictoryRewards(this.enemies);
+
+            eventBus.emit('showMessage', {
+                text: `Vitória! +${rewards.gold} ouro`,
+                type: 'success'
+            });
+
+            console.log('Victory rewards:', rewards);
+        } else {
+            eventBus.emit('showMessage', {
+                text: 'Derrota... Tente novamente!',
+                type: 'error'
+            });
+        }
+
+        // Encerrar sessão AR
+        if (this.gameManager.arSceneManager) {
+            this.gameManager.arSceneManager.endSession();
+        }
+
+        // Voltar para o mapa após delay
+        setTimeout(() => {
+            this.gameManager.stateManager.setState(GameState.MAP);
+        }, 2000);
     }
 
     isPlayerTurn() {
-        // Simplificado
-        return true;
+        return this.gameManager.stateManager.combatState === 'player_turn';
     }
 }
