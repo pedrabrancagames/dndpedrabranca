@@ -3,7 +3,6 @@
  * Lida com sessão WebXR, Hit Test, posicionamento, modelos 3D e interação
  */
 import * as THREE from 'three';
-import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { SceneManager } from './SceneManager.js';
 import { ModelLoader } from './ModelLoader.js';
 import { eventBus } from '../core/EventEmitter.js';
@@ -14,9 +13,9 @@ export class ARSceneManager extends SceneManager {
         this.gameManager = gameManager;
         this.modelLoader = new ModelLoader();
 
-        // Renderer para labels HTML (barras de HP)
-        this.labelRenderer = null;
-        this.enemyLabels = new Map();
+        // Sprites de HP (3D nativo)
+        this.enemyHPSprites = new Map();
+
 
         this.reticle = null;
         this.hitTestSource = null;
@@ -56,16 +55,6 @@ export class ARSceneManager extends SceneManager {
         this.reticle.matrixAutoUpdate = false;
         this.reticle.visible = false;
         this.scene.add(this.reticle);
-
-        // Configurar CSS2DRenderer para labels HTML
-        this.labelRenderer = new CSS2DRenderer();
-        this.labelRenderer.setSize(window.innerWidth, window.innerHeight);
-        this.labelRenderer.domElement.style.position = 'absolute';
-        this.labelRenderer.domElement.style.top = '0';
-        this.labelRenderer.domElement.style.left = '0';
-        this.labelRenderer.domElement.style.pointerEvents = 'none';
-        this.labelRenderer.domElement.id = 'enemy-labels';
-        document.body.appendChild(this.labelRenderer.domElement);
     }
 
     setupInteraction() {
@@ -200,11 +189,6 @@ export class ARSceneManager extends SceneManager {
         const dt = this.clock.getDelta();
         this.update(dt);
         this.renderer.render(this.scene, this.camera);
-
-        // Renderizar labels de HP
-        if (this.labelRenderer && this.arenaPlaced) {
-            this.labelRenderer.render(this.scene, this.camera);
-        }
     }
 
     onSelect() {
@@ -433,72 +417,123 @@ export class ARSceneManager extends SceneManager {
     }
 
     /**
-     * Cria uma barra de HP flutuante para um inimigo
+     * Cria uma barra de HP flutuante usando Sprite 3D
      */
     createEnemyHPBar(enemy, model) {
-        // Container da label
-        const labelDiv = document.createElement('div');
-        labelDiv.className = 'enemy-hp-label';
-        labelDiv.innerHTML = `
-            <div class="enemy-name">${enemy.name}</div>
-            <div class="enemy-hp-bar-container">
-                <div class="enemy-hp-fill" style="width: 100%"></div>
-            </div>
-            <div class="enemy-hp-text">${enemy.hp}/${enemy.maxHp}</div>
-        `;
+        // Criar canvas para desenhar a barra
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 48;
 
-        // Criar objeto CSS2D
-        const label = new CSS2DObject(labelDiv);
-        label.position.set(0, 0.8, 0); // Acima do modelo
-        model.add(label);
+        const ctx = canvas.getContext('2d');
+        this.drawHPBar(ctx, enemy, canvas.width, canvas.height);
+
+        // Criar textura e sprite
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+
+        const material = new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+            depthTest: false,
+            depthWrite: false
+        });
+
+        const sprite = new THREE.Sprite(material);
+        sprite.scale.set(0.4, 0.15, 1); // Tamanho da barra no mundo
+        sprite.position.set(0, 0.7, 0); // Acima do modelo
+        sprite.renderOrder = 999; // Renderizar por cima
+
+        model.add(sprite);
 
         // Guardar referência
-        this.enemyLabels.set(enemy.id, { label, element: labelDiv, enemy });
+        this.enemyHPSprites.set(enemy.id, { sprite, canvas, ctx, texture, enemy });
+    }
+
+    /**
+     * Desenha a barra de HP no canvas
+     */
+    drawHPBar(ctx, enemy, width, height) {
+        const hpPercent = Math.max(0, enemy.hp / enemy.maxHp);
+
+        // Limpar canvas
+        ctx.clearRect(0, 0, width, height);
+
+        // Background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.roundRect(0, 0, width, height, 6);
+        ctx.fill();
+
+        // Nome
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(enemy.name, width / 2, 14);
+
+        // Barra de fundo
+        const barX = 8;
+        const barY = 20;
+        const barWidth = width - 16;
+        const barHeight = 12;
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.roundRect(barX, barY, barWidth, barHeight, 4);
+        ctx.fill();
+
+        // Barra de HP
+        const fillWidth = barWidth * hpPercent;
+        if (fillWidth > 0) {
+            // Cor baseada no HP
+            let color = '#22c55e'; // Verde
+            if (hpPercent <= 0.25) {
+                color = '#ef4444'; // Vermelho
+            } else if (hpPercent <= 0.5) {
+                color = '#f59e0b'; // Amarelo
+            }
+
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.roundRect(barX, barY, fillWidth, barHeight, 4);
+            ctx.fill();
+        }
+
+        // Texto HP
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${enemy.hp}/${enemy.maxHp}`, width / 2, 42);
     }
 
     /**
      * Atualiza a barra de HP de um inimigo
      */
     updateEnemyHPBar(enemyId) {
-        const labelData = this.enemyLabels.get(enemyId);
-        if (!labelData) return;
+        const spriteData = this.enemyHPSprites.get(enemyId);
+        if (!spriteData) return;
 
-        const { element, enemy } = labelData;
-        const hpPercent = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+        const { ctx, canvas, texture, enemy } = spriteData;
 
-        const fill = element.querySelector('.enemy-hp-fill');
-        const text = element.querySelector('.enemy-hp-text');
+        // Redesenhar
+        this.drawHPBar(ctx, enemy, canvas.width, canvas.height);
+        texture.needsUpdate = true;
 
-        if (fill) {
-            fill.style.width = `${hpPercent}%`;
-
-            // Mudar cor baseado no HP
-            if (hpPercent <= 25) {
-                fill.style.background = 'linear-gradient(90deg, #dc2626, #ef4444)';
-            } else if (hpPercent <= 50) {
-                fill.style.background = 'linear-gradient(90deg, #f59e0b, #fbbf24)';
-            }
-        }
-
-        if (text) {
-            text.textContent = `${enemy.hp}/${enemy.maxHp}`;
-        }
-
-        // Se morto, esconder
+        // Se morto, esconder sprite
         if (enemy.hp <= 0) {
-            element.style.display = 'none';
+            spriteData.sprite.visible = false;
         }
     }
 
     /**
-     * Limpa todas as labels de HP
+     * Limpa todos os sprites de HP
      */
     clearEnemyLabels() {
-        this.enemyLabels.forEach(({ label }) => {
-            if (label.parent) {
-                label.parent.remove(label);
+        this.enemyHPSprites.forEach(({ sprite }) => {
+            if (sprite.parent) {
+                sprite.parent.remove(sprite);
             }
+            sprite.material.map?.dispose();
+            sprite.material.dispose();
         });
-        this.enemyLabels.clear();
+        this.enemyHPSprites.clear();
     }
 }
