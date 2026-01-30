@@ -10,6 +10,7 @@ import { InventoryScreen } from './screens/InventoryScreen.js';
 import { ConfigScreen } from './screens/ConfigScreen.js';
 import { GMScreen } from './screens/GMScreen.js';
 import { CombatScreen } from './screens/CombatScreen.js';
+import { MapScreen } from './screens/MapScreen.js';
 
 export class UIManager {
     constructor(gameManager) {
@@ -23,6 +24,7 @@ export class UIManager {
         this.screens.set(GameState.CONFIG, new ConfigScreen('config-screen', gameManager));
         this.screens.set(GameState.GM, new GMScreen('gm-screen', gameManager));
         this.screens.set(GameState.COMBAT, new CombatScreen('combat-hud', gameManager));
+        this.screens.set(GameState.MAP, new MapScreen('map-screen', gameManager));
 
         // Setup inicial dos eventos de cada tela
         this.screens.forEach(screen => screen.setupEvents());

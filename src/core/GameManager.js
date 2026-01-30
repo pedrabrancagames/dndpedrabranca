@@ -8,6 +8,7 @@ import { StateManager, GameState } from './StateManager.js';
 import { SaveManager } from './SaveManager.js';
 import { AssetLoader } from './AssetLoader.js';
 import { UIManager } from '../ui/UIManager.js';
+import { MapManager } from '../map/MapManager.js';
 
 export class GameManager {
     constructor() {
@@ -15,6 +16,7 @@ export class GameManager {
         this.stateManager = new StateManager();
         this.saveManager = new SaveManager();
         this.assetLoader = new AssetLoader();
+        this.mapManager = new MapManager(this);
 
         // Estado do jogo
         this.gameData = {
@@ -26,12 +28,11 @@ export class GameManager {
             testMode: false
         };
 
-        // UI Manager (será inicializado após o DOM estar pronto e subsistemas)
+        // UI Manager
         this.uiManager = null;
 
         // Referências para outros managers
         this.combatManager = null;
-        this.mapManager = null;
         this.arSceneManager = null;
 
         this.isInitialized = false;
@@ -44,15 +45,12 @@ export class GameManager {
         console.log('🎮 Initializing D&D Pedra Branca...');
 
         try {
-            // Mostrar splash (ainda manual pois UIManager não tá pronto)
             this.updateLoadingText('Inicializando...');
 
-            // Inicializar save system
             await this.saveManager.init();
             this.updateLoadingProgress(10);
             this.updateLoadingText('Carregando dados...');
 
-            // Carregar save existente
             const savedData = await this.saveManager.load();
             if (savedData) {
                 this.gameData = { ...this.gameData, ...savedData };
@@ -62,24 +60,19 @@ export class GameManager {
             }
             this.updateLoadingProgress(30);
 
-            // Carregar assets essenciais
             this.updateLoadingText('Carregando recursos...');
             await this.loadEssentialAssets();
             this.updateLoadingProgress(80);
 
-            // Configurar event listeners
             this.setupEventListeners();
             this.updateLoadingProgress(90);
 
-            // Configurar UI Manager
             this.uiManager = new UIManager(this);
             this.updateLoadingProgress(100);
             this.updateLoadingText('Pronto!');
 
-            // Aguardar um momento para mostrar 100%
             await this.delay(500);
 
-            // Ir para HOME
             this.stateManager.setState(GameState.HOME);
             this.isInitialized = true;
 
@@ -176,16 +169,10 @@ export class GameManager {
         ];
     }
 
-    /**
-     * Carrega assets essenciais
-     */
     async loadEssentialAssets() {
         await this.delay(500);
     }
 
-    /**
-     * Configura event listeners globais
-     */
     setupEventListeners() {
         eventBus.on('loadingProgress', ({ progress }) => {
             this.updateLoadingProgress(progress);
@@ -198,17 +185,11 @@ export class GameManager {
         });
     }
 
-    /**
-     * Salva o jogo
-     */
     async saveGame() {
         await this.saveManager.save(this.gameData);
         console.log('Game saved');
     }
 
-    /**
-     * Atualiza a barra de progresso
-     */
     updateLoadingProgress(percent) {
         const progressBar = document.getElementById('loading-progress');
         if (progressBar) {
@@ -216,9 +197,6 @@ export class GameManager {
         }
     }
 
-    /**
-     * Atualiza o texto de carregamento
-     */
     updateLoadingText(text) {
         const loadingText = document.getElementById('loading-text');
         if (loadingText) {
@@ -226,9 +204,6 @@ export class GameManager {
         }
     }
 
-    /**
-     * Utilitário de delay
-     */
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
