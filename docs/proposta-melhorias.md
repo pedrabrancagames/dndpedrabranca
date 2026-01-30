@@ -125,7 +125,7 @@ Isso adiciona profundidade e replayability - o jogador pode fazer escolhas que a
 ## 4. Roadmap Sugerido
 
 ### Fase 1: Correções e Polimento (1-2 meses)
-- [ ] Refatoração do ARSceneManager
+- [x] Refatoração do ARSceneManager
 - [ ] Object Pooling
 - [ ] Error Boundaries
 - [ ] Combos visuais básicos
@@ -146,7 +146,6 @@ Isso adiciona profundidade e replayability - o jogador pode fazer escolhas que a
 ## 5. Priorização Final
 
 ### 🔴 Alta Prioridade (Fazer Primeiro)
-1. **GPS real do jogador** - Funcionalidade core quebrada
 2. Object Pooling e Performance
 3. Combos Visuais
 4. Voz gravada do Game Master

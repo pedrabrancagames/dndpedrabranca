@@ -1,9 +1,11 @@
 /**
  * ARInteraction - Sistema de Interação AR
  * Mixin para raycasting e seleção de inimigos
+ * Usa VectorPool para vetores temporários
  */
 import * as THREE from 'three';
 import { eventBus } from '../core/EventEmitter.js';
+import { VectorPool } from './VectorPool.js';
 
 /**
  * Mixin para interação e seleção em AR
@@ -23,28 +25,34 @@ export const ARInteractionMixin = {
      */
     onSelect() {
         if (this.reticle.visible && !this.arenaPlaced) {
-            // Posicionar arena
-            const position = new THREE.Vector3();
-            const quaternion = new THREE.Quaternion();
-            const scale = new THREE.Vector3();
+            // Usar vetores do pool para decomposição de matriz
+            const position = VectorPool.acquireVector3();
+            const quaternion = VectorPool.acquireQuaternion();
+            const scale = VectorPool.acquireVector3();
 
             this.reticle.matrix.decompose(position, quaternion, scale);
 
             // Capturar direção da câmera XR
             const xrCamera = this.renderer.xr.getCamera();
-            const cameraPos = new THREE.Vector3();
+            const cameraPos = VectorPool.acquireVector3();
             xrCamera.getWorldPosition(cameraPos);
 
             // Direção do jogador para o reticle
-            const direction = new THREE.Vector3().subVectors(position, cameraPos).normalize();
+            const direction = VectorPool.acquireVector3();
+            direction.subVectors(position, cameraPos).normalize();
             direction.y = 0; // Manter no plano horizontal
 
+            // Emitir evento com cópias dos vetores (pool será liberado)
             eventBus.emit('arSurfaceSelected', {
                 matrix: this.reticle.matrix.clone(),
-                position,
-                quaternion,
-                cameraDirection: direction
+                position: position.clone(),
+                quaternion: quaternion.clone(),
+                cameraDirection: direction.clone()
             });
+
+            // Devolver vetores ao pool
+            VectorPool.releaseAll(position, quaternion, scale, cameraPos, direction);
+
         } else if (this.arenaPlaced) {
             // Tentar selecionar inimigo
             this.trySelectEnemy();
@@ -57,9 +65,9 @@ export const ARInteractionMixin = {
     trySelectEnemy() {
         if (this.spawnedModels.length === 0) return;
 
-        // Pegar posição do controller
-        const controllerPos = new THREE.Vector3();
-        const controllerDir = new THREE.Vector3(0, 0, -1);
+        // Usar vetores do pool
+        const controllerPos = VectorPool.acquireVector3();
+        const controllerDir = VectorPool.acquireVector3(0, 0, -1);
 
         this.controller.getWorldPosition(controllerPos);
         controllerDir.applyQuaternion(this.controller.quaternion);
@@ -68,6 +76,9 @@ export const ARInteractionMixin = {
         const xrCamera = this.renderer.xr.getCamera();
         this.raycaster.camera = xrCamera;
         this.raycaster.set(controllerPos, controllerDir);
+
+        // Devolver vetores ao pool
+        VectorPool.releaseAll(controllerPos, controllerDir);
 
         // Filtrar apenas meshes, ignorando sprites (barras de HP)
         const meshesToCheck = [];

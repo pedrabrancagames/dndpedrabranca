@@ -1,57 +1,55 @@
 /**
  * ARVisuals - Efeitos Visuais AR
  * Mixin para barras de HP, efeitos de dano e partículas
+ * Usa Object Pooling para reutilizar sprites de HP
  */
 import * as THREE from 'three';
+import { HPSpritePool } from './HPSpritePool.js';
+import { VectorPool } from './VectorPool.js';
+
+// Pool global de sprites de HP (lazy initialization)
+let hpSpritePool = null;
+
+function getHPSpritePool() {
+    if (!hpSpritePool) {
+        hpSpritePool = new HPSpritePool(10);
+    }
+    return hpSpritePool;
+}
 
 /**
  * Mixin para efeitos visuais em AR
  */
 export const ARVisualsMixin = {
     /**
-     * Cria uma barra de HP flutuante usando Sprite 3D
+     * Cria uma barra de HP flutuante usando sprite do pool
      * @param {Object} enemy - Dados do inimigo
      * @param {THREE.Object3D} model - Modelo 3D do inimigo
      */
     createEnemyHPBar(enemy, model) {
-        // Calcular altura do modelo no espaço do mundo
-        const box = new THREE.Box3().setFromObject(model);
+        // Calcular altura do modelo usando vetores do pool
+        const box = VectorPool.acquireBox3();
+        box.setFromObject(model);
         const worldHeight = box.max.y - box.min.y;
+        VectorPool.release(box);
 
         // Converter para coordenadas locais
         const modelScale = model.scale.y || 1;
         const localHeight = worldHeight / modelScale;
 
-        // Criar canvas para desenhar a barra
-        const canvas = document.createElement('canvas');
-        canvas.width = 128;
-        canvas.height = 48;
+        // Adquirir sprite do pool
+        const pool = getHPSpritePool();
+        const spriteData = pool.acquire();
 
-        const ctx = canvas.getContext('2d');
-        this.drawHPBar(ctx, enemy, canvas.width, canvas.height);
+        // Desenhar barra de HP
+        this.drawHPBar(spriteData.ctx, enemy, spriteData.canvas.width, spriteData.canvas.height);
+        spriteData.texture.needsUpdate = true;
 
-        // Criar textura e sprite
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.needsUpdate = true;
+        // Posicionar e anexar ao modelo
+        pool.attachToModel(spriteData, model, localHeight);
 
-        const material = new THREE.SpriteMaterial({
-            map: texture,
-            transparent: true,
-            depthTest: false,
-            depthWrite: false
-        });
-
-        const sprite = new THREE.Sprite(material);
-        sprite.scale.set(0.5, 0.18, 1);
-
-        // Posicionar acima da cabeça do modelo em coordenadas locais
-        sprite.position.set(0, localHeight + 0.3, 0);
-        sprite.renderOrder = 999;
-
-        model.add(sprite);
-
-        // Guardar referência
-        this.enemyHPSprites.set(enemy.id, { sprite, canvas, ctx, texture, enemy });
+        // Guardar referência com dados do inimigo
+        this.enemyHPSprites.set(enemy.id, { ...spriteData, enemy });
     },
 
     /**
@@ -133,16 +131,16 @@ export const ARVisualsMixin = {
     },
 
     /**
-     * Limpa todos os sprites de HP
+     * Limpa todos os sprites de HP (devolve ao pool)
      */
     clearEnemyLabels() {
-        this.enemyHPSprites.forEach(({ sprite }) => {
-            if (sprite.parent) {
-                sprite.parent.remove(sprite);
-            }
-            sprite.material.map?.dispose();
-            sprite.material.dispose();
+        const pool = getHPSpritePool();
+
+        this.enemyHPSprites.forEach((spriteData) => {
+            // Devolver ao pool em vez de destruir
+            pool.release(spriteData);
         });
+
         this.enemyHPSprites.clear();
     },
 
@@ -160,17 +158,21 @@ export const ARVisualsMixin = {
             // Flash vermelho
             model.traverse((child) => {
                 if (child.isMesh && child.material) {
-                    const originalColor = child.material.color.clone();
+                    // Usar VectorPool para cores temporárias
+                    const originalColor = VectorPool.acquireColor();
+                    originalColor.copy(child.material.color);
                     child.material.color.set(0xff0000);
 
                     setTimeout(() => {
                         child.material.color.copy(originalColor);
+                        VectorPool.release(originalColor);
                     }, 150);
                 }
             });
 
-            // Shake effect
-            const originalPos = model.position.clone();
+            // Shake effect - usar vetores do pool
+            const originalPos = VectorPool.acquireVector3();
+            originalPos.copy(model.position);
             const shakeIntensity = 0.05;
 
             const shake = () => {
@@ -182,6 +184,7 @@ export const ARVisualsMixin = {
             setTimeout(() => {
                 clearInterval(shakeInterval);
                 model.position.copy(originalPos);
+                VectorPool.release(originalPos);
             }, 200);
         }
     }
