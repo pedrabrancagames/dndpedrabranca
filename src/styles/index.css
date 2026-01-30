@@ -980,3 +980,50 @@ button {
     transform: translateY(0);
   }
 }
+
+/* ==== Enemy HP Labels (3D Floating) ==== */
+.enemy-hp-label {
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  border-radius: 6px;
+  padding: 4px 8px;
+  text-align: center;
+  min-width: 60px;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.enemy-hp-label .enemy-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.enemy-hp-label .enemy-hp-bar-container {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 2px;
+}
+
+.enemy-hp-label .enemy-hp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+  border-radius: 3px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.enemy-hp-label .enemy-hp-text {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Container do CSS2DRenderer */
+#enemy-labels {
+  pointer-events: none;
+  z-index: 10;
+}
