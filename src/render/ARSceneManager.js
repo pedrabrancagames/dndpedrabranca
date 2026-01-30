@@ -17,6 +17,11 @@ export class ARSceneManager extends SceneManager {
 
         this.isSessionActive = false;
         this.controller = null;
+        this.currentSession = null;
+
+        // Config inicial do canvas para não bloquear UI
+        this.canvas.style.pointerEvents = 'none';
+        this.canvas.style.zIndex = '-1';
 
         this.setupAR();
         this.setupInteraction();
@@ -49,11 +54,18 @@ export class ARSceneManager extends SceneManager {
                     domOverlay: { root: document.getElementById('combat-hud') }
                 });
 
+                session.addEventListener('end', () => this.onSessionEnded());
+
                 this.renderer.xr.setReferenceSpaceType('local');
                 await this.renderer.xr.setSession(session);
 
+                this.currentSession = session;
                 this.isSessionActive = true;
                 this.hitTestSourceRequested = false;
+
+                // Ativar interação no canvas
+                this.canvas.style.pointerEvents = 'auto';
+                this.canvas.style.zIndex = '1'; // Abaixo do HUD (z-index 100+), mas visível
 
                 this.renderer.setAnimationLoop((timestamp, frame) => this.render(timestamp, frame));
 
@@ -62,11 +74,30 @@ export class ARSceneManager extends SceneManager {
 
             } catch (error) {
                 console.error('Failed to start AR session:', error);
-                alert('Erro ao iniciar AR: ' + error.message);
             }
-        } else {
-            alert('WebXR não suportado neste navegador.');
         }
+    }
+
+    async endSession() {
+        if (this.currentSession) {
+            await this.currentSession.end();
+        }
+    }
+
+    onSessionEnded() {
+        this.hitTestSourceRequested = false;
+        this.hitTestSource = null;
+        this.isSessionActive = false;
+        this.currentSession = null;
+
+        this.renderer.setAnimationLoop(null);
+
+        // Resetar canvas
+        this.canvas.style.pointerEvents = 'none';
+        this.canvas.style.zIndex = '-1';
+
+        console.log('AR Session ended');
+        eventBus.emit('arSessionEnded');
     }
 
     render(timestamp, frame) {
@@ -79,14 +110,6 @@ export class ARSceneManager extends SceneManager {
                     session.requestHitTestSource({ space: referenceSpace }).then((source) => {
                         this.hitTestSource = source;
                     });
-                });
-
-                session.addEventListener('end', () => {
-                    this.hitTestSourceRequested = false;
-                    this.hitTestSource = null;
-                    this.isSessionActive = false;
-                    this.renderer.setAnimationLoop(null);
-                    eventBus.emit('arSessionEnded');
                 });
 
                 this.hitTestSourceRequested = true;
@@ -104,6 +127,8 @@ export class ARSceneManager extends SceneManager {
                 }
             }
         }
+
+        if (!this.renderer.xr.isPresenting) return;
 
         const dt = this.clock.getDelta();
         this.update(dt);
