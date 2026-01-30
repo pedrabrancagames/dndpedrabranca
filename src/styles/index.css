@@ -1027,3 +1027,166 @@ button {
   pointer-events: none;
   z-index: 10;
 }
+
+/* ==== Narrative Overlay (Game Master) ==== */
+.narrative-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.narrative-overlay.visible {
+  opacity: 1;
+}
+
+.narrative-content {
+  max-width: 600px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.narrative-content.chapter {
+  animation: narrativePulse 2s infinite;
+}
+
+@keyframes narrativePulse {
+
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+
+  50% {
+    filter: brightness(1.1);
+  }
+}
+
+.narrative-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-gold, #fbbf24);
+  margin-bottom: 1.5rem;
+  text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+}
+
+.narrative-lines {
+  min-height: 200px;
+}
+
+.narrative-line {
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.narrative-continue {
+  margin-top: 2rem;
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  animation: pulse 2s infinite;
+}
+
+.narrative-continue:hover {
+  transform: scale(1.05);
+}
+
+/* ==== Choice Event Overlay ==== */
+.choice-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.choice-overlay.visible {
+  opacity: 1;
+}
+
+.choice-content {
+  max-width: 500px;
+  padding: 2rem;
+  background: linear-gradient(135deg,
+      rgba(30, 30, 30, 0.95),
+      rgba(20, 20, 20, 0.98));
+  border-radius: 16px;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  box-shadow: 0 0 40px rgba(251, 191, 36, 0.2);
+}
+
+.choice-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-gold, #fbbf24);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.choice-description {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.choice-lore {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border-left: 3px solid var(--color-gold, #fbbf24);
+}
+
+.choice-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.choice-btn {
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.2),
+      rgba(59, 130, 246, 0.1));
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.choice-btn:hover {
+  background: linear-gradient(135deg,
+      rgba(59, 130, 246, 0.4),
+      rgba(59, 130, 246, 0.2));
+  border-color: rgba(59, 130, 246, 0.8);
+  transform: translateX(4px);
+}
+
+.choice-btn:active {
+  transform: translateX(2px) scale(0.98);
+}

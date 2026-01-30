@@ -13,6 +13,7 @@ import { CombatManager } from '../combat/CombatManager.js';
 import { ARSceneManager } from '../render/ARSceneManager.js';
 import { CombatHUD } from '../ui/CombatHUD.js';
 import { ProgressionSystem } from '../systems/ProgressionSystem.js';
+import { GameMaster } from '../systems/GameMaster.js';
 
 export class GameManager {
     constructor() {
@@ -22,6 +23,7 @@ export class GameManager {
         this.mapManager = new MapManager(this);
         this.combatManager = new CombatManager(this);
         this.progressionSystem = new ProgressionSystem(this);
+        this.gameMaster = new GameMaster(this);
 
         // Inicializado após DOM
         this.arSceneManager = null;
