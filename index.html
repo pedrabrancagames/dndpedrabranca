@@ -1,23 +1,24 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#1a1a2e">
   <meta name="description" content="RPG tático em Realidade Aumentada - Explore seu bairro e combata inimigos em AR">
-  
+
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  
+
   <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
-        crossorigin="anonymous">
-  
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+
   <title>D&D Pedra Branca</title>
 </head>
+
 <body>
   <!-- Container Principal -->
   <div id="app">
@@ -25,7 +26,7 @@
     <div id="splash-screen" class="screen active">
       <div class="splash-content">
         <h1 class="game-title">D&D Pedra Branca</h1>
-        <p class="game-subtitle">Crônicas do Bairro</p>
+        <p class="game-subtitle">D&D Pedra Branca</p>
         <div class="loading-container">
           <div class="loading-bar">
             <div class="loading-progress" id="loading-progress"></div>
@@ -38,7 +39,7 @@
     <!-- Home Screen -->
     <div id="home-screen" class="screen">
       <header class="home-header">
-        <h1>Crônicas do Bairro</h1>
+        <h1>D&D Pedra Branca</h1>
       </header>
       <nav class="home-menu">
         <button class="menu-btn" id="btn-combat">
@@ -162,4 +163,5 @@
 
   <script type="module" src="/src/main.js"></script>
 </body>
+
 </html>

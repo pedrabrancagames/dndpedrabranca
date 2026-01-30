@@ -7,6 +7,7 @@ import { eventBus } from './EventEmitter.js';
 import { StateManager, GameState } from './StateManager.js';
 import { SaveManager } from './SaveManager.js';
 import { AssetLoader } from './AssetLoader.js';
+import { UIManager } from '../ui/UIManager.js';
 
 export class GameManager {
     constructor() {
@@ -25,7 +26,10 @@ export class GameManager {
             testMode: false
         };
 
-        // Referências para outros managers (serão criados depois)
+        // UI Manager (será inicializado após o DOM estar pronto e subsistemas)
+        this.uiManager = null;
+
+        // Referências para outros managers
         this.combatManager = null;
         this.mapManager = null;
         this.arSceneManager = null;
@@ -40,7 +44,7 @@ export class GameManager {
         console.log('🎮 Initializing D&D Pedra Branca...');
 
         try {
-            // Mostrar splash
+            // Mostrar splash (ainda manual pois UIManager não tá pronto)
             this.updateLoadingText('Inicializando...');
 
             // Inicializar save system
@@ -54,7 +58,6 @@ export class GameManager {
                 this.gameData = { ...this.gameData, ...savedData };
                 console.log('Save loaded');
             } else {
-                // Novo jogo - inicializar dados padrão
                 this.initNewGame();
             }
             this.updateLoadingProgress(30);
@@ -68,8 +71,8 @@ export class GameManager {
             this.setupEventListeners();
             this.updateLoadingProgress(90);
 
-            // Configurar UI
-            this.setupUI();
+            // Configurar UI Manager
+            this.uiManager = new UIManager(this);
             this.updateLoadingProgress(100);
             this.updateLoadingText('Pronto!');
 
@@ -98,7 +101,7 @@ export class GameManager {
             gold: 100,
             currentMission: null,
             chapter: 1,
-            testMode: true // Modo teste ativo por padrão para desenvolvimento
+            testMode: true
         };
     }
 
@@ -177,8 +180,6 @@ export class GameManager {
      * Carrega assets essenciais
      */
     async loadEssentialAssets() {
-        // Por enquanto, apenas simular carregamento
-        // Assets reais serão carregados conforme necessário
         await this.delay(500);
     }
 
@@ -186,154 +187,15 @@ export class GameManager {
      * Configura event listeners globais
      */
     setupEventListeners() {
-        // Progresso de carregamento
         eventBus.on('loadingProgress', ({ progress }) => {
             this.updateLoadingProgress(progress);
         });
 
-        // Mudança de estado
-        eventBus.on('stateChange', ({ to }) => {
-            // Auto-save ao sair de certas telas
-            if (to === GameState.HOME) {
+        eventBus.on('stateChange', ({ from, to }) => {
+            if (from && (from !== GameState.SPLASH && from !== GameState.LOADING)) {
                 this.saveGame();
             }
         });
-    }
-
-    /**
-     * Configura a UI
-     */
-    setupUI() {
-        // Botões do menu HOME
-        this.bindButton('btn-combat', () => this.stateManager.setState(GameState.MAP));
-        this.bindButton('btn-gm', () => this.showGM());
-        this.bindButton('btn-heroes', () => this.showHeroes());
-        this.bindButton('btn-inventory', () => this.stateManager.setState(GameState.INVENTORY));
-        this.bindButton('btn-config', () => this.showConfig());
-
-        // Botões de voltar
-        this.bindButton('btn-map-back', () => this.stateManager.setState(GameState.HOME));
-        this.bindButton('btn-heroes-back', () => this.stateManager.setState(GameState.HOME));
-        this.bindButton('btn-inventory-back', () => this.stateManager.setState(GameState.HOME));
-        this.bindButton('btn-config-back', () => this.stateManager.setState(GameState.HOME));
-        this.bindButton('btn-gm-back', () => this.stateManager.setState(GameState.HOME));
-
-        // Toggle de modo teste
-        const testModeToggle = document.getElementById('toggle-test-mode');
-        if (testModeToggle) {
-            testModeToggle.checked = this.gameData.testMode;
-            testModeToggle.addEventListener('change', (e) => {
-                this.gameData.testMode = e.target.checked;
-                this.saveGame();
-            });
-        }
-
-        // Botões do HUD de combate
-        this.bindButton('btn-pause', () => this.togglePause());
-        this.bindButton('btn-exit-combat', () => this.exitCombat());
-        this.bindButton('btn-resume', () => this.togglePause());
-        this.bindButton('btn-exit-to-home', () => this.exitCombat());
-        this.bindButton('btn-pass-turn', () => this.passTurn());
-    }
-
-    /**
-     * Bind seguro de botão
-     */
-    bindButton(id, handler) {
-        const btn = document.getElementById(id);
-        if (btn) {
-            btn.addEventListener('click', handler);
-        }
-    }
-
-    /**
-     * Mostra a tela de heróis
-     */
-    showHeroes() {
-        this.stateManager.setState(GameState.HEROES);
-        this.renderHeroes();
-    }
-
-    /**
-     * Renderiza os heróis na grid
-     */
-    renderHeroes() {
-        const grid = document.getElementById('heroes-grid');
-        if (!grid) return;
-
-        grid.innerHTML = this.gameData.heroes.map(hero => `
-      <div class="hero-card ${hero.class}">
-        <div class="hero-icon">${hero.icon}</div>
-        <div class="hero-name">${hero.name}</div>
-        <div class="hero-class">Nível ${hero.level}</div>
-        <div class="stat-bar hp">
-          <div class="fill" style="width: ${(hero.hp / hero.maxHp) * 100}%"></div>
-        </div>
-        <div class="stat-label">HP: ${hero.hp}/${hero.maxHp}</div>
-      </div>
-    `).join('');
-    }
-
-    /**
-     * Mostra tela de configurações
-     */
-    showConfig() {
-        this.stateManager.setState(GameState.CONFIG);
-
-        // Atualizar toggle de modo teste
-        const testModeToggle = document.getElementById('toggle-test-mode');
-        if (testModeToggle) {
-            testModeToggle.checked = this.gameData.testMode;
-        }
-    }
-
-    /**
-     * Mostra o Game Master
-     */
-    showGM() {
-        this.stateManager.setState(GameState.GM);
-
-        const gmText = document.getElementById('gm-text');
-        if (gmText) {
-            gmText.textContent = 'Bem-vindo, aventureiro! Rumores sombrios ecoam pelas ruas do bairro. ' +
-                'Goblins foram avistados nas proximidades. Você está pronto para investigar?';
-        }
-
-        const gmActions = document.getElementById('gm-actions');
-        if (gmActions) {
-            gmActions.innerHTML = `
-        <button onclick="game.stateManager.setState('map')">Investigar</button>
-        <button onclick="game.stateManager.setState('home')">Voltar</button>
-      `;
-        }
-    }
-
-    /**
-     * Toggle do menu de pausa
-     */
-    togglePause() {
-        const pauseMenu = document.getElementById('pause-menu');
-        if (pauseMenu) {
-            pauseMenu.classList.toggle('hidden');
-        }
-    }
-
-    /**
-     * Sai do combate
-     */
-    exitCombat() {
-        const pauseMenu = document.getElementById('pause-menu');
-        if (pauseMenu) {
-            pauseMenu.classList.add('hidden');
-        }
-        this.stateManager.setState(GameState.HOME);
-    }
-
-    /**
-     * Passa o turno
-     */
-    passTurn() {
-        eventBus.emit('passTurn');
     }
 
     /**
