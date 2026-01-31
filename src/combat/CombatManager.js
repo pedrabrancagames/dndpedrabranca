@@ -43,10 +43,16 @@ export class CombatManager {
 
     /**
      * Inicia um encontro de combate
-     * @param {string} missionId 
+     * @param {Object} encounterData - Dados do encontro (missionId, questId, objectiveId, etc.)
      */
-    startEncounter(missionId) {
-        console.log(`Starting encounter for mission: ${missionId}`);
+    startEncounter(encounterData) {
+        // Suportar tanto string (legacy) quanto objeto
+        const missionId = typeof encounterData === 'string' ? encounterData : encounterData.missionId;
+        const questId = encounterData?.questId || null;
+        const objectiveId = encounterData?.objectiveId || null;
+        const target = encounterData?.target || null;
+
+        console.log(`Starting encounter for mission: ${missionId}`, { questId, objectiveId });
 
         const heroes = this.gameManager.gameData.heroes;
 
@@ -58,8 +64,12 @@ export class CombatManager {
 
         this.activeEncounter = {
             missionId,
+            questId,
+            objectiveId,
+            target,
             heroes,
-            enemies: this.enemies
+            enemies: this.enemies,
+            enemiesKilled: 0
         };
 
         // Transitar UI para combate
@@ -115,6 +125,11 @@ export class CombatManager {
             this.turnManager.killUnit(target.id);
             console.log(`${target.name} died!`);
 
+            // Contar inimigo morto para progresso de quest
+            if (this.activeEncounter && target.type !== 'hero') {
+                this.activeEncounter.enemiesKilled = (this.activeEncounter.enemiesKilled || 0) + 1;
+            }
+
             // Emitir evento de morte para animação
             eventBus.emit('enemyDied', { enemyId: target.id });
 
@@ -145,6 +160,8 @@ export class CombatManager {
     }
 
     handleCombatEnd(victory) {
+        const encounter = this.activeEncounter;
+
         if (victory) {
             // Processar recompensas
             const rewards = this.gameManager.progressionSystem.processVictoryRewards(this.enemies);
@@ -155,6 +172,15 @@ export class CombatManager {
             });
 
             console.log('Victory rewards:', rewards);
+
+            // EMITIR EVENTO DE VITÓRIA PARA ATUALIZAR PROGRESSO DE QUESTS
+            eventBus.emit('combat:victory', {
+                missionId: encounter?.missionId,
+                questId: encounter?.questId,
+                objectiveId: encounter?.objectiveId,
+                target: encounter?.target,
+                enemiesKilled: encounter?.enemiesKilled || this.enemies.length
+            });
         } else {
             eventBus.emit('showMessage', {
                 text: 'Derrota... Tente novamente!',
@@ -166,6 +192,9 @@ export class CombatManager {
         if (this.gameManager.arSceneManager) {
             this.gameManager.arSceneManager.endSession();
         }
+
+        // Limpar encontro ativo
+        this.activeEncounter = null;
 
         // Voltar para o mapa após delay
         setTimeout(() => {
