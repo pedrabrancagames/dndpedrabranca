@@ -56,11 +56,8 @@ export class CombatManager {
 
         const heroes = this.gameManager.gameData.heroes;
 
-        // Criar inimigos usando o banco de dados
-        this.enemies = [
-            createEnemyInstance('goblin', 'goblin_1'),
-            createEnemyInstance('goblin_archer', 'goblin_2')
-        ];
+        // Determinar inimigos com base no target
+        this.enemies = this.spawnEnemiesForTarget(target);
 
         this.activeEncounter = {
             missionId,
@@ -200,6 +197,60 @@ export class CombatManager {
         setTimeout(() => {
             this.gameManager.stateManager.setState(GameState.MAP);
         }, 2000);
+    }
+
+    /**
+     * Gera lista de inimigos baseada no alvo da missão
+     */
+    spawnEnemiesForTarget(target) {
+        if (!target) {
+            // Default: patrulha goblin
+            return [
+                createEnemyInstance('goblin', 'goblin_1'),
+                createEnemyInstance('goblin_archer', 'goblin_2')
+            ];
+        }
+
+        const targetLower = target.toLowerCase();
+
+        // Bosses
+        if (targetLower.includes('grukk') || targetLower.includes('boss') || targetLower.includes('leader')) {
+            return [
+                createEnemyInstance('goblin_king', 'boss_grukk'),
+                createEnemyInstance('goblin_shaman', 'minion_1')
+            ];
+        }
+
+        // Tipos comuns
+        if (targetLower.includes('goblin')) {
+            // Ameaça média: 2-3 goblins variados
+            const enemies = [createEnemyInstance('goblin', 'goblin_1')];
+            if (Math.random() > 0.5) enemies.push(createEnemyInstance('goblin_archer', 'goblin_2'));
+            if (Math.random() > 0.7) enemies.push(createEnemyInstance('goblin_shaman', 'goblin_3'));
+            // Garantir pelo menos 2 inimigos para ser interessante
+            if (enemies.length < 2) enemies.push(createEnemyInstance('goblin', 'goblin_extra'));
+            return enemies;
+        }
+
+        if (targetLower.includes('wolf')) {
+            return [
+                createEnemyInstance('wolf', 'wolf_1'),
+                createEnemyInstance('wolf', 'wolf_2')
+            ];
+        }
+
+        if (targetLower.includes('skeleton')) {
+            return [
+                createEnemyInstance('skeleton', 'skel_1'),
+                createEnemyInstance('skeleton', 'skel_2')
+            ];
+        }
+
+        // Fallback genérico
+        return [
+            createEnemyInstance('goblin', 'goblin_1'),
+            createEnemyInstance('goblin', 'goblin_2')
+        ];
     }
 
     isPlayerTurn() {

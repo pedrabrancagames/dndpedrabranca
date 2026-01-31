@@ -74,8 +74,10 @@ export class MapManager {
                 },
                 (err) => {
                     console.warn('GPS: Erro ao obter posição inicial:', err.message);
-                    // Usar posição padrão se falhar
-                    this.setDefaultPosition();
+                    // Só usar padrão se NÃO tivermos nenhuma posição ainda
+                    if (!this.currentPosition) {
+                        this.setDefaultPosition();
+                    }
                 },
                 { enableHighAccuracy: true, timeout: 10000 }
             );
@@ -158,14 +160,7 @@ export class MapManager {
         marker.missionId = mission.id;
 
         marker.on('click', () => {
-            // Clique sempre funciona - não exige proximidade física
-            this.gameManager.stateManager.setState('combat', {
-                missionId: mission.id,
-                questId: mission.questId,
-                objectiveId: mission.objectiveId,
-                objectiveType: mission.objectiveType,
-                target: mission.target
-            });
+            this.handleMarkerClick(mission);
         });
 
         return marker;
@@ -184,6 +179,9 @@ export class MapManager {
     /**
      * Remove um marcador específico pelo ID
      */
+    /**
+     * Remove um marcador específico pelo ID
+     */
     removeMissionMarker(missionId) {
         if (!this.markersLayer) return;
 
@@ -192,6 +190,62 @@ export class MapManager {
                 this.markersLayer.removeLayer(layer);
             }
         });
+    }
+
+    /**
+     * Gerencia o clique no marcador baseado no tipo
+     */
+    handleMarkerClick(mission) {
+        console.log('Marcador clicado:', mission);
+
+        // COMBATE
+        if (mission.objectiveType === 'kill' || mission.type === 'combat') {
+            this.gameManager.stateManager.setState('combat', {
+                missionId: mission.id,
+                questId: mission.questId,
+                objectiveId: mission.objectiveId,
+                objectiveType: mission.objectiveType,
+                target: mission.target
+            });
+        }
+        // NPC / DIÁLOGO
+        else if (mission.objectiveType === 'talk' || mission.type === 'npc' || mission.objectiveType === 'deliver') {
+            // Simular diálogo e completar
+            const { eventBus } = require('../core/EventEmitter.js');
+            eventBus.emit('showMessage', {
+                text: `💬 Conversando com ${mission.target}...`,
+                type: 'info'
+            });
+
+            setTimeout(() => {
+                eventBus.emit('combat:victory', {
+                    missionId: mission.id,
+                    questId: mission.questId,
+                    objectiveId: mission.objectiveId,
+                    target: mission.target,
+                    enemiesKilled: 1 // Hack para contar progresso
+                });
+            }, 1500);
+        }
+        // EXPLORAÇÃO
+        else if (mission.objectiveType === 'explore' || mission.type === 'explore' || mission.type === 'collect') {
+            // Simular exploração e completar
+            const { eventBus } = require('../core/EventEmitter.js');
+            eventBus.emit('showMessage', {
+                text: `🔍 Explorando a área...`,
+                type: 'info'
+            });
+
+            setTimeout(() => {
+                eventBus.emit('combat:victory', {
+                    missionId: mission.id,
+                    questId: mission.questId,
+                    objectiveId: mission.objectiveId,
+                    target: mission.target,
+                    enemiesKilled: 1
+                });
+            }, 1500);
+        }
     }
 }
 
