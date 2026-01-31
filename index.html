@@ -224,12 +224,85 @@
     <div id="gm-screen" class="screen">
       <header class="screen-header">
         <button class="back-btn" id="btn-gm-back">←</button>
-        <h2>Game Master</h2>
+        <h2>Mestre do Jogo</h2>
       </header>
-      <div class="gm-panel" id="gm-panel">
-        <div class="gm-avatar">🎭</div>
-        <div class="gm-text" id="gm-text"></div>
-        <div class="gm-actions" id="gm-actions"></div>
+
+      <!-- Abas de navegação -->
+      <div class="gm-tabs" id="gm-tabs">
+        <button class="gm-tab active" data-tab="quests">📜 Missões</button>
+        <button class="gm-tab" data-tab="rumors">🗣️ Rumores</button>
+        <button class="gm-tab" data-tab="log">📖 Log</button>
+      </div>
+
+      <!-- Conteúdo das abas -->
+      <div class="gm-content">
+        <!-- Aba de Missões -->
+        <div class="gm-tab-content active" id="gm-quests">
+          <!-- Filtros de tipo de quest -->
+          <div class="quest-filters" id="quest-filters">
+            <button class="quest-filter active" data-filter="active">Ativas</button>
+            <button class="quest-filter" data-filter="available">Disponíveis</button>
+            <button class="quest-filter" data-filter="completed">Concluídas</button>
+          </div>
+
+          <!-- Lista de quests -->
+          <div class="quest-list" id="quest-list"></div>
+        </div>
+
+        <!-- Aba de Rumores -->
+        <div class="gm-tab-content" id="gm-rumors">
+          <div class="rumors-panel">
+            <div class="gm-avatar">🎭</div>
+            <div class="gm-text" id="gm-text">Bem-vindo, aventureiro! Clique em uma missão para mais detalhes.</div>
+          </div>
+        </div>
+
+        <!-- Aba de Log -->
+        <div class="gm-tab-content" id="gm-log">
+          <div class="event-log" id="event-log">
+            <p class="log-empty">Nenhum evento registrado ainda.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de detalhes da quest -->
+      <div class="quest-detail-modal hidden" id="quest-detail-modal">
+        <div class="quest-detail-content">
+          <button class="modal-close" id="btn-close-quest-modal">✕</button>
+
+          <div class="quest-detail-header">
+            <span class="quest-type-badge" id="quest-type-badge">⭐ Principal</span>
+            <h3 id="quest-detail-name"></h3>
+            <span class="quest-giver" id="quest-giver"></span>
+          </div>
+
+          <p class="quest-detail-description" id="quest-detail-description"></p>
+
+          <!-- Objetivos -->
+          <div class="quest-objectives">
+            <h4>📋 Objetivos</h4>
+            <div class="objectives-list" id="objectives-list"></div>
+          </div>
+
+          <!-- Progresso -->
+          <div class="quest-progress-bar">
+            <div class="quest-progress-fill" id="quest-progress-fill"></div>
+          </div>
+          <span class="quest-progress-text" id="quest-progress-text">0%</span>
+
+          <!-- Recompensas -->
+          <div class="quest-rewards">
+            <h4>🎁 Recompensas</h4>
+            <div class="rewards-grid" id="rewards-grid"></div>
+          </div>
+
+          <!-- Ações -->
+          <div class="quest-actions" id="quest-actions">
+            <button class="action-btn accept-btn" id="btn-accept-quest">✅ Aceitar Missão</button>
+            <button class="action-btn abandon-btn hidden" id="btn-abandon-quest">❌ Abandonar</button>
+            <button class="action-btn complete-btn hidden" id="btn-complete-quest">🏆 Completar</button>
+          </div>
+        </div>
       </div>
     </div>
 

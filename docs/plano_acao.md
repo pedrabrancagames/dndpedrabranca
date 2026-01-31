@@ -19,10 +19,10 @@
 
 ## Fase 2: Game Master & Narrativa (Semana 3-4)
 
-### 2.1 Hub de Missões
-- [ ] Criar estrutura de dados para Quests (`QuestDatabase.js`)
-- [ ] Implementar UI de Quest Log (Ativas/Concluídas)
-- [ ] Exibir objetivos e recompensas
+### 2.1 Hub de Missões ✅
+- [x] Criar estrutura de dados para Quests (`QuestDatabase.js`)
+- [x] Implementar UI de Quest Log (Ativas/Concluídas)
+- [x] Exibir objetivos e recompensas
 
 ### 2.2 Eventos de Exploração
 - [ ] Integrar `ExplorationEvents` com a tela GM

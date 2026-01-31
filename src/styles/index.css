@@ -2132,3 +2132,418 @@ button {
 .xr-debug-actions button:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* ==== Game Master Screen - Hub de Missões ==== */
+
+/* GM Tabs */
+.gm-tabs {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gm-tab {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.gm-tab.active {
+  background: var(--color-primary);
+}
+
+.gm-tab:active {
+  transform: scale(0.95);
+}
+
+/* GM Content */
+.gm-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.gm-tab-content {
+  display: none;
+  padding: var(--space-md);
+}
+
+.gm-tab-content.active {
+  display: block;
+}
+
+/* Quest Filters */
+.quest-filters {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+}
+
+.quest-filter {
+  flex: 1;
+  padding: var(--space-sm);
+  background: var(--color-bg-dark);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+.quest-filter.active {
+  background: var(--color-secondary);
+  color: var(--color-accent);
+}
+
+/* Quest List */
+.quest-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.quest-list-empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-xl);
+  font-style: italic;
+}
+
+/* Quest Card */
+.quest-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  border-left: 4px solid var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.quest-card:active {
+  transform: scale(0.98);
+}
+
+.quest-card.main {
+  border-left-color: var(--color-accent);
+}
+
+.quest-card.side {
+  border-left-color: var(--color-success);
+}
+
+.quest-card.daily {
+  border-left-color: var(--color-pa);
+}
+
+.quest-card.completed {
+  opacity: 0.7;
+  border-left-color: var(--color-text-muted);
+}
+
+.quest-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.quest-type-icon {
+  font-size: 1.25rem;
+}
+
+.quest-card-title h4 {
+  font-size: 0.875rem;
+  margin-bottom: 2px;
+}
+
+.quest-type-label {
+  font-size: 0.625rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.quest-card-description {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-sm);
+  line-height: 1.4;
+}
+
+.quest-card-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.mini-progress-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--color-bg-dark);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.mini-progress-fill {
+  height: 100%;
+  background: var(--color-success);
+  border-radius: var(--radius-full);
+}
+
+.progress-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--color-success);
+}
+
+.completed-badge {
+  font-size: 0.625rem;
+  text-align: right;
+  color: var(--color-text-muted);
+}
+
+/* Quest Detail Modal */
+.quest-detail-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(10px);
+  z-index: var(--z-modal);
+  overflow-y: auto;
+  animation: fadeIn var(--transition-fast);
+}
+
+.quest-detail-content {
+  min-height: 100%;
+  padding: var(--space-lg);
+  padding-top: calc(var(--space-lg) + 40px);
+}
+
+.quest-detail-header {
+  margin-bottom: var(--space-md);
+}
+
+.quest-type-badge {
+  display: inline-block;
+  background: var(--color-accent);
+  color: var(--color-bg-dark);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.625rem;
+  font-weight: 700;
+  margin-bottom: var(--space-sm);
+}
+
+.quest-detail-header h3 {
+  font-size: 1.25rem;
+  margin-bottom: var(--space-xs);
+}
+
+.quest-giver {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.quest-detail-description {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  margin-bottom: var(--space-lg);
+  background: var(--color-bg-dark);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-accent);
+}
+
+/* Quest Objectives */
+.quest-objectives {
+  margin-bottom: var(--space-lg);
+}
+
+.quest-objectives h4 {
+  font-size: 0.875rem;
+  margin-bottom: var(--space-sm);
+  color: var(--color-accent);
+}
+
+.objectives-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.objective-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+}
+
+.objective-item.completed {
+  opacity: 0.6;
+}
+
+.objective-item.completed .objective-text {
+  text-decoration: line-through;
+}
+
+.objective-check {
+  font-size: 1rem;
+}
+
+.objective-text {
+  flex: 1;
+}
+
+.objective-progress {
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+/* Quest Progress Bar */
+.quest-progress-bar {
+  height: 8px;
+  background: var(--color-bg-dark);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: var(--space-xs);
+}
+
+.quest-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-success), #22c55e);
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+}
+
+.quest-progress-text {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: right;
+  margin-bottom: var(--space-lg);
+}
+
+/* Quest Rewards */
+.quest-rewards {
+  margin-bottom: var(--space-lg);
+}
+
+.quest-rewards h4 {
+  font-size: 0.875rem;
+  margin-bottom: var(--space-sm);
+  color: var(--color-accent);
+}
+
+.rewards-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.reward-item {
+  background: var(--color-surface);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Quest Actions */
+.quest-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.quest-actions .action-btn {
+  flex: 1;
+}
+
+.quest-actions .accept-btn {
+  background: var(--color-success);
+}
+
+.quest-actions .abandon-btn {
+  background: var(--color-danger);
+}
+
+.quest-actions .complete-btn {
+  background: linear-gradient(135deg, var(--color-accent), #f59e0b);
+  color: var(--color-bg-dark);
+}
+
+/* Rumors Panel */
+.rumors-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-xl);
+  text-align: center;
+}
+
+.rumors-panel .gm-avatar {
+  font-size: 4rem;
+  margin-bottom: var(--space-lg);
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.rumors-panel .gm-text {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text);
+  background: var(--color-surface);
+  padding: var(--space-lg);
+  border-radius: var(--radius-lg);
+  max-width: 400px;
+}
+
+/* Event Log */
+.event-log {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.log-empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--space-xl);
+  font-style: italic;
+}
+
+.log-entry {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+}
+
+.log-time {
+  color: var(--color-text-muted);
+  min-width: 60px;
+}
+
+.log-message {
+  flex: 1;
+}
