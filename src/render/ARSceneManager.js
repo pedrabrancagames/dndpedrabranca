@@ -175,9 +175,12 @@ export class ARSceneManager extends SceneManager {
                     this.createEnemyHPBar(enemy, model);
                 }, 500);
 
-                // Animar entrada com delay escalonado (usando AnimationUtils)
+                // Animar entrada com delay escalonado
+                // Escala base aumentada de 0.5 para 1.5 (3x) conforme feedback
+                const baseScale = enemy.scale || 1.5;
+
                 AnimationUtils.animateSpawn(model, {
-                    targetScale: 0.5,
+                    targetScale: baseScale,
                     delay: i * 200
                 });
 
