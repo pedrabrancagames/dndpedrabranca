@@ -223,12 +223,17 @@ export class CombatManager {
 
         // Tipos comuns
         if (targetLower.includes('goblin')) {
-            // Ameaça média: 2-3 goblins variados
-            const enemies = [createEnemyInstance('goblin', 'goblin_1')];
-            if (Math.random() > 0.5) enemies.push(createEnemyInstance('goblin_archer', 'goblin_2'));
-            if (Math.random() > 0.7) enemies.push(createEnemyInstance('goblin_shaman', 'goblin_3'));
-            // Garantir pelo menos 2 inimigos para ser interessante
-            if (enemies.length < 2) enemies.push(createEnemyInstance('goblin', 'goblin_extra'));
+            // Ameaça média: 3-5 goblins (Ajustado para quests)
+            const enemies = [
+                createEnemyInstance('goblin', 'goblin_1'),
+                createEnemyInstance('goblin', 'goblin_2'),
+                createEnemyInstance('goblin_archer', 'goblin_3')
+            ];
+
+            // Chance alta de adicionar mais inimigos
+            if (Math.random() > 0.3) enemies.push(createEnemyInstance('goblin_shaman', 'goblin_4'));
+            if (Math.random() > 0.6) enemies.push(createEnemyInstance('goblin', 'goblin_extra'));
+
             return enemies;
         }
 

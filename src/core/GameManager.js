@@ -148,7 +148,8 @@ export class GameManager {
 
             // Iniciar combate
             if (to === GameState.COMBAT && data && data.missionId) {
-                this.combatManager.startEncounter(data.missionId);
+                // BUGFIX: Passar o objeto 'data' completo para preservar questId e objectiveId
+                this.combatManager.startEncounter(data);
                 this.arSceneManager.startSession();
             }
         });
