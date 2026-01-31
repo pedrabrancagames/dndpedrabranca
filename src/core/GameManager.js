@@ -35,8 +35,7 @@ export class GameManager {
             gold: 100,
             fragments: 0,
             currentMission: null,
-            chapter: 1,
-            testMode: true
+            chapter: 1
         };
 
         this.uiManager = null;
@@ -90,8 +89,7 @@ export class GameManager {
             gold: 100,
             fragments: 50,
             currentMission: null,
-            chapter: 1,
-            testMode: true
+            chapter: 1
         };
     }
 

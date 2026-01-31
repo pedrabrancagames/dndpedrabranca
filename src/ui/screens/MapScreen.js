@@ -8,7 +8,7 @@ export class MapScreen extends BaseScreen {
         super(screenId);
         this.gameManager = gameManager;
         this.mapInitialized = false;
-        this.questMarkersSpawned = false;
+        this.gpsListenerSetup = false;
     }
 
     setupEvents() {
@@ -19,66 +19,90 @@ export class MapScreen extends BaseScreen {
     }
 
     onShow() {
-        // Inicializar mapa na primeira vez
         if (!this.mapInitialized && this.gameManager.mapManager) {
             setTimeout(() => {
                 this.gameManager.mapManager.init('map-container');
                 this.mapInitialized = true;
-                this.spawnAllMarkers();
+                this.waitForGPSAndSpawnMarkers();
             }, 100);
         } else {
-            // Se já inicializado, invalidar tamanho para corrigir renderização
+            // Mapa já existe, garantir renderização correta
             setTimeout(() => {
                 if (this.gameManager.mapManager.map) {
                     this.gameManager.mapManager.map.invalidateSize();
                 }
-                // Atualizar marcadores de quests
                 this.updateQuestMarkers();
             }, 100);
         }
     }
 
     /**
-     * Gera todos os marcadores: quests ativas + eventos aleatórios
+     * Aguarda GPS retornar posição real antes de spawnar marcadores
      */
-    spawnAllMarkers() {
-        this.spawnQuestMarkers();
-        this.spawnRandomEncounters();
+    waitForGPSAndSpawnMarkers() {
+        const mapManager = this.gameManager.mapManager;
+
+        // Se já tem posição, spawnar imediatamente
+        if (mapManager.currentPosition) {
+            console.log('GPS: Posição prévia disponível, spawnando marcadores');
+            this.spawnQuestMarkers();
+            return;
+        }
+
+        // Caso contrário, aguardar evento de GPS
+        if (!this.gpsListenerSetup) {
+            console.log('GPS: Aguardando posição para spawnar markers...');
+            eventBus.once('gps:update', (pos) => {
+                console.log('GPS: Primeiro fix recebido, spawnando marcadores');
+                this.spawnQuestMarkers();
+            });
+            this.gpsListenerSetup = true;
+        }
     }
 
     /**
-     * Gera marcadores de quests ativas
+     * Gera marcadores de quests ativas na posição atual do jogador
      */
     spawnQuestMarkers() {
         const quests = this.gameManager.gameData.quests;
+        const mapManager = this.gameManager.mapManager;
+
         if (!quests || !quests.active || quests.active.length === 0) {
             console.log('Nenhuma quest ativa para gerar marcadores');
             return;
         }
 
-        const playerPos = this.gameManager.mapManager.currentPosition || { lat: -23.5874, lng: -46.6576 };
+        // IMPORTANTE: Usar posição atual do GPS
+        // Se ainda for null, aguarda o próximo update (waitForGPS já cuida disso se for 1a vez)
+        const playerPos = mapManager.currentPosition;
+        if (!playerPos) {
+            console.warn('Tentativa de spawnar markers sem posição GPS. Abortando.');
+            return;
+        }
+
+        console.log(`Gerando marcadores na posição: ${playerPos.lat}, ${playerPos.lng}`);
 
         quests.active.forEach((questId, index) => {
             const quest = getQuestData(questId);
             if (!quest) return;
 
-            // Gerar marcadores para cada objetivo não completado
             const progress = quests.progress[questId] || {};
 
             quest.objectives.forEach((objective, objIndex) => {
                 const currentProgress = progress[objective.id] || 0;
-                if (currentProgress >= objective.required) return; // Já completo
+                if (currentProgress >= objective.required) return;
 
                 // Posicionar marcadores em círculo ao redor do jogador
-                const angle = (index * 0.7 + objIndex * 0.3) * Math.PI * 2 / Math.max(quests.active.length, 1);
-                const distance = 0.0003 + objIndex * 0.0001; // ~30-40 metros
+                const totalMarkers = quest.objectives.length;
+                const angle = ((objIndex + 1) / totalMarkers) * Math.PI * 2;
+                // Distância pequena para aparecer 'perto'
+                const distance = 0.0002; // ~20 metros
 
                 const markerData = this.createQuestMarker(quest, objective, playerPos, angle, distance);
-                this.gameManager.mapManager.addMissionMarker(markerData);
+                mapManager.addMissionMarker(markerData);
             });
         });
 
-        this.questMarkersSpawned = true;
         console.log(`Marcadores de ${quests.active.length} quest(s) criados`);
     }
 
@@ -89,7 +113,6 @@ export class MapScreen extends BaseScreen {
         const lat = playerPos.lat + Math.cos(angle) * distance;
         const lng = playerPos.lng + Math.sin(angle) * distance;
 
-        // Determinar tipo e ícone baseado no tipo de objetivo
         let type = 'quest';
         let icon = '📍';
 
@@ -104,7 +127,7 @@ export class MapScreen extends BaseScreen {
                 break;
             case ObjectiveType.TALK:
                 type = 'npc';
-                icon = '💬';
+                icon = '💬'; // Ícone correto de diálogo
                 break;
             case ObjectiveType.EXPLORE:
                 type = 'explore';
@@ -120,7 +143,7 @@ export class MapScreen extends BaseScreen {
             id: `quest_${quest.id}_${objective.id}`,
             type: type,
             icon: icon,
-            title: `${quest.name}`,
+            title: quest.name,
             description: objective.description,
             lat: lat,
             lng: lng,
@@ -132,47 +155,35 @@ export class MapScreen extends BaseScreen {
     }
 
     /**
-     * Gera encontros aleatórios (mantém comportamento anterior)
-     */
-    spawnRandomEncounters() {
-        const playerPos = this.gameManager.mapManager.currentPosition || { lat: -23.5874, lng: -46.6576 };
-
-        // Adicionar um encontro aleatório de teste
-        this.gameManager.mapManager.addMissionMarker({
-            id: 'random_encounter_1',
-            type: 'combat',
-            icon: '👺',
-            title: 'Encontro Aleatório',
-            description: 'Goblins patrulhando a área.',
-            lat: playerPos.lat + 0.0004,
-            lng: playerPos.lng - 0.0002,
-            isRandomEncounter: true
-        });
-    }
-
-    /**
      * Atualiza marcadores quando quests mudam
      */
     updateQuestMarkers() {
-        if (!this.gameManager.mapManager || !this.gameManager.mapManager.markersLayer) return;
+        const mapManager = this.gameManager.mapManager;
+        if (!mapManager || !mapManager.markersLayer) return;
 
-        // Limpar marcadores antigos e recriar
-        this.gameManager.mapManager.markersLayer.clearLayers();
-        this.spawnAllMarkers();
+        mapManager.markersLayer.clearLayers();
+
+        if (mapManager.currentPosition) {
+            this.spawnQuestMarkers();
+        } else {
+            this.waitForGPSAndSpawnMarkers();
+        }
     }
 
     /**
      * Callback quando um combate é vencido
      */
     onCombatVictory(data) {
-        if (!data || !data.missionId) return;
+        if (!data) return;
 
-        // Verificar se é um marcador de quest
-        if (data.missionId.startsWith('quest_')) {
+        // Dados precisos vindos do CombatManager
+        if (data.questId && data.objectiveId) {
+            this.updateQuestProgress(data.questId, data.objectiveId, data.enemiesKilled || 1);
+        }
+        else if (data.missionId && data.missionId.startsWith('quest_')) {
             const parts = data.missionId.split('_');
             const questId = parts[1];
             const objectiveId = parts.slice(2).join('_');
-
             this.updateQuestProgress(questId, objectiveId, data.enemiesKilled || 1);
         }
     }
@@ -181,8 +192,12 @@ export class MapScreen extends BaseScreen {
      * Atualiza progresso de uma quest
      */
     updateQuestProgress(questId, objectiveId, amount = 1) {
+        console.log(`Atualizando progresso: quest=${questId}, objective=${objectiveId}, amount=${amount}`);
+
         const quests = this.gameManager.gameData.quests;
-        if (!quests || !quests.progress[questId]) return;
+        if (!quests || !quests.progress) return;
+
+        if (!quests.progress[questId]) quests.progress[questId] = {};
 
         const quest = getQuestData(questId);
         if (!quest) return;
@@ -190,12 +205,10 @@ export class MapScreen extends BaseScreen {
         const objective = quest.objectives.find(o => o.id === objectiveId);
         if (!objective) return;
 
-        // Atualizar progresso
         const currentProgress = quests.progress[questId][objectiveId] || 0;
         const newProgress = Math.min(currentProgress + amount, objective.required);
         quests.progress[questId][objectiveId] = newProgress;
 
-        // Notificar usuário
         if (newProgress >= objective.required) {
             eventBus.emit('showMessage', {
                 text: `✅ Objetivo completo: ${objective.description}`,
@@ -208,10 +221,7 @@ export class MapScreen extends BaseScreen {
             });
         }
 
-        // Verificar se toda a quest foi completada
         this.checkQuestCompletion(questId);
-
-        // Salvar progresso
         this.gameManager.saveGame();
     }
 
@@ -237,4 +247,3 @@ export class MapScreen extends BaseScreen {
         }
     }
 }
-

@@ -10,19 +10,10 @@ export class ConfigScreen extends BaseScreen {
     setupEvents() {
         this.bindClick('#btn-config-back', () => this.gameManager.stateManager.setState(GameState.HOME));
 
-        const toggle = this.findElement('#toggle-test-mode');
-        if (toggle) {
-            toggle.addEventListener('change', (e) => {
-                this.gameManager.gameData.testMode = e.target.checked;
-                this.gameManager.saveGame();
-            });
-        }
+
     }
 
     onShow() {
-        const toggle = this.findElement('#toggle-test-mode');
-        if (toggle) {
-            toggle.checked = this.gameManager.gameData.testMode;
-        }
+
     }
 }

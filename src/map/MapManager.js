@@ -15,7 +15,6 @@ export class MapManager {
 
         // Configurações
         this.defaultZoom = 18;
-        this.updateInterval = 2000;
 
         // Estado
         this.currentPosition = null;
@@ -52,7 +51,7 @@ export class MapManager {
             this.markersLayer = L.layerGroup().addTo(this.map);
             this.isMapReady = true;
 
-            // Iniciar tracking se tiver permissão ou modo teste
+            // Iniciar tracking sempre
             this.startTracking();
 
             console.log('MapManager initialized');
@@ -66,7 +65,7 @@ export class MapManager {
      */
     startTracking() {
         if ('geolocation' in navigator) {
-            // Tentar obter posição inicial
+            // Tentar obter posição inicial rapidamente
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     this.updatePosition(pos.coords);
@@ -74,7 +73,7 @@ export class MapManager {
                 },
                 (err) => {
                     console.warn('GPS: Erro ao obter posição inicial:', err.message);
-                    // Só usar padrão se NÃO tivermos nenhuma posição ainda
+                    // Só usar padrão se ainda não tivermos posição NENHUMA
                     if (!this.currentPosition) {
                         this.setDefaultPosition();
                     }
@@ -89,8 +88,10 @@ export class MapManager {
                 { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
             );
         } else {
-            console.warn('Geolocation not supported, using default position');
-            this.setDefaultPosition();
+            console.warn('Geolocation not supported');
+            if (!this.currentPosition) {
+                this.setDefaultPosition();
+            }
         }
     }
 
@@ -98,7 +99,8 @@ export class MapManager {
      * Define posição padrão quando GPS não está disponível
      */
     setDefaultPosition() {
-        // Posição padrão (São Paulo - pode ser ajustado)
+        // Posição padrão (São Paulo) apenas como fallback último recurso
+        console.log('Usando posição padrão (GPS falhou)');
         const defaultPos = { latitude: -23.5505, longitude: -46.6333 };
         this.updatePosition(defaultPos);
     }
@@ -120,23 +122,11 @@ export class MapManager {
             this.map.setView([latitude, longitude], this.defaultZoom);
         } else {
             this.playerMarker.setLatLng([latitude, longitude]);
+            // Opcional: Centralizar mapa se o jogador sair muito do centro?
+            // this.map.panTo([latitude, longitude]);
         }
 
-        // Centralizar mapa suavemente se estiver seguindo
-        // this.map.panTo([latitude, longitude]);
-
-        // Verificar proximidade de missões
-        this.checkProximity();
         eventBus.emit('gps:update', { lat: latitude, lng: longitude });
-    }
-
-
-
-    /**
-     * Verifica proximidade dos marcadores
-     */
-    checkProximity() {
-        // TODO: Implementar lógica de triggers
     }
 
     /**
@@ -167,32 +157,6 @@ export class MapManager {
     }
 
     /**
-     * Verifica se o jogador está próximo de uma posição
-     */
-    isNearby(lat, lng, threshold = 0.0005) {
-        if (!this.currentPosition) return false;
-        const dLat = Math.abs(this.currentPosition.lat - lat);
-        const dLng = Math.abs(this.currentPosition.lng - lng);
-        return dLat < threshold && dLng < threshold;
-    }
-
-    /**
-     * Remove um marcador específico pelo ID
-     */
-    /**
-     * Remove um marcador específico pelo ID
-     */
-    removeMissionMarker(missionId) {
-        if (!this.markersLayer) return;
-
-        this.markersLayer.eachLayer((layer) => {
-            if (layer.missionId === missionId) {
-                this.markersLayer.removeLayer(layer);
-            }
-        });
-    }
-
-    /**
      * Gerencia o clique no marcador baseado no tipo
      */
     handleMarkerClick(mission) {
@@ -210,26 +174,25 @@ export class MapManager {
         }
         // NPC / DIÁLOGO
         else if (mission.objectiveType === 'talk' || mission.type === 'npc' || mission.objectiveType === 'deliver') {
-            // Simular diálogo e completar
             const { eventBus } = require('../core/EventEmitter.js');
             eventBus.emit('showMessage', {
                 text: `💬 Conversando com ${mission.target}...`,
                 type: 'info'
             });
 
+            // Simular completamento após delay
             setTimeout(() => {
                 eventBus.emit('combat:victory', {
                     missionId: mission.id,
                     questId: mission.questId,
                     objectiveId: mission.objectiveId,
                     target: mission.target,
-                    enemiesKilled: 1 // Hack para contar progresso
+                    enemiesKilled: 1
                 });
-            }, 1500);
+            }, 1000);
         }
         // EXPLORAÇÃO
         else if (mission.objectiveType === 'explore' || mission.type === 'explore' || mission.type === 'collect') {
-            // Simular exploração e completar
             const { eventBus } = require('../core/EventEmitter.js');
             eventBus.emit('showMessage', {
                 text: `🔍 Explorando a área...`,
@@ -244,8 +207,20 @@ export class MapManager {
                     target: mission.target,
                     enemiesKilled: 1
                 });
-            }, 1500);
+            }, 1000);
         }
     }
-}
 
+    /**
+     * Remove um marcador específico pelo ID
+     */
+    removeMissionMarker(missionId) {
+        if (!this.markersLayer) return;
+
+        this.markersLayer.eachLayer((layer) => {
+            if (layer.missionId === missionId) {
+                this.markersLayer.removeLayer(layer);
+            }
+        });
+    }
+}
