@@ -24,10 +24,10 @@
 - [x] Implementar UI de Quest Log (Ativas/Concluídas)
 - [x] Exibir objetivos e recompensas
 
-### 2.2 Eventos de Exploração
-- [ ] Integrar `ExplorationEvents` com a tela GM
-- [ ] Criar UI de escolhas (estilo pergaminho/carta)
-- [ ] Implementar consequências das escolhas
+### 2.2 Eventos de Exploração ✅
+- [x] Integrar `ExplorationEvents` com a tela GM
+- [x] Criar UI de escolhas (estilo pergaminho/carta)
+- [x] Implementar consequências das escolhas
 
 ### 2.3 Log de Eventos
 - [ ] Criar sistema de histórico de ações

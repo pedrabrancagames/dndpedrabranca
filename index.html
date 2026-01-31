@@ -230,7 +230,7 @@
       <!-- Abas de navegação -->
       <div class="gm-tabs" id="gm-tabs">
         <button class="gm-tab active" data-tab="quests">📜 Missões</button>
-        <button class="gm-tab" data-tab="rumors">🗣️ Rumores</button>
+        <button class="gm-tab" data-tab="rumors">🎲 Eventos</button>
         <button class="gm-tab" data-tab="log">📖 Log</button>
       </div>
 
@@ -249,11 +249,14 @@
           <div class="quest-list" id="quest-list"></div>
         </div>
 
-        <!-- Aba de Rumores -->
+        <!-- Aba de Eventos -->
         <div class="gm-tab-content" id="gm-rumors">
-          <div class="rumors-panel">
-            <div class="gm-avatar">🎭</div>
-            <div class="gm-text" id="gm-text">Bem-vindo, aventureiro! Clique em uma missão para mais detalhes.</div>
+          <div class="events-panel">
+            <div class="event-intro">
+              <div class="gm-avatar">🎭</div>
+              <p class="event-intro-text">Algo acontece durante sua jornada...</p>
+            </div>
+            <button class="explore-btn" id="btn-explore">🗺️ Explorar a Região</button>
           </div>
         </div>
 
@@ -262,6 +265,33 @@
           <div class="event-log" id="event-log">
             <p class="log-empty">Nenhum evento registrado ainda.</p>
           </div>
+        </div>
+      </div>
+
+      <!-- Modal de Evento de Exploração -->
+      <div class="exploration-event-modal hidden" id="exploration-event-modal">
+        <div class="exploration-event-content">
+          <div class="event-scroll">
+            <div class="event-header">
+              <span class="event-type-badge" id="event-type-badge"></span>
+              <span class="event-icon" id="event-icon"></span>
+              <h3 id="event-title"></h3>
+            </div>
+
+            <p class="event-narration" id="event-narration"></p>
+
+            <div class="event-choices" id="event-choices"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de Resultado do Evento -->
+      <div class="event-result-modal hidden" id="event-result-modal">
+        <div class="event-result-content">
+          <div class="result-icon" id="result-icon">✨</div>
+          <p class="result-text" id="result-text"></p>
+          <div class="result-consequences" id="result-consequences"></div>
+          <button class="continue-btn" id="btn-continue-event">Continuar</button>
         </div>
       </div>
 
