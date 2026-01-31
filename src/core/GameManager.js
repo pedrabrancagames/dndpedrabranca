@@ -76,8 +76,19 @@ export class GameManager {
     initNewGame() {
         this.gameData = {
             heroes: this.createDefaultHeroes(),
-            inventory: [],
+            inventory: [
+                { itemId: 'sword_basic', quantity: 1 },
+                { itemId: 'armor_leather', quantity: 1 },
+                { itemId: 'potion_health_small', quantity: 5 },
+                { itemId: 'potion_health_medium', quantity: 2 },
+                { itemId: 'staff_arcane', quantity: 1 },
+                { itemId: 'sword_flame', quantity: 1 },
+                { itemId: 'dagger_shadow', quantity: 1 },
+                { itemId: 'ring_protection', quantity: 1 },
+                { itemId: 'letter_sealed', quantity: 1 }
+            ],
             gold: 100,
+            fragments: 50,
             currentMission: null,
             chapter: 1,
             testMode: true

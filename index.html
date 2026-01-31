@@ -76,8 +76,79 @@
       <header class="screen-header">
         <button class="back-btn" id="btn-heroes-back">←</button>
         <h2>Heróis</h2>
+        <div class="resources-display">
+          <span class="gold-display" id="heroes-gold">💰 0</span>
+          <span class="fragments-display" id="heroes-fragments">💎 0</span>
+        </div>
       </header>
+
+      <!-- Grid de heróis -->
       <div class="heroes-grid" id="heroes-grid"></div>
+
+      <!-- Modal de detalhes do herói -->
+      <div class="hero-detail-modal hidden" id="hero-detail-modal">
+        <div class="hero-detail-content">
+          <button class="modal-close" id="btn-close-hero-modal">✕</button>
+
+          <!-- Header do herói -->
+          <div class="hero-detail-header">
+            <div class="hero-portrait-large" id="hero-portrait-large"></div>
+            <div class="hero-detail-info">
+              <h3 id="hero-detail-name"></h3>
+              <span class="hero-detail-class" id="hero-detail-class"></span>
+              <div class="hero-detail-level" id="hero-detail-level">Nível 1</div>
+            </div>
+          </div>
+
+          <!-- Barra de XP -->
+          <div class="xp-bar-container">
+            <div class="xp-bar">
+              <div class="xp-fill" id="xp-fill"></div>
+            </div>
+            <span class="xp-text" id="xp-text">0 / 100 XP</span>
+          </div>
+
+          <!-- Stats do herói -->
+          <div class="hero-stats-grid" id="hero-stats-grid"></div>
+
+          <!-- Deck de cartas -->
+          <div class="deck-section">
+            <h4 class="deck-title">📜 Deck de Cartas</h4>
+            <div class="deck-grid" id="deck-grid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de upgrade de carta -->
+      <div class="card-upgrade-modal hidden" id="card-upgrade-modal">
+        <div class="card-upgrade-content">
+          <button class="modal-close" id="btn-close-upgrade-modal">✕</button>
+          <h4 class="upgrade-title">⬆️ Upgrade de Carta</h4>
+
+          <div class="upgrade-comparison">
+            <div class="upgrade-card current">
+              <span class="upgrade-card-icon" id="upgrade-card-icon"></span>
+              <span class="upgrade-card-name" id="upgrade-card-name"></span>
+              <span class="upgrade-card-level" id="upgrade-card-level">Nível 1</span>
+              <div class="upgrade-card-stats" id="upgrade-current-stats"></div>
+            </div>
+            <div class="upgrade-arrow">➡️</div>
+            <div class="upgrade-card next">
+              <span class="upgrade-card-icon" id="upgrade-next-icon"></span>
+              <span class="upgrade-card-name" id="upgrade-next-name"></span>
+              <span class="upgrade-card-level" id="upgrade-next-level">Nível 2</span>
+              <div class="upgrade-card-stats" id="upgrade-next-stats"></div>
+            </div>
+          </div>
+
+          <div class="upgrade-cost" id="upgrade-cost">
+            <span>💰 500</span>
+            <span>💎 10</span>
+          </div>
+
+          <button class="upgrade-btn" id="btn-confirm-upgrade">⬆️ Melhorar Carta</button>
+        </div>
+      </div>
     </div>
 
     <!-- Inventory Screen -->
@@ -85,8 +156,50 @@
       <header class="screen-header">
         <button class="back-btn" id="btn-inventory-back">←</button>
         <h2>Inventário</h2>
+        <div class="gold-display" id="gold-display">💰 0</div>
       </header>
+
+      <!-- Filtros de categoria -->
+      <div class="inventory-filters" id="inventory-filters">
+        <button class="filter-tab active" data-filter="all">Todos</button>
+        <button class="filter-tab" data-filter="weapon">⚔️ Armas</button>
+        <button class="filter-tab" data-filter="armor">🛡️ Armaduras</button>
+        <button class="filter-tab" data-filter="consumable">🧪 Consumíveis</button>
+        <button class="filter-tab" data-filter="quest">📜 Quest</button>
+      </div>
+
+      <!-- Indicador de capacidade -->
+      <div class="inventory-capacity" id="inventory-capacity">
+        <span class="capacity-label">Mochila:</span>
+        <div class="capacity-bar">
+          <div class="capacity-fill" id="capacity-fill"></div>
+        </div>
+        <span class="capacity-text" id="capacity-text">0/20</span>
+      </div>
+
+      <!-- Grid de itens -->
       <div class="inventory-grid" id="inventory-grid"></div>
+
+      <!-- Modal de detalhes do item -->
+      <div class="item-detail-modal hidden" id="item-detail-modal">
+        <div class="item-detail-content">
+          <button class="modal-close" id="btn-close-item-modal">✕</button>
+          <div class="item-detail-header">
+            <span class="item-detail-icon" id="item-detail-icon"></span>
+            <div class="item-detail-title">
+              <h3 id="item-detail-name"></h3>
+              <span class="item-detail-rarity" id="item-detail-rarity"></span>
+            </div>
+          </div>
+          <p class="item-detail-description" id="item-detail-description"></p>
+          <div class="item-detail-stats" id="item-detail-stats"></div>
+          <div class="item-detail-actions">
+            <button class="action-btn equip-btn" id="btn-equip-item">🎯 Equipar</button>
+            <button class="action-btn use-btn" id="btn-use-item">✨ Usar</button>
+            <button class="action-btn discard-btn" id="btn-discard-item">🗑️ Descartar</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Config Screen -->
