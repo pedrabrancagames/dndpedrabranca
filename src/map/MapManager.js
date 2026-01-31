@@ -150,9 +150,53 @@ export class MapManager {
             .addTo(this.markersLayer)
             .bindPopup(`<b>${mission.title}</b><br>${mission.description}`);
 
+        // Armazenar referência para remoção posterior
+        marker.missionId = mission.id;
+
         marker.on('click', () => {
-            // Se estiver perto ou modo teste
-            this.gameManager.stateManager.setState('combat', { missionId: mission.id });
+            // Se estiver perto ou modo teste, iniciar combate
+            if (this.isNearby(mission.lat, mission.lng) || this.gameManager.gameData.testMode) {
+                this.gameManager.stateManager.setState('combat', {
+                    missionId: mission.id,
+                    questId: mission.questId,
+                    objectiveId: mission.objectiveId,
+                    objectiveType: mission.objectiveType,
+                    target: mission.target
+                });
+            } else {
+                // Se não estiver perto, mostrar mensagem
+                const { eventBus } = require('../core/EventEmitter.js');
+                eventBus.emit('showMessage', {
+                    text: 'Aproxime-se do local para interagir!',
+                    type: 'info'
+                });
+            }
+        });
+
+        return marker;
+    }
+
+    /**
+     * Verifica se o jogador está próximo de uma posição
+     */
+    isNearby(lat, lng, threshold = 0.0005) {
+        if (!this.currentPosition) return false;
+        const dLat = Math.abs(this.currentPosition.lat - lat);
+        const dLng = Math.abs(this.currentPosition.lng - lng);
+        return dLat < threshold && dLng < threshold;
+    }
+
+    /**
+     * Remove um marcador específico pelo ID
+     */
+    removeMissionMarker(missionId) {
+        if (!this.markersLayer) return;
+
+        this.markersLayer.eachLayer((layer) => {
+            if (layer.missionId === missionId) {
+                this.markersLayer.removeLayer(layer);
+            }
         });
     }
 }
+

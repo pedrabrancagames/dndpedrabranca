@@ -340,6 +340,27 @@ button {
   color: var(--color-accent);
 }
 
+.mission-marker.quest {
+  color: #fbbf24;
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6));
+}
+
+.mission-marker.collect {
+  color: #3b82f6;
+}
+
+.mission-marker.npc {
+  color: #22c55e;
+}
+
+.mission-marker.explore {
+  color: #a855f7;
+}
+
+.mission-marker.deliver {
+  color: #f97316;
+}
+
 @keyframes bounce {
 
   0%,
