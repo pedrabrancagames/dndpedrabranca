@@ -62,23 +62,43 @@ export class MapManager {
     }
 
     /**
-     * Inicia o rastreamento GPS
+     * Inicia o rastreamento GPS - sempre usa localização real
      */
     startTracking() {
-        if (this.gameManager.gameData.testMode) {
-            this.startTestMode();
-            return;
-        }
-
         if ('geolocation' in navigator) {
+            // Tentar obter posição inicial
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    this.updatePosition(pos.coords);
+                    console.log('GPS: Posição inicial obtida');
+                },
+                (err) => {
+                    console.warn('GPS: Erro ao obter posição inicial:', err.message);
+                    // Usar posição padrão se falhar
+                    this.setDefaultPosition();
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+
+            // Monitorar posição continuamente
             this.watchId = navigator.geolocation.watchPosition(
                 (pos) => this.updatePosition(pos.coords),
-                (err) => console.error('GPS Error:', err),
-                { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+                (err) => console.warn('GPS tracking error:', err.message),
+                { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
             );
         } else {
-            console.error('Geolocation not supported');
+            console.warn('Geolocation not supported, using default position');
+            this.setDefaultPosition();
         }
+    }
+
+    /**
+     * Define posição padrão quando GPS não está disponível
+     */
+    setDefaultPosition() {
+        // Posição padrão (São Paulo - pode ser ajustado)
+        const defaultPos = { latitude: -23.5505, longitude: -46.6333 };
+        this.updatePosition(defaultPos);
     }
 
     /**
@@ -108,23 +128,7 @@ export class MapManager {
         eventBus.emit('gps:update', { lat: latitude, lng: longitude });
     }
 
-    /**
-     * Modo Teste: Posição fake
-     */
-    startTestMode() {
-        console.log('Starting GPS Test Mode');
-        // Posição fake inicial (Parque Ibirapuera para teste, ou 0,0)
-        const startPos = { latitude: -23.5874, longitude: -46.6576 };
-        this.updatePosition(startPos);
 
-        // Simular movimento aleatório simples
-        setInterval(() => {
-            if (!this.currentPosition) return;
-            const lat = this.currentPosition.lat + (Math.random() - 0.5) * 0.0001;
-            const lng = this.currentPosition.lng + (Math.random() - 0.5) * 0.0001;
-            this.updatePosition({ latitude: lat, longitude: lng });
-        }, 3000);
-    }
 
     /**
      * Verifica proximidade dos marcadores
@@ -154,23 +158,14 @@ export class MapManager {
         marker.missionId = mission.id;
 
         marker.on('click', () => {
-            // Se estiver perto ou modo teste, iniciar combate
-            if (this.isNearby(mission.lat, mission.lng) || this.gameManager.gameData.testMode) {
-                this.gameManager.stateManager.setState('combat', {
-                    missionId: mission.id,
-                    questId: mission.questId,
-                    objectiveId: mission.objectiveId,
-                    objectiveType: mission.objectiveType,
-                    target: mission.target
-                });
-            } else {
-                // Se não estiver perto, mostrar mensagem
-                const { eventBus } = require('../core/EventEmitter.js');
-                eventBus.emit('showMessage', {
-                    text: 'Aproxime-se do local para interagir!',
-                    type: 'info'
-                });
-            }
+            // Clique sempre funciona - não exige proximidade física
+            this.gameManager.stateManager.setState('combat', {
+                missionId: mission.id,
+                questId: mission.questId,
+                objectiveId: mission.objectiveId,
+                objectiveType: mission.objectiveType,
+                target: mission.target
+            });
         });
 
         return marker;
