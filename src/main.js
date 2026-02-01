@@ -21,6 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (import.meta.env.DEV) {
         window.game = game;
 
+        // Debug: Spawn NPC
+        window.spawnNPC = (id) => {
+            if (game.gameManager.arSceneManager) {
+                game.gameManager.arSceneManager.spawnNPC(id || 'mayor');
+            } else {
+                console.warn('AR Scene not active');
+            }
+        };
+
         // Ferramentas de debug
         window.perfMonitor = getPerformanceMonitor();
         window.xrDebugger = getWebXRDebugger();

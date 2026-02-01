@@ -12,6 +12,7 @@ import * as THREE from 'three';
 import { SceneManager } from './SceneManager.js';
 import { ModelLoader } from './ModelLoader.js';
 import { eventBus } from '../core/EventEmitter.js';
+import { getNPCData } from '../data/NPCDatabase.js';
 
 // Mixins
 import { applyARSessionMixin } from './ARSession.js';
@@ -192,6 +193,74 @@ export class ARSceneManager extends SceneManager {
         }
 
         eventBus.emit('enemiesSpawned', { count: enemies.length });
+    }
+
+    /**
+     * Spawna um NPC pacífico na cena
+     * @param {string} npcId - ID do NPC no database
+     * @param {THREE.Vector3} position - Posição relativa ao centro da arena (opcional)
+     */
+    async spawnNPC(npcId, position = null) {
+        const npcData = getNPCData(npcId);
+        if (!npcData) {
+            console.error(`NPC data not found: ${npcId}`);
+            return;
+        }
+
+        try {
+            const model = await this.modelLoader.load(npcData.model);
+
+            // Configurar posição (padraõ: levemente à esquerda do centro)
+            const spawnPos = position || new THREE.Vector3(-1, 0, 0); // Default offset
+
+            // Ajustar para coordenadas do mundo (Arena + Offset)
+            // Se a arena não estiver colocada, não spawna (segurança)
+            if (!this.arenaPlaced) {
+                console.warn('Cannot spawn NPC: Arena not placed');
+                return;
+            }
+
+            // Calcular posição real
+            // Assumindo que o offset é relativo à direção da câmera
+            const worldX = this.arenaPosition.x + spawnPos.x;
+            const worldZ = this.arenaPosition.z + spawnPos.z;
+
+            model.position.set(worldX, this.arenaPosition.y, worldZ);
+
+            // Escala conforme DB
+            const scale = npcData.scale || 1.0;
+            model.scale.set(0, 0, 0); // Começa invisível para animação
+
+            // Metadados para interação
+            model.userData = {
+                type: 'npc',
+                id: npcId,
+                name: npcData.name
+            };
+
+            // Olhar para o jogador (câmera)
+            const lookAtPos = new THREE.Vector3(
+                this.arenaPosition.x - this.cameraDirection.x * 2,
+                this.arenaPosition.y,
+                this.arenaPosition.z - this.cameraDirection.z * 2
+            );
+            model.lookAt(lookAtPos);
+
+            this.scene.add(model);
+            this.spawnedModels.push(model);
+
+            // Animar entrada
+            AnimationUtils.animateSpawn(model, {
+                targetScale: scale,
+                delay: 0
+            });
+
+            console.log(`Spawned NPC ${npcData.name} at`, model.position);
+            eventBus.emit('npcSpawned', { npc: npcData });
+
+        } catch (error) {
+            console.error(`Failed to spawn NPC ${npcId}:`, error);
+        }
     }
 
     /**

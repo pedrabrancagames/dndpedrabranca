@@ -54,15 +54,15 @@ export const ARInteractionMixin = {
             VectorPool.releaseAll(position, quaternion, scale, cameraPos, direction);
 
         } else if (this.arenaPlaced) {
-            // Tentar selecionar inimigo
-            this.trySelectEnemy();
+            // Tentar selecionar objeto (Inimigo ou NPC)
+            this.trySelectObject();
         }
     },
 
     /**
-     * Tenta selecionar um inimigo via raycast do controller
+     * Tenta selecionar um objeto interativo (Inimigo/NPC) via raycast
      */
-    trySelectEnemy() {
+    trySelectObject() {
         if (this.spawnedModels.length === 0) return;
 
         // Usar vetores do pool
@@ -100,30 +100,41 @@ export const ARInteractionMixin = {
                 target = target.parent;
             }
 
-            this.selectEnemy(target);
+            this.handleObjectSelection(target);
         }
     },
 
     /**
-     * Seleciona um inimigo e destaca visualmente
-     * @param {THREE.Object3D} model - Modelo do inimigo
+     * Processa a seleção de um objeto
      */
-    selectEnemy(model) {
+    handleObjectSelection(model) {
         // Desselecionar anterior
         if (this.selectedEnemy) {
             this.highlightModel(this.selectedEnemy, false);
         }
 
-        this.selectedEnemy = model;
-        this.highlightModel(model, true);
+        this.selectedEnemy = model; // Mantemos o nome da var, mas pode ser NPC
+        const isNPC = model.userData?.type === 'npc';
 
-        // Encontrar dados do inimigo
-        const enemies = this.gameManager.combatManager?.enemies || [];
-        const enemy = enemies.find(e => e.model === model);
+        // Highlight com cor diferente
+        const highlightColor = isNPC ? 0x00ff00 : 0xff4444;
+        this.highlightModel(model, true, highlightColor);
 
-        if (enemy) {
-            console.log(`Selected enemy: ${enemy.name}`);
-            eventBus.emit('enemySelected', { enemy, model });
+        if (isNPC) {
+            console.log(`Selected NPC: ${model.userData.name}`);
+            eventBus.emit('npcSelected', {
+                npcId: model.userData.id,
+                model: model
+            });
+        } else {
+            // Lógica antiga de inimigo
+            const enemies = this.gameManager.combatManager?.enemies || [];
+            const enemy = enemies.find(e => e.model === model);
+
+            if (enemy) {
+                console.log(`Selected enemy: ${enemy.name}`);
+                eventBus.emit('enemySelected', { enemy, model });
+            }
         }
     },
 
@@ -132,12 +143,12 @@ export const ARInteractionMixin = {
      * @param {THREE.Object3D} model - Modelo a destacar
      * @param {boolean} highlight - Se deve destacar ou remover
      */
-    highlightModel(model, highlight) {
+    highlightModel(model, highlight, color = 0xff4444) {
         model.traverse((child) => {
             if (child.isMesh && child.material) {
                 if (highlight) {
                     child.material._originalEmissive = child.material.emissive?.clone();
-                    child.material.emissive = new THREE.Color(0xff4444);
+                    child.material.emissive = new THREE.Color(color);
                     child.material.emissiveIntensity = 0.5;
                 } else {
                     if (child.material._originalEmissive) {
