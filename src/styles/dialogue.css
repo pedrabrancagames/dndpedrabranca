@@ -1,0 +1,79 @@
+/* ==== Dialogue Overlay ==== */
+.dialogue-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: var(--space-md);
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0));
+    z-index: var(--z-modal);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 250px;
+    pointer-events: auto;
+    /* Enable clicks */
+}
+
+.dialogue-box {
+    background: rgba(13, 13, 26, 0.95);
+    border: 2px solid var(--color-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    animation: slideUp var(--transition-normal);
+}
+
+.dialogue-speaker {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    color: var(--color-accent);
+    margin-bottom: var(--space-sm);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.dialogue-text {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: var(--space-lg);
+    min-height: 3em;
+}
+
+.dialogue-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.dialogue-option-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    text-align: left;
+    transition: all var(--transition-fast);
+}
+
+.dialogue-option-btn:hover,
+.dialogue-option-btn:active {
+    background: var(--color-primary-dark);
+    border-color: var(--color-primary);
+    transform: translateX(5px);
+}
+
+.hidden {
+    display: none !important;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}

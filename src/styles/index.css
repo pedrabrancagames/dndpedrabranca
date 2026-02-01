@@ -2,6 +2,8 @@
    D&D Pedra Branca - Sistema de Design
    ================================================ */
 
+@import './dialogue.css';
+
 /* ==== CSS Variables (Design Tokens) ==== */
 :root {
   /* Cores Primárias */

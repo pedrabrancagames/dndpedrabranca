@@ -11,9 +11,7 @@ import { UIManager } from '../ui/UIManager.js';
 import { MapManager } from '../map/MapManager.js';
 import { CombatManager } from '../combat/CombatManager.js';
 import { ARSceneManager } from '../render/ARSceneManager.js';
-import { CombatHUD } from '../ui/CombatHUD.js';
-import { ProgressionSystem } from '../systems/ProgressionSystem.js';
-import { GameMaster } from '../systems/GameMaster.js';
+import { DialogueSystem } from '../systems/DialogueSystem.js';
 
 export class GameManager {
     constructor() {
@@ -28,6 +26,7 @@ export class GameManager {
         // Inicializado após DOM
         this.arSceneManager = null;
         this.combatHUD = null;
+        this.dialogueSystem = null;
 
         this.gameData = {
             heroes: [],
@@ -57,6 +56,7 @@ export class GameManager {
             // Managers dependentes de DOM
             this.arSceneManager = new ARSceneManager('three-canvas', this);
             this.combatHUD = new CombatHUD(this);
+            this.dialogueSystem = new DialogueSystem();
             this.uiManager = new UIManager(this);
 
             this.updateLoadingText('Pronto!');

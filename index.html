@@ -373,8 +373,20 @@
       </div>
     </div>
 
-    <!-- Canvas 3D (para Three.js) -->
-    <canvas id="three-canvas"></canvas>
+    <!-- Dialogue Overlay -->
+    <div id="dialogue-overlay" class="dialogue-overlay hidden">
+      <div class="dialogue-box">
+        <h3 class="dialogue-speaker" id="dialogue-speaker">Speaker Name</h3>
+        <p class="dialogue-text" id="dialogue-text">Dialogue text goes here...</p>
+        <div class="dialogue-options" id="dialogue-options">
+          <!-- Buttons injected via JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Canvas 3D (para Three.js) -->
+  <canvas id="three-canvas"></canvas>
   </div>
 
   <script type="module" src="/src/main.js"></script>
