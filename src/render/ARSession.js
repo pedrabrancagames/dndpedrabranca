@@ -4,6 +4,7 @@
  */
 import * as THREE from 'three';
 import { eventBus } from '../core/EventEmitter.js';
+import { EventNames } from '../data/GameConstants.js';
 
 /**
  * Mixin para gerenciamento de sessão WebXR AR
@@ -60,7 +61,7 @@ export const ARSessionMixin = {
                 });
 
                 console.log('AR Session started');
-                eventBus.emit('arSessionStarted');
+                eventBus.emit(EventNames.AR_SESSION_STARTED);
 
             } catch (error) {
                 console.error('Failed to start AR session:', error);
@@ -96,7 +97,7 @@ export const ARSessionMixin = {
         this.canvas.style.zIndex = '-1';
 
         console.log('AR Session ended');
-        eventBus.emit('arSessionEnded');
+        eventBus.emit(EventNames.AR_SESSION_ENDED);
     },
 
     /**

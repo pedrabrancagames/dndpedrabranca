@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { eventBus } from './EventEmitter.js';
+import { AssetTypes, EventNames } from '../data/GameConstants.js';
 
 export class AssetLoader {
     constructor() {
@@ -34,13 +35,13 @@ export class AssetLoader {
 
         // Coletar todos os assets
         if (manifest.models) {
-            manifest.models.forEach(m => assets.push({ type: 'model', ...m }));
+            manifest.models.forEach(m => assets.push({ type: AssetTypes.MODEL, ...m }));
         }
         if (manifest.textures) {
-            manifest.textures.forEach(t => assets.push({ type: 'texture', ...t }));
+            manifest.textures.forEach(t => assets.push({ type: AssetTypes.TEXTURE, ...t }));
         }
         if (manifest.json) {
-            manifest.json.forEach(j => assets.push({ type: 'json', ...j }));
+            manifest.json.forEach(j => assets.push({ type: AssetTypes.JSON, ...j }));
         }
 
         this.totalAssets = assets.length;
@@ -62,13 +63,13 @@ export class AssetLoader {
             let result;
 
             switch (asset.type) {
-                case 'model':
+                case AssetTypes.MODEL:
                     result = await this.loadModel(asset.url);
                     break;
-                case 'texture':
+                case AssetTypes.TEXTURE:
                     result = await this.loadTexture(asset.url);
                     break;
-                case 'json':
+                case AssetTypes.JSON:
                     result = await this.loadJSON(asset.url);
                     break;
                 default:
@@ -134,7 +135,7 @@ export class AssetLoader {
             ? (this.loadedCount / this.totalAssets) * 100
             : 100;
 
-        eventBus.emit('loadingProgress', {
+        eventBus.emit(EventNames.LOADING_PROGRESS, {
             progress: this.loadingProgress,
             loaded: this.loadedCount,
             total: this.totalAssets

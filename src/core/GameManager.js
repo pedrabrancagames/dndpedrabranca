@@ -16,7 +16,7 @@ import { ProgressionSystem } from '../systems/ProgressionSystem.js';
 import { GameMaster } from '../systems/GameMaster.js';
 import { DialogueSystem } from '../systems/DialogueSystem.js';
 import { ShopSystem } from '../systems/ShopSystem.js';
-import { ItemIDs, HeroIDs } from '../data/GameConstants.js';
+import { ItemIDs, HeroIDs, EventNames, NPCIDs, ToastTypes } from '../data/GameConstants.js';
 
 export class GameManager {
     constructor() {
@@ -148,9 +148,9 @@ export class GameManager {
     async loadEssentialAssets() { await this.delay(500); }
 
     setupEventListeners() {
-        eventBus.on('loadingProgress', ({ progress }) => this.updateLoadingProgress(progress));
+        eventBus.on(EventNames.LOADING_PROGRESS, ({ progress }) => this.updateLoadingProgress(progress));
 
-        eventBus.on('stateChange', ({ from, to, data }) => {
+        eventBus.on(EventNames.STATE_CHANGE, ({ from, to, data }) => {
             if (from && from !== GameState.SPLASH) this.saveGame();
 
             // Iniciar combate ou interação AR
@@ -162,7 +162,7 @@ export class GameManager {
                     // Pequeno delay para garantir que a sessão AR iniciou antes de spawnar
                     setTimeout(() => {
                         // Passar o objeto 'data' inteiro como contexto (contém questId, objectiveId, etc)
-                        this.arSceneManager.spawnNPC(data.npcId || 'mayor', null, data);
+                        this.arSceneManager.spawnNPC(data.npcId || NPCIDs.MAYOR, null, data);
                     }, 1000);
                 } else {
                     // BUGFIX: Passar o objeto 'data' completo
@@ -173,10 +173,10 @@ export class GameManager {
         });
 
         // Toast messages
-        eventBus.on('showMessage', ({ text, type }) => this.showToast(text, type));
+        eventBus.on(EventNames.SHOW_MESSAGE, ({ text, type }) => this.showToast(text, type));
 
         // Sair do modo AR ao terminar diálogo
-        eventBus.on('dialogueEnded', () => {
+        eventBus.on(EventNames.DIALOGUE_ENDED, () => {
             if (this.stateManager.isState(GameState.COMBAT)) {
                 console.log('Dialogue ended. Exiting AR session...');
                 this.arSceneManager.endSession();
@@ -185,7 +185,7 @@ export class GameManager {
         });
     }
 
-    showToast(text, type = 'info') {
+    showToast(text, type = ToastTypes.INFO) {
         let container = document.querySelector('.toast-container');
         if (!container) {
             container = document.createElement('div');

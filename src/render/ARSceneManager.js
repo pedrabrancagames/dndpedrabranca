@@ -13,6 +13,7 @@ import { SceneManager } from './SceneManager.js';
 import { ModelLoader } from './ModelLoader.js';
 import { eventBus } from '../core/EventEmitter.js';
 import { getNPCData } from '../data/NPCDatabase.js';
+import { EventNames, EnemyTypes, NPCIDs } from '../data/GameConstants.js';
 
 // Mixins
 import { applyARSessionMixin } from './ARSession.js';
@@ -69,20 +70,20 @@ export class ARSceneManager extends SceneManager {
      * Configura listeners de eventos do sistema
      */
     setupEventListeners() {
-        eventBus.on('arSurfaceSelected', async (data) => {
+        eventBus.on(EventNames.AR_SURFACE_SELECTED, async (data) => {
             if (!this.arenaPlaced) {
                 await this.placeArena(data.position, data.cameraDirection);
             }
         });
 
         // Feedback visual de dano
-        eventBus.on('damageTaken', ({ targetId, amount }) => {
+        eventBus.on(EventNames.DAMAGE_TAKEN, ({ targetId, amount }) => {
             this.flashDamage(targetId);
             this.updateEnemyHPBar(targetId);
         });
 
         // Animação de morte
-        eventBus.on('enemyDied', ({ enemyId }) => {
+        eventBus.on(EventNames.ENEMY_DIED, ({ enemyId }) => {
             this.playDeathAnimation(enemyId);
         });
     }
@@ -127,7 +128,7 @@ export class ARSceneManager extends SceneManager {
             this.pendingNPC = null;
         }
 
-        eventBus.emit('arenaPlaced', { position });
+        eventBus.emit(EventNames.ARENA_PLACED, { position });
     }
 
     /**
@@ -151,7 +152,7 @@ export class ARSceneManager extends SceneManager {
 
         for (let i = 0; i < enemies.length; i++) {
             const enemy = enemies[i];
-            const modelPath = ModelLoader.getEnemyModelPath(enemy.type || 'goblin');
+            const modelPath = ModelLoader.getEnemyModelPath(enemy.type || EnemyTypes.GOBLIN);
 
             try {
                 const model = await this.modelLoader.load(modelPath);
@@ -203,7 +204,7 @@ export class ARSceneManager extends SceneManager {
             }
         }
 
-        eventBus.emit('enemiesSpawned', { count: enemies.length });
+        eventBus.emit(EventNames.ENEMIES_SPAWNED, { count: enemies.length });
     }
 
     /**
@@ -277,7 +278,7 @@ export class ARSceneManager extends SceneManager {
             });
 
             console.log(`Spawned NPC ${npcData.name} at`, model.position);
-            eventBus.emit('npcSpawned', { npc: npcData });
+            eventBus.emit(EventNames.NPC_SPAWNED, { npc: npcData });
 
         } catch (error) {
             console.error(`Failed to spawn NPC ${npcId}:`, error);
