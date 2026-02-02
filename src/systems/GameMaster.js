@@ -55,10 +55,27 @@ export class GameMaster {
             }
             if (!this.gameManager.gameData.completedQuests.includes(questId)) {
                 this.gameManager.gameData.completedQuests.push(questId);
-
-                // Salvar jogo
-                this.gameManager.saveGame();
             }
+
+            // Remover da lista de quests ativas
+            if (this.gameManager.gameData.quests && this.gameManager.gameData.quests.active) {
+                const activeIndex = this.gameManager.gameData.quests.active.indexOf(questId);
+                if (activeIndex > -1) {
+                    this.gameManager.gameData.quests.active.splice(activeIndex, 1);
+                    console.log(`Quest ${questId} removed from active list`);
+                }
+
+                // Adicionar à lista de concluídas na estrutura de quests também (para consistência)
+                if (!this.gameManager.gameData.quests.completed) {
+                    this.gameManager.gameData.quests.completed = [];
+                }
+                if (!this.gameManager.gameData.quests.completed.includes(questId)) {
+                    this.gameManager.gameData.quests.completed.push(questId);
+                }
+            }
+
+            // Salvar jogo
+            this.gameManager.saveGame();
 
             this.showGMMessage(`Missão "${questId}" completada!`, 'success');
         });
