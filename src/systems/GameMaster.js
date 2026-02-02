@@ -141,6 +141,47 @@ export class GameMaster {
     /**
      * Mostra mensagem de vitória
      */
+    /**
+     * Helper para esperar transições CSS
+     * @param {HTMLElement} element 
+     * @returns {Promise<void>}
+     */
+    waitForTransition(element) {
+        return new Promise(resolve => {
+            const onEnd = () => {
+                element.removeEventListener('transitionend', onEnd);
+                element.removeEventListener('transitioncancel', onEnd);
+                resolve();
+            };
+
+            // Timeout de segurança caso a transição falhe ou não ocorra
+            const timeout = setTimeout(onEnd, 1000);
+
+            element.addEventListener('transitionend', () => {
+                clearTimeout(timeout);
+                onEnd();
+            });
+            element.addEventListener('transitioncancel', () => {
+                clearTimeout(timeout);
+                onEnd();
+            });
+        });
+    }
+
+    /**
+     * Helper seguro para delay (ainda útil para ritmo, mas com verificação opcional)
+     */
+    delay(ms, conditionFn = () => true) {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                if (conditionFn()) resolve();
+            }, ms);
+        });
+    }
+
+    /**
+     * Mostra mensagem de vitória
+     */
     showVictoryMessage() {
         const message = getRandomLine(VictoryLines);
         this.showGMMessage(message, 'success');
@@ -209,38 +250,62 @@ export class GameMaster {
         const linesContainer = overlay.querySelector('.narrative-lines');
         const continueBtn = overlay.querySelector('.narrative-continue');
 
-        // Animar entrada
+        // Animar entrada de forma segura
+        // Pequeno delay para garantir que o browser registrou o append
         requestAnimationFrame(() => {
+            if (!document.body.contains(overlay)) return;
             overlay.classList.add('visible');
         });
 
+        // Espera a transição de entrada
+        await this.waitForTransition(overlay);
+
+        // Se o overlay tiver sido fechado nesse meio tempo, aborta
+        if (!document.body.contains(overlay)) return;
+
         // Mostrar linhas uma a uma
         for (const line of lines) {
+            if (!document.body.contains(overlay)) break;
+
             await this.typewriterEffect(linesContainer, line);
-            await this.delay(500);
+
+            // Pausa entre linhas, verificando se o elemento ainda existe
+            await this.delay(500, () => document.body.contains(overlay));
         }
 
-        // Mostrar botão de continuar
-        continueBtn.style.display = 'block';
+        if (!document.body.contains(overlay)) return;
 
-        // Esperar clique
-        await new Promise(resolve => {
-            continueBtn.onclick = resolve;
-            overlay.onclick = (e) => {
-                if (e.target === overlay) resolve();
-            };
-        });
+        // Mostrar botão de continuar
+        if (continueBtn) {
+            continueBtn.style.display = 'block';
+
+            // Esperar clique
+            await new Promise(resolve => {
+                const safeResolve = () => {
+                    if (document.body.contains(overlay)) resolve();
+                };
+
+                continueBtn.onclick = safeResolve;
+                overlay.onclick = (e) => {
+                    if (e.target === overlay) safeResolve();
+                };
+            });
+        }
 
         // Animar saída
-        overlay.classList.remove('visible');
-        await this.delay(300);
-        overlay.remove();
+        if (document.body.contains(overlay)) {
+            overlay.classList.remove('visible');
+            await this.waitForTransition(overlay);
+            if (document.body.contains(overlay)) {
+                overlay.remove();
+            }
+        }
 
         if (onComplete) onComplete();
     }
 
     /**
-     * Efeito de máquina de escrever
+     * Efeito de máquina de escrever seguro
      */
     async typewriterEffect(container, text) {
         const p = document.createElement('p');
@@ -248,6 +313,10 @@ export class GameMaster {
         container.appendChild(p);
 
         for (const char of text) {
+            // Verifica se o container principal (overlay) ainda está no DOM
+            // Isso evita erro se o jogador fechar a janela durante a escrita
+            if (!document.body.contains(container)) break;
+
             p.textContent += char;
             await this.delay(30);
         }

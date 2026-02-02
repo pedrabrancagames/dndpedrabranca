@@ -9,6 +9,23 @@ const DB_VERSION = 1;
 const AUTO_SAVE_INTERVAL = 30000; // 30 segundos
 const SYNC_QUEUE_KEY = 'dnd_sync_queue';
 
+
+const SCHEMA_VERSION = '0.1.1';
+
+// Schema padrão para validação e auto-reparo
+const DEFAULT_SCHEMA = {
+    heroes: [],
+    inventory: [],
+    gold: 0,
+    fragments: 0,
+    currentMission: null,
+    chapter: 1,
+    quests: { active: [], completed: [], progress: {} },
+    eventLog: [],
+    reputation: 0,
+    version: SCHEMA_VERSION
+};
+
 export class SaveManager {
     constructor() {
         this.db = null;
@@ -70,7 +87,7 @@ export class SaveManager {
         const data = {
             ...state,
             savedAt: Date.now(),
-            version: '0.1.0'
+            version: SCHEMA_VERSION
         };
 
         // Salvar no LocalStorage (rápido, para dados pequenos)
@@ -95,25 +112,90 @@ export class SaveManager {
      * @returns {object|null} Estado carregado ou null
      */
     async load() {
-        // Tentar IndexedDB primeiro
+        let rawData = null;
+
+        // 1. Tentar IndexedDB primeiro
         if (this.db) {
             try {
-                const data = await this.loadFromIndexedDB('gameState', 'main');
-                if (data) return data;
+                rawData = await this.loadFromIndexedDB('gameState', 'main');
             } catch (error) {
                 console.warn('IndexedDB load failed:', error);
             }
         }
 
-        // Fallback para LocalStorage
+        // 2. Fallback para LocalStorage
+        if (!rawData) {
+            try {
+                const lsData = localStorage.getItem(STORAGE_KEY);
+                if (lsData) rawData = JSON.parse(lsData);
+            } catch (error) {
+                console.error('LocalStorage load failed:', error);
+            }
+        }
+
+        if (!rawData) return null;
+
+        // 3. Validação e Migração
         try {
-            const data = localStorage.getItem(STORAGE_KEY);
-            return data ? JSON.parse(data) : null;
+            const validatedData = this.validateAndMigrate(rawData);
+            return validatedData;
         } catch (error) {
-            console.error('LocalStorage load failed:', error);
+            console.error('Save data corrupted or invalid:', error);
+            // Em caso de corrupção crítica, retornar null forçará um New Game (seguro)
+            // ou poderíamos retornar um backup. Por enquanto, fail-safe é null.
             return null;
         }
     }
+
+    /**
+     * Valida e migra os dados salvos
+     */
+    validateAndMigrate(data) {
+        if (!data || typeof data !== 'object') {
+            throw new Error('Invalid save data format');
+        }
+
+        // Verificar versão
+        let currentData = { ...data };
+
+        // Migração simples (se houver versões futuras, isso cresce)
+        if (!currentData.version) {
+            console.warn('Save data missing version. Assuming legacy (0.0.1). Migrating...');
+            currentData.version = '0.0.1';
+            // Exemplo de migração: garantir campos novos
+            currentData = this.migrateSave(currentData);
+        } else if (currentData.version !== SCHEMA_VERSION) {
+            console.log(`Migrating save from ${currentData.version} to ${SCHEMA_VERSION}`);
+            currentData = this.migrateSave(currentData);
+        }
+
+        // Validação de Schema (Auto-reparo)
+        // Garante que campos obrigatórios existam, usando defaults se necessário
+        const sanitized = {
+            ...DEFAULT_SCHEMA, // Base defaults
+            ...currentData     // Sobrescreve com dados salvos
+        };
+
+        // Verificações profundas críticas
+        if (!Array.isArray(sanitized.heroes)) sanitized.heroes = [];
+        if (!Array.isArray(sanitized.inventory)) sanitized.inventory = [];
+        if (typeof sanitized.gold !== 'number') sanitized.gold = 0;
+
+        return sanitized;
+    }
+
+    /**
+     * Lógica de migração de versões
+     */
+    migrateSave(data) {
+        // Exemplo: Se versão < 0.1.0, adicionar campo 'fragments'
+        // Por enquanto, apenas atualiza a versão e garante campos novos do schema default
+        // A mesclagem com DEFAULT_SCHEMA no validate já cuida de campos novos faltantes
+
+        data.version = SCHEMA_VERSION;
+        return data;
+    }
+
 
     /**
      * Verifica se existe save

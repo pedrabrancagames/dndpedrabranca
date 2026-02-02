@@ -4,6 +4,7 @@
  */
 
 import { CardRarity } from './CardDatabase.js';
+import { ItemIDs, HeroIDs, QuestIDs } from './GameConstants.js';
 
 // Re-exportar CardRarity para uso consistente
 export { CardRarity };
@@ -33,8 +34,8 @@ export const RarityColors = {
  */
 export const ItemDatabase = {
     // ========== ARMAS ==========
-    sword_basic: {
-        id: 'sword_basic',
+    [ItemIDs.SWORD_BASIC]: {
+        id: ItemIDs.SWORD_BASIC,
         name: 'Espada de Ferro',
         icon: '🗡️',
         category: ItemCategory.WEAPON,
@@ -44,8 +45,8 @@ export const ItemDatabase = {
         equipSlot: 'mainHand',
         price: 50
     },
-    sword_flame: {
-        id: 'sword_flame',
+    [ItemIDs.SWORD_FLAME]: {
+        id: ItemIDs.SWORD_FLAME,
         name: 'Lâmina Flamejante',
         icon: '🔥',
         category: ItemCategory.WEAPON,
@@ -55,8 +56,8 @@ export const ItemDatabase = {
         equipSlot: 'mainHand',
         price: 350
     },
-    staff_arcane: {
-        id: 'staff_arcane',
+    [ItemIDs.STAFF_ARCANE]: {
+        id: ItemIDs.STAFF_ARCANE,
         name: 'Cajado Arcano',
         icon: '🪄',
         category: ItemCategory.WEAPON,
@@ -64,11 +65,11 @@ export const ItemDatabase = {
         description: 'Um cajado imbuído de energia arcana. Aumenta poder mágico.',
         stats: { mag: 10 },
         equipSlot: 'mainHand',
-        classRestriction: ['mage', 'cleric'],
+        classRestriction: [HeroIDs.MAGE, HeroIDs.CLERIC],
         price: 200
     },
-    dagger_shadow: {
-        id: 'dagger_shadow',
+    [ItemIDs.DAGGER_SHADOW]: {
+        id: ItemIDs.DAGGER_SHADOW,
         name: 'Adaga das Sombras',
         icon: '🗡️',
         category: ItemCategory.WEAPON,
@@ -76,11 +77,11 @@ export const ItemDatabase = {
         description: 'Uma adaga que parece absorver a luz. Aumenta chance de crítico.',
         stats: { atk: 8, crit: 15 },
         equipSlot: 'mainHand',
-        classRestriction: ['rogue'],
+        classRestriction: [HeroIDs.ROGUE],
         price: 500
     },
-    hammer_holy: {
-        id: 'hammer_holy',
+    [ItemIDs.HAMMER_HOLY]: {
+        id: ItemIDs.HAMMER_HOLY,
         name: 'Martelo Sagrado',
         icon: '🔨',
         category: ItemCategory.WEAPON,
@@ -93,8 +94,8 @@ export const ItemDatabase = {
     },
 
     // ========== ARMADURAS ==========
-    armor_leather: {
-        id: 'armor_leather',
+    [ItemIDs.ARMOR_LEATHER]: {
+        id: ItemIDs.ARMOR_LEATHER,
         name: 'Armadura de Couro',
         icon: '🧥',
         category: ItemCategory.ARMOR,
@@ -104,8 +105,8 @@ export const ItemDatabase = {
         equipSlot: 'torso',
         price: 40
     },
-    armor_chain: {
-        id: 'armor_chain',
+    [ItemIDs.ARMOR_CHAIN]: {
+        id: ItemIDs.ARMOR_CHAIN,
         name: 'Cota de Malha',
         icon: '🛡️',
         category: ItemCategory.ARMOR,
@@ -113,11 +114,11 @@ export const ItemDatabase = {
         description: 'Anéis de metal entrelaçados oferecem boa proteção.',
         stats: { def: 10 },
         equipSlot: 'torso',
-        classRestriction: ['warrior', 'cleric'],
+        classRestriction: [HeroIDs.WARRIOR, HeroIDs.CLERIC],
         price: 150
     },
-    robe_mage: {
-        id: 'robe_mage',
+    [ItemIDs.ROBE_MAGE]: {
+        id: ItemIDs.ROBE_MAGE,
         name: 'Manto do Arcanista',
         icon: '🧙',
         category: ItemCategory.ARMOR,
@@ -125,11 +126,11 @@ export const ItemDatabase = {
         description: 'Tecido encantado que amplifica magias.',
         stats: { def: 3, mag: 8 },
         equipSlot: 'torso',
-        classRestriction: ['mage'],
+        classRestriction: [HeroIDs.MAGE],
         price: 300
     },
-    armor_plate: {
-        id: 'armor_plate',
+    [ItemIDs.ARMOR_PLATE]: {
+        id: ItemIDs.ARMOR_PLATE,
         name: 'Armadura de Placas',
         icon: '🏰',
         category: ItemCategory.ARMOR,
@@ -137,13 +138,13 @@ export const ItemDatabase = {
         description: 'Proteção máxima para os mais bravos guerreiros.',
         stats: { def: 20, maxHp: 20 },
         equipSlot: 'torso',
-        classRestriction: ['warrior'],
+        classRestriction: [HeroIDs.WARRIOR],
         price: 600
     },
 
     // ========== CONSUMÍVEIS ==========
-    potion_health_small: {
-        id: 'potion_health_small',
+    [ItemIDs.POTION_HEALTH_SMALL]: {
+        id: ItemIDs.POTION_HEALTH_SMALL,
         name: 'Poção de Vida Menor',
         icon: '🧪',
         category: ItemCategory.CONSUMABLE,
@@ -154,8 +155,8 @@ export const ItemDatabase = {
         maxStack: 10,
         price: 25
     },
-    potion_health_medium: {
-        id: 'potion_health_medium',
+    [ItemIDs.POTION_HEALTH_MEDIUM]: {
+        id: ItemIDs.POTION_HEALTH_MEDIUM,
         name: 'Poção de Vida',
         icon: '🧪',
         category: ItemCategory.CONSUMABLE,
@@ -166,8 +167,8 @@ export const ItemDatabase = {
         maxStack: 10,
         price: 60
     },
-    potion_mana: {
-        id: 'potion_mana',
+    [ItemIDs.POTION_MANA]: {
+        id: ItemIDs.POTION_MANA,
         name: 'Poção de Mana',
         icon: '💧',
         category: ItemCategory.CONSUMABLE,
@@ -178,8 +179,8 @@ export const ItemDatabase = {
         maxStack: 5,
         price: 75
     },
-    scroll_fireball: {
-        id: 'scroll_fireball',
+    [ItemIDs.SCROLL_FIREBALL]: {
+        id: ItemIDs.SCROLL_FIREBALL,
         name: 'Pergaminho de Bola de Fogo',
         icon: '📜',
         category: ItemCategory.CONSUMABLE,
@@ -190,8 +191,8 @@ export const ItemDatabase = {
         maxStack: 3,
         price: 200
     },
-    elixir_power: {
-        id: 'elixir_power',
+    [ItemIDs.ELIXIR_POWER]: {
+        id: ItemIDs.ELIXIR_POWER,
         name: 'Elixir de Poder',
         icon: '⚗️',
         category: ItemCategory.CONSUMABLE,
@@ -204,40 +205,40 @@ export const ItemDatabase = {
     },
 
     // ========== ITENS DE QUEST ==========
-    key_crypt: {
-        id: 'key_crypt',
+    [ItemIDs.KEY_CRYPT]: {
+        id: ItemIDs.KEY_CRYPT,
         name: 'Chave da Cripta',
         icon: '🗝️',
         category: ItemCategory.QUEST,
         rarity: CardRarity.UNCOMMON,
         description: 'Uma chave antiga que abre a cripta do cemitério de Pedra Branca.',
-        questId: 'crypt_entrance',
+        questId: QuestIDs.CRYPT_ENTRANCE,
         stackable: false
     },
-    amulet_cursed: {
-        id: 'amulet_cursed',
+    [ItemIDs.AMULET_CURSED]: {
+        id: ItemIDs.AMULET_CURSED,
         name: 'Amuleto Amaldiçoado',
         icon: '📿',
         category: ItemCategory.QUEST,
         rarity: CardRarity.RARE,
         description: 'Um amuleto que emana energia sombria. O Clérigo pode purificá-lo.',
-        questId: 'purify_amulet',
+        questId: QuestIDs.PURIFY_AMULET,
         stackable: false
     },
-    letter_sealed: {
-        id: 'letter_sealed',
+    [ItemIDs.LETTER_SEALED]: {
+        id: ItemIDs.LETTER_SEALED,
         name: 'Carta Lacrada',
         icon: '✉️',
         category: ItemCategory.QUEST,
         rarity: CardRarity.COMMON,
         description: 'Uma carta endereçada ao Prefeito de Pedra Branca.',
-        questId: 'deliver_letter',
+        questId: QuestIDs.DELIVER_LETTER,
         stackable: false
     },
 
     // ========== ACESSÓRIOS ==========
-    ring_protection: {
-        id: 'ring_protection',
+    [ItemIDs.RING_PROTECTION]: {
+        id: ItemIDs.RING_PROTECTION,
         name: 'Anel de Proteção',
         icon: '💍',
         category: ItemCategory.ACCESSORY,
@@ -247,8 +248,8 @@ export const ItemDatabase = {
         equipSlot: 'accessory',
         price: 100
     },
-    amulet_life: {
-        id: 'amulet_life',
+    [ItemIDs.AMULET_LIFE]: {
+        id: ItemIDs.AMULET_LIFE,
         name: 'Amuleto da Vitalidade',
         icon: '💚',
         category: ItemCategory.ACCESSORY,
@@ -258,8 +259,8 @@ export const ItemDatabase = {
         equipSlot: 'accessory',
         price: 250
     },
-    cloak_shadows: {
-        id: 'cloak_shadows',
+    [ItemIDs.CLOAK_SHADOWS]: {
+        id: ItemIDs.CLOAK_SHADOWS,
         name: 'Manto das Sombras',
         icon: '🦇',
         category: ItemCategory.ACCESSORY,
@@ -268,7 +269,7 @@ export const ItemDatabase = {
         stats: { crit: 10 },
         equipSlot: 'accessory',
         effects: { stealthBonus: 20 },
-        classRestriction: ['rogue'],
+        classRestriction: [HeroIDs.ROGUE],
         price: 400
     }
 };

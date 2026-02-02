@@ -16,6 +16,7 @@ import { ProgressionSystem } from '../systems/ProgressionSystem.js';
 import { GameMaster } from '../systems/GameMaster.js';
 import { DialogueSystem } from '../systems/DialogueSystem.js';
 import { ShopSystem } from '../systems/ShopSystem.js';
+import { ItemIDs, HeroIDs } from '../data/GameConstants.js';
 
 export class GameManager {
     constructor() {
@@ -82,15 +83,15 @@ export class GameManager {
         this.gameData = {
             heroes: this.createDefaultHeroes(),
             inventory: [
-                { itemId: 'sword_basic', quantity: 1 },
-                { itemId: 'armor_leather', quantity: 1 },
-                { itemId: 'potion_health_small', quantity: 5 },
-                { itemId: 'potion_health_medium', quantity: 2 },
-                { itemId: 'staff_arcane', quantity: 1 },
-                { itemId: 'sword_flame', quantity: 1 },
-                { itemId: 'dagger_shadow', quantity: 1 },
-                { itemId: 'ring_protection', quantity: 1 },
-                { itemId: 'letter_sealed', quantity: 1 }
+                { itemId: ItemIDs.SWORD_BASIC, quantity: 1 },
+                { itemId: ItemIDs.ARMOR_LEATHER, quantity: 1 },
+                { itemId: ItemIDs.POTION_HEALTH_SMALL, quantity: 5 },
+                { itemId: ItemIDs.POTION_HEALTH_MEDIUM, quantity: 2 },
+                { itemId: ItemIDs.STAFF_ARCANE, quantity: 1 },
+                { itemId: ItemIDs.SWORD_FLAME, quantity: 1 },
+                { itemId: ItemIDs.DAGGER_SHADOW, quantity: 1 },
+                { itemId: ItemIDs.RING_PROTECTION, quantity: 1 },
+                { itemId: ItemIDs.LETTER_SEALED, quantity: 1 }
             ],
             gold: 100,
             fragments: 50,
@@ -102,7 +103,7 @@ export class GameManager {
     createDefaultHeroes() {
         return [
             {
-                id: 'warrior', name: 'Guerreiro', class: 'warrior', icon: '⚔️',
+                id: HeroIDs.WARRIOR, name: 'Guerreiro', class: HeroIDs.WARRIOR, icon: '⚔️',
                 hp: 120, maxHp: 120, pa: 3, maxPa: 3, atk: 25, def: 15, level: 1, xp: 0,
                 deck: [
                     { name: 'Golpe', icon: '⚔️', cost: 1, damage: 15, description: 'Ataque básico' },
@@ -112,7 +113,7 @@ export class GameManager {
                 ]
             },
             {
-                id: 'mage', name: 'Mago', class: 'mage', icon: '🔮',
+                id: HeroIDs.MAGE, name: 'Mago', class: HeroIDs.MAGE, icon: '🔮',
                 hp: 60, maxHp: 60, pa: 3, maxPa: 3, atk: 10, mag: 30, def: 5, level: 1, xp: 0,
                 deck: [
                     { name: 'Míssil Arcano', icon: '✨', cost: 1, damage: 20, description: 'Projétil mágico' },
@@ -122,7 +123,7 @@ export class GameManager {
                 ]
             },
             {
-                id: 'rogue', name: 'Ladino', class: 'rogue', icon: '🗡️',
+                id: HeroIDs.ROGUE, name: 'Ladino', class: HeroIDs.ROGUE, icon: '🗡️',
                 hp: 80, maxHp: 80, pa: 3, maxPa: 3, atk: 20, def: 8, crit: 15, level: 1, xp: 0,
                 deck: [
                     { name: 'Punhalada', icon: '🗡️', cost: 1, damage: 18, description: 'Ataque rápido' },
@@ -132,7 +133,7 @@ export class GameManager {
                 ]
             },
             {
-                id: 'cleric', name: 'Clérigo', class: 'cleric', icon: '✨',
+                id: HeroIDs.CLERIC, name: 'Clérigo', class: HeroIDs.CLERIC, icon: '✨',
                 hp: 90, maxHp: 90, pa: 3, maxPa: 3, atk: 15, mag: 25, def: 10, level: 1, xp: 0,
                 deck: [
                     { name: 'Cura Menor', icon: '💚', cost: 1, heal: 20, description: 'Cura 20 HP' },
