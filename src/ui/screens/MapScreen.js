@@ -100,7 +100,7 @@ export class MapScreen extends BaseScreen {
                 const currentProgress = progress[objective.id] || 0;
                 if (currentProgress < objective.required) {
                     allObjectives.push({ quest, objective });
-                    break; // PARA AQUI: Apenas 1 objetivo por quest de cada vez
+                    // break; // REMOVIDO: Mostrar todos os objetivos para permitir exploração não-linear
                 }
             }
         });

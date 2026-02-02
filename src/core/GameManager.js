@@ -61,7 +61,7 @@ export class GameManager {
             // Managers dependentes de DOM
             this.arSceneManager = new ARSceneManager('three-canvas', this);
             this.combatHUD = new CombatHUD(this);
-            this.dialogueSystem = new DialogueSystem();
+            this.dialogueSystem = new DialogueSystem(this);
             this.shopSystem = new ShopSystem(this);
             this.uiManager = new UIManager(this);
 

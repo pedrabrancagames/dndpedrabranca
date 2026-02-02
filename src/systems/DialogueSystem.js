@@ -5,10 +5,11 @@
 import { eventBus } from '../core/EventEmitter.js';
 import { getDialogue } from '../data/DialogueDatabase.js'; // Ensure this path is correct relative to src/systems
 import { getNPCData } from '../data/NPCDatabase.js';     // Ensure this path is correct
-// import { getQuestData } from '../data/QuestDatabase.js'; // Future use
+import { getQuestData } from '../data/QuestDatabase.js';
 
 export class DialogueSystem {
-    constructor() {
+    constructor(gameManager) {
+        this.gameManager = gameManager;
         this.activeDialogue = null;
         this.currentNodeId = null;
         this.currentNPCId = null;
@@ -46,6 +47,28 @@ export class DialogueSystem {
 
         // 1. Tentar determinar diálogo pelo contexto da quest
         if (context && context.questId && context.objectiveId) {
+            // VERIFICAÇÃO DE PRÉ-REQUISITOS (SEQUENCIAL)
+            if (this.gameManager) {
+                const canProceed = this.checkQuestPrerequisites(context.questId, context.objectiveId);
+                if (!canProceed) {
+                    // Se não cumpriu requisitos anteriores, tenta achar um diálogo de "espera"
+                    // ou mostra uma mensagem genérica
+                    console.log('Prerequisites not met for:', context.objectiveId);
+
+                    // Tentar diálogo específico de "bloqueado"
+                    const lockedId = `${npcId}_${context.questId}_${context.objectiveId}_blocked`;
+                    if (getDialogue(lockedId)) {
+                        this.currentNPCId = npcId;
+                        this.startDialogue(lockedId);
+                        return;
+                    }
+
+                    // Fallback: Diálogo genérico de "Não está pronto"
+                    this.startGenericDialogue(npcId, "Preciso que você termine suas tarefas antes de falarmos sobre isso.", "Entendido");
+                    return;
+                }
+            }
+
             // Convenção: npcId_questId_objectiveId
             const specificId = `${npcId}_${context.questId}_${context.objectiveId}`;
             if (getDialogue(specificId)) {
@@ -68,6 +91,52 @@ export class DialogueSystem {
 
         this.currentNPCId = npcId;
         this.startDialogue(dialogueId);
+    }
+
+    /**
+     * Verifica se os objetivos anteriores da quest estão completos
+     */
+    checkQuestPrerequisites(questId, currentObjectiveId) {
+        if (!this.gameManager || !this.gameManager.gameData) return true;
+
+        const quests = this.gameManager.gameData.quests;
+        const questData = getQuestData(questId);
+
+        // Se não conseguir validar, permite (segurança) ou bloqueia? Melhor permitir para não travar
+        if (!questData || !quests.progress || !quests.progress[questId]) return true;
+
+        const objectives = questData.objectives;
+        const currentIndex = objectives.findIndex(o => o.id === currentObjectiveId);
+
+        if (currentIndex <= 0) return true; // Primeiro objetivo sempre liberado
+
+        // Verificar todos os objetivos ANTERIORES
+        for (let i = 0; i < currentIndex; i++) {
+            const prevObj = objectives[i];
+            const prevProgress = quests.progress[questId][prevObj.id] || 0;
+            if (prevProgress < prevObj.required) {
+                return false; // Bloqueado: objetivo anterior pendente
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Inicia um diálogo construído dinamicamente
+     */
+    startGenericDialogue(npcId, text, optionText) {
+        this.currentNPCId = npcId;
+        this.activeDialogue = {
+            start: {
+                text: text,
+                speaker: npcId === 'mayor' ? 'Prefeito Magnus' : 'NPC', // Simples mapeamento ou pegar do DB
+                options: [{ text: optionText, next: '_exit' }],
+                isEnd: true
+            }
+        };
+        this.showUI(true);
+        this.displayNode('start');
     }
 
     /**
