@@ -173,6 +173,15 @@ export class GameManager {
 
         // Toast messages
         eventBus.on('showMessage', ({ text, type }) => this.showToast(text, type));
+
+        // Sair do modo AR ao terminar diálogo
+        eventBus.on('dialogueEnded', () => {
+            if (this.stateManager.isState(GameState.COMBAT)) {
+                console.log('Dialogue ended. Exiting AR session...');
+                this.arSceneManager.endSession();
+                this.stateManager.setState(GameState.MAP);
+            }
+        });
     }
 
     showToast(text, type = 'info') {
