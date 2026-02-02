@@ -41,7 +41,7 @@ export const QuestDatabase = {
         giver: 'Prefeito de Pedra Branca',
         objectives: [
             { id: 'scout', type: ObjectiveType.EXPLORE, description: 'Investigar avistamentos de goblins', target: 'goblin_camp', progress: 0, required: 1 },
-            { id: 'kill_goblins', type: ObjectiveType.KILL, description: 'Derrotar goblins', target: 'goblin', progress: 0, required: 5 },
+            { id: 'kill_goblins', type: ObjectiveType.KILL, description: 'Derrotar goblins', target: 'goblin', progress: 0, required: 3 },
             { id: 'report', type: ObjectiveType.TALK, description: 'Reportar ao Prefeito', target: 'mayor', progress: 0, required: 1 }
         ],
         rewards: {

@@ -157,6 +157,7 @@ export class GameManager {
             if (to === GameState.COMBAT && data && data.missionId) {
                 if (data.isNPC) {
                     console.log('Starting NPC Interaction:', data.npcId);
+                    this.combatManager.clearEnemies();
                     // Passar dados para renderizar NPC
                     this.arSceneManager.startSession();
                     // Pequeno delay para garantir que a sessão AR iniciou antes de spawnar

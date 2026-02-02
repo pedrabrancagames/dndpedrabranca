@@ -199,6 +199,11 @@ export class CombatManager {
         }, 2000);
     }
 
+    clearEnemies() {
+        this.enemies = [];
+        this.activeEncounter = null;
+    }
+
     /**
      * Gera lista de inimigos baseada no alvo da missão
      */
