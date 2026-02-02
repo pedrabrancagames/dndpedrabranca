@@ -28,7 +28,8 @@ export class DialogueSystem {
     setupEventListeners() {
         // Iniciar diálogo quando NPC é selecionado
         eventBus.on('npcSelected', (data) => {
-            this.startDialogueForNPC(data.npcId);
+            console.log('Dialogue Requested for:', data.npcId, 'Context:', data.context);
+            this.startDialogueForNPC(data.npcId, data.context);
         });
     }
 

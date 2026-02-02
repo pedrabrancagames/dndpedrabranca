@@ -122,8 +122,8 @@ export class ARSceneManager extends SceneManager {
 
         // Spawnar NPC pendente (se houver)
         if (this.pendingNPC) {
-            console.log('Spawning pending NPC:', this.pendingNPC);
-            await this.spawnNPC(this.pendingNPC);
+            console.log('Spawning pending NPC:', this.pendingNPC.id);
+            await this.spawnNPC(this.pendingNPC.id, null, this.pendingNPC.context);
             this.pendingNPC = null;
         }
 
@@ -229,7 +229,7 @@ export class ARSceneManager extends SceneManager {
             // Se a arena não estiver colocada, enfileira o spawn
             if (!this.arenaPlaced) {
                 console.log('Arena not ready. Queuing NPC spawn:', npcId);
-                this.pendingNPC = npcId;
+                this.pendingNPC = { id: npcId, context: context };
 
                 // Mostrar dica para o usuário
                 const hint = document.getElementById('reticle-hint');
