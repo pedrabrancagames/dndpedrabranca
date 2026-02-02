@@ -35,15 +35,38 @@ export class DialogueSystem {
     /**
      * Inicia o diálogo associado a um NPC
      */
-    startDialogueForNPC(npcId) {
-        const npcData = getNPCData(npcId);
-        if (!npcData || !npcData.dialogueId) {
-            console.warn(`No dialogue found for NPC: ${npcId}`);
+    /**
+     * Inicia o diálogo associado a um NPC
+     * @param {string} npcId
+     * @param {object} context - Contexto opcional (questId, objectiveId, etc)
+     */
+    startDialogueForNPC(npcId, context = null) {
+        let dialogueId = null;
+
+        // 1. Tentar determinar diálogo pelo contexto da quest
+        if (context && context.questId && context.objectiveId) {
+            // Convenção: npcId_questId_objectiveId
+            const specificId = `${npcId}_${context.questId}_${context.objectiveId}`;
+            if (getDialogue(specificId)) {
+                dialogueId = specificId;
+            }
+        }
+
+        // 2. Fallback para diálogo padrão do NPC
+        if (!dialogueId) {
+            const npcData = getNPCData(npcId);
+            if (npcData) {
+                dialogueId = npcData.dialogueId;
+            }
+        }
+
+        if (!dialogueId) {
+            console.warn(`No dialogue found for NPC: ${npcId} with context:`, context);
             return;
         }
 
         this.currentNPCId = npcId;
-        this.startDialogue(npcData.dialogueId);
+        this.startDialogue(dialogueId);
     }
 
     /**
@@ -151,6 +174,19 @@ export class DialogueSystem {
             case 'START_QUEST':
                 eventBus.emit('questStarted', { questId: payload });
                 // TODO: Adicionar notificação visual
+                break;
+
+            case 'COMPLETE_QUEST':
+                console.log('Completing quest via dialogue:', payload);
+                // Emitir evento para o GameMaster completar a quest
+                eventBus.emit('combat:victory', {
+                    questId: payload, // Ex: 'deliver_letter'
+                    // Para quests de entrega, geralmente não precisa de objectiveId específico se for a quest toda,
+                    // mas podemos passar um genérico ou o sistema de quest lida com isso.
+                    // Assumindo que payload é 'quest_id' ou 'quest_id:objective_id'
+                });
+                // Alternativa mais direta para o GameMaster:
+                eventBus.emit('questCompleted', { questId: payload });
                 break;
 
             case 'OPEN_SHOP':

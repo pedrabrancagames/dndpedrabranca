@@ -124,7 +124,8 @@ export const ARInteractionMixin = {
             console.log(`Selected NPC: ${model.userData.name}`);
             eventBus.emit('npcSelected', {
                 npcId: model.userData.id,
-                model: model
+                model: model,
+                context: model.userData.context // Extract context
             });
         } else {
             // Lógica antiga de inimigo

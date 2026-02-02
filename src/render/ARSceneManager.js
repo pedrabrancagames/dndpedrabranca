@@ -210,8 +210,9 @@ export class ARSceneManager extends SceneManager {
      * Spawna um NPC pacífico na cena
      * @param {string} npcId - ID do NPC no database
      * @param {THREE.Vector3} position - Posição relativa ao centro da arena (opcional)
+     * @param {object} context - Contexto da missão (questId, objectiveId)
      */
-    async spawnNPC(npcId, position = null) {
+    async spawnNPC(npcId, position = null, context = null) {
         const npcData = getNPCData(npcId);
         if (!npcData) {
             console.error(`NPC data not found: ${npcId}`);
@@ -254,7 +255,8 @@ export class ARSceneManager extends SceneManager {
             model.userData = {
                 type: 'npc',
                 id: npcId,
-                name: npcData.name
+                name: npcData.name,
+                context: context // Store context here
             };
 
             // Olhar para o jogador (câmera)

@@ -160,7 +160,8 @@ export class GameManager {
                     this.arSceneManager.startSession();
                     // Pequeno delay para garantir que a sessão AR iniciou antes de spawnar
                     setTimeout(() => {
-                        this.arSceneManager.spawnNPC(data.npcId || 'mayor');
+                        // Passar o objeto 'data' inteiro como contexto (contém questId, objectiveId, etc)
+                        this.arSceneManager.spawnNPC(data.npcId || 'mayor', null, data);
                     }, 1000);
                 } else {
                     // BUGFIX: Passar o objeto 'data' completo

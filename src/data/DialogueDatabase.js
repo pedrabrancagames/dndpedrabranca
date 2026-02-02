@@ -49,6 +49,28 @@ export const DialogueDatabase = {
         }
     },
 
+    mayor_deliver_letter_deliver: {
+        start: {
+            text: "Oh! Você trouxe a carta do conselho? Excelente notícia, estávamos esperando ansiosamente.",
+            speaker: "Prefeito Magnus",
+            options: [
+                { text: "Aqui está.", next: "reward", action: "COMPLETE_QUEST:deliver_letter" }
+            ]
+        },
+        reward: {
+            text: "Muito obrigado. Aqui está sua recompensa pelo serviço rápido. A cidade de Pedra Branca agradece.",
+            speaker: "Prefeito Magnus",
+            options: [
+                { text: "Obrigado, Prefeito.", next: "end" }
+            ]
+        },
+        end: {
+            text: "Se precisar de mais trabalho, volte a falar comigo.",
+            speaker: "Prefeito Magnus",
+            isEnd: true
+        }
+    },
+
     // ========== MERCADOR (Merchant) ==========
     merchant_welcome: {
         start: {
