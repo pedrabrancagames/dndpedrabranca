@@ -328,6 +328,11 @@ button {
   text-align: center;
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.5));
   cursor: pointer;
+  /* IMPORTANTE: Não usar transform no container principal pois conflita com Leaflet */
+}
+
+.mission-marker span {
+  display: block;
   animation: bounce 2s infinite;
 }
 

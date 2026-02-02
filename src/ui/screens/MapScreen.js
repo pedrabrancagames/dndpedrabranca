@@ -88,18 +88,21 @@ export class MapScreen extends BaseScreen {
         }
 
         // Coletar todos os objetivos ativos para distribuição global
+        // BUGFIX: Apenas o primeiro objetivo incompleto de cada quest deve aparecer
         const allObjectives = [];
         quests.active.forEach(questId => {
             const quest = getQuestData(questId);
             if (!quest) return;
             const progress = quests.progress[questId] || {};
 
-            quest.objectives.forEach(objective => {
+            // Encontrar o primeiro objetivo não completado
+            for (const objective of quest.objectives) {
                 const currentProgress = progress[objective.id] || 0;
                 if (currentProgress < objective.required) {
                     allObjectives.push({ quest, objective });
+                    break; // PARA AQUI: Apenas 1 objetivo por quest de cada vez
                 }
-            });
+            }
         });
 
         // Gerar marcadores
