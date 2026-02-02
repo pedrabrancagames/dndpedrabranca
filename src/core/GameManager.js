@@ -11,6 +11,9 @@ import { UIManager } from '../ui/UIManager.js';
 import { MapManager } from '../map/MapManager.js';
 import { CombatManager } from '../combat/CombatManager.js';
 import { ARSceneManager } from '../render/ARSceneManager.js';
+import { CombatHUD } from '../ui/CombatHUD.js';
+import { ProgressionSystem } from '../systems/ProgressionSystem.js';
+import { GameMaster } from '../systems/GameMaster.js';
 import { DialogueSystem } from '../systems/DialogueSystem.js';
 
 export class GameManager {
