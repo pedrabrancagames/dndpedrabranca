@@ -174,7 +174,6 @@ export class MapManager {
         }
         // NPC / DIÁLOGO
         else if (mission.objectiveType === 'talk' || mission.type === 'npc' || mission.objectiveType === 'deliver') {
-            const { eventBus } = require('../core/EventEmitter.js');
             eventBus.emit('showMessage', {
                 text: `💬 Conversando com ${mission.target}...`,
                 type: 'info'
@@ -193,7 +192,6 @@ export class MapManager {
         }
         // EXPLORAÇÃO
         else if (mission.objectiveType === 'explore' || mission.type === 'explore' || mission.type === 'collect') {
-            const { eventBus } = require('../core/EventEmitter.js');
             eventBus.emit('showMessage', {
                 text: `🔍 Explorando a área...`,
                 type: 'info'
