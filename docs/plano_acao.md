@@ -29,29 +29,29 @@
 - [x] Criar UI de escolhas (estilo pergaminho/carta)
 - [x] Implementar consequências das escolhas
 
-### 2.3 Log de Eventos
-- [ ] Criar sistema de histórico de ações
-- [ ] Exibir últimos 10 eventos na tela GM
+### 2.3 Log de Eventos ✅
+- [x] Criar sistema de histórico de ações
+- [x] Exibir últimos 10 eventos na tela GM
 
 ---
 
-## Fase 3: NPCs em Realidade Aumentada (Semana 5-7)
+## Fase 3: NPCs em Realidade Aumentada (Semana 5-7) ✅
 
-### 3.1 Infraestrutura AR para NPCs
-- [ ] Criar `NPCDatabase.js` (modelos 3D, diálogos, posição GPS)
-- [ ] Adicionar estado `GameState.NPC_INTERACTION`
-- [ ] Reutilizar `ARSceneManager` para posicionar NPCs
-- [ ] Implementar detecção de clique no modelo 3D do NPC
+### 3.1 Infraestrutura AR para NPCs ✅
+- [x] Criar `NPCDatabase.js` (modelos 3D, diálogos, posição GPS)
+- [x] Adicionar estado `GameState.NPC_INTERACTION`
+- [x] Reutilizar `ARSceneManager` para posicionar NPCs
+- [x] Implementar detecção de clique no modelo 3D do NPC
 
-### 3.2 Sistema de Diálogo
-- [ ] Criar estrutura de árvore de diálogos (JSON)
-- [ ] Implementar UI de caixa de diálogo (estilo Visual Novel)
-- [ ] Adicionar opções de resposta do jogador
-- [ ] Implementar memória de encontros anteriores
+### 3.2 Sistema de Diálogo ✅
+- [x] Criar estrutura de árvore de diálogos (JSON)
+- [x] Implementar UI de caixa de diálogo (estilo Visual Novel)
+- [x] Adicionar opções de resposta do jogador
+- [x] Implementar memória de encontros anteriores
 
-### 3.3 Comerciantes em AR
-- [ ] Criar UI de loja flutuante ao lado do NPC
-- [ ] Integrar com sistema de inventário e ouro
+### 3.3 Comerciantes em AR ✅
+- [x] Criar UI de loja flutuante ao lado do NPC
+- [x] Integrar com sistema de inventário e ouro
 
 ---
 
