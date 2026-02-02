@@ -1,7 +1,7 @@
 import { BaseScreen } from './BaseScreen.js';
 import { GameState } from '../../core/StateManager.js';
 import { eventBus } from '../../core/EventEmitter.js';
-import { getQuestData, ObjectiveType } from '../../data/QuestDatabase.js';
+import { getQuestData, ObjectiveType, canAcceptQuest, QuestDatabase } from '../../data/QuestDatabase.js';
 
 export class MapScreen extends BaseScreen {
     constructor(screenId, gameManager) {
@@ -98,9 +98,15 @@ export class MapScreen extends BaseScreen {
             // Encontrar o primeiro objetivo não completado
             for (const objective of quest.objectives) {
                 const currentProgress = progress[objective.id] || 0;
-                if (currentProgress < objective.required) {
+
+                // VERIFICAÇÃO: Apenas mostrar objetivos desbloqueados (sequenciais)
+                const canShow = this.gameManager.progressionSystem.checkQuestPrerequisites(questId, objective.id);
+
+                if (canShow && currentProgress < objective.required) {
                     allObjectives.push({ quest, objective });
-                    // break; // REMOVIDO: Mostrar todos os objetivos para permitir exploração não-linear
+                    // Adicionamos break se quisermos mostrar APENAS o próximo passo linear
+                    // Mas como verificamos checkQuestPrerequisites, se a DB permitir paralelo, mostra.
+                    // Se a DB for sequencial (padrão), o checkQuestPrerequisites barra os futuros.
                 }
             }
         });
@@ -141,6 +147,73 @@ export class MapScreen extends BaseScreen {
         this.gameManager.saveGame();
 
         console.log(`Marcadores de ${allObjectives.length} objetivos criados`);
+
+        // Spawnar marcadores de quests disponíveis (Amarelo !)
+        this.spawnAvailableQuestMarkers(playerPos);
+    }
+
+    /**
+     * Spawna marcadores para quests que podem ser aceitas
+     */
+    spawnAvailableQuestMarkers(playerPos) {
+        const activeQuests = this.gameManager.gameData.quests.active || [];
+        const completedQuests = this.gameManager.gameData.quests.completed || [];
+        const playerData = {
+            level: 1, // TODO: Pegar do ProgressionSystem
+            completedQuests: completedQuests
+        };
+        // Pegar nível real se possível
+        if (this.gameManager.gameData.heroes && this.gameManager.gameData.heroes.length > 0) {
+            playerData.level = this.gameManager.gameData.heroes[0].level;
+        }
+
+        const mapManager = this.gameManager.mapManager;
+
+        Object.values(QuestDatabase).forEach((quest, index) => {
+            // Ignorar se já está ativa ou completa
+            if (activeQuests.includes(quest.id) || completedQuests.includes(quest.id)) return;
+
+            // Verificar se pode aceitar
+            if (canAcceptQuest(quest, playerData)) {
+                // Criar marcador de missão disponível
+                const markerKey = `available_${quest.id}`;
+
+                // Posição: Tentar manter consistente ou gerar perto
+                // Idealmente, seria a posição do NPC Giver.
+                // Como não temos DB de posições fixas, vamos gerar uma posição "fixa" baseada no ID para ser determinística
+                // ou usar a posição do jogador com offset se for a primeira vez
+
+                let lat, lng;
+
+                // Pseudo-aleatório determinístico baseado no ID da quest para ficar sempre no mesmo lugar
+                const hash = quest.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const angle = (hash % 360) * (Math.PI / 180);
+                const distance = 0.0003; // ~30m
+
+                // Usar a posição atual do jogador como base central (ou uma base fixa se tivesse)
+                // Para não "correr" com o jogador, idealmente persistimos isso.
+                // Mas 'available' quests podem "aparecer" perto do jogador.
+
+                lat = playerPos.lat + Math.cos(angle) * distance;
+                lng = playerPos.lng + Math.sin(angle) * distance;
+
+                const markerData = {
+                    id: `available_${quest.id}`,
+                    type: 'npc', // Usa tratamento de NPC
+                    icon: '❗', // Exclamação Amarela/Vermelha
+                    title: `Nova Missão: ${quest.name}`,
+                    description: `Fale com ${quest.giver} para aceitar.`,
+                    lat: lat,
+                    lng: lng,
+                    target: quest.giverId || 'mayor', // Fallback
+                    targetId: quest.giverId || 'mayor',
+                    isAvailableQuest: true, // Flag para tratamento especial se precisar
+                    questId: quest.id // Contexto para o diálogo saber qual quest iniciar
+                };
+
+                mapManager.addMissionMarker(markerData);
+            }
+        });
     }
 
     /**

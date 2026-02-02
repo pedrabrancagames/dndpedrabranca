@@ -200,7 +200,11 @@ export class MapManager {
                 objectiveId: mission.objectiveId,
                 target: mission.target,
                 isNPC: true,
-                npcId: mission.targetId || mission.target.toLowerCase().replace(/\s+/g, '_') // Fallback ID generation
+                target: mission.target,
+                isNPC: true,
+                npcId: mission.targetId || mission.target.toLowerCase().replace(/\s+/g, '_'),
+                // Passar contexto da quest se disponível (para iniciar diálogos de missões disponíveis)
+                questId: mission.questId
             });
         }
         // EXPLORAÇÃO

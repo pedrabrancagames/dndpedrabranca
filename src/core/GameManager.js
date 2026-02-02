@@ -96,7 +96,13 @@ export class GameManager {
             gold: 100,
             fragments: 50,
             currentMission: null,
-            chapter: 1
+            chapter: 1,
+            quests: {
+                active: [],
+                completed: [],
+                progress: {},
+                markerPositions: {}
+            }
         };
     }
 

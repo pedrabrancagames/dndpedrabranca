@@ -39,6 +39,7 @@ export const QuestDatabase = {
         description: 'Goblins foram avistados nas proximidades de Pedra Branca. Investigue a origem dessa invasão e proteja os moradores.',
         briefDescription: 'Elimine a ameaça goblin que ronda a cidade.',
         giver: 'Prefeito de Pedra Branca',
+        giverId: 'mayor',
         objectives: [
             { id: 'scout', type: ObjectiveType.EXPLORE, description: 'Investigar avistamentos de goblins', target: 'goblin_camp', progress: 0, required: 1 },
             { id: 'kill_goblins', type: ObjectiveType.KILL, description: 'Derrotar goblins', target: 'goblin', progress: 0, required: 3 },
@@ -63,6 +64,7 @@ export const QuestDatabase = {
         description: 'Os goblins comuns eram apenas batedores. Encontre e derrote o líder goblin antes que ele organize um ataque maior.',
         briefDescription: 'Derrote o líder goblin Grukk.',
         giver: 'Capitão da Guarda',
+        giverId: 'guard_captain',
         objectives: [
             { id: 'find_lair', type: ObjectiveType.EXPLORE, description: 'Encontrar o covil goblin', target: 'goblin_lair', progress: 0, required: 1 },
             { id: 'kill_boss', type: ObjectiveType.KILL, description: 'Derrotar Grukk, o Líder', target: 'grukk_boss', progress: 0, required: 1 }
@@ -87,6 +89,7 @@ export const QuestDatabase = {
         description: 'Um mercador não retornou de sua jornada. Sua esposa está preocupada. Encontre-o e traga-o de volta em segurança.',
         briefDescription: 'Encontre o mercador desaparecido.',
         giver: 'Esposa do Mercador',
+        giverId: 'merchant_wife',
         objectives: [
             { id: 'search', type: ObjectiveType.EXPLORE, description: 'Procurar nas trilhas próximas', target: 'forest_path', progress: 0, required: 3 },
             { id: 'rescue', type: ObjectiveType.TALK, description: 'Resgatar o mercador', target: 'merchant_npc', progress: 0, required: 1 }
@@ -110,6 +113,7 @@ export const QuestDatabase = {
         description: 'O curandeiro local precisa de ervas raras para preparar poções. Colete-as nas redondezas.',
         briefDescription: 'Colete ervas para o curandeiro.',
         giver: 'Curandeiro',
+        giverId: 'healer',
         objectives: [
             { id: 'collect_herbs', type: ObjectiveType.COLLECT, description: 'Coletar Ervas Curativas', target: 'healing_herb', progress: 0, required: 5 }
         ],
@@ -132,6 +136,7 @@ export const QuestDatabase = {
         description: 'Uma carta lacrada precisa chegar ao Prefeito com urgência. O mensageiro original desapareceu no caminho.',
         briefDescription: 'Entregue a carta ao Prefeito.',
         giver: 'Mensageiro Ferido',
+        giverId: 'messenger',
         objectives: [
             { id: 'get_letter', type: ObjectiveType.COLLECT, description: 'Pegar a carta lacrada', target: 'letter_sealed', progress: 0, required: 1 },
             { id: 'deliver', type: ObjectiveType.DELIVER, description: 'Entregar ao Prefeito', target: 'mayor', progress: 0, required: 1 }
@@ -156,6 +161,7 @@ export const QuestDatabase = {
         description: 'Ajude a guarda local patrulhando as ruas e eliminando ameaças.',
         briefDescription: 'Patrulhe a cidade e elimine inimigos.',
         giver: 'Capitão da Guarda',
+        giverId: 'guard_captain',
         objectives: [
             { id: 'patrol', type: ObjectiveType.EXPLORE, description: 'Visitar pontos de patrulha', target: 'patrol_point', progress: 0, required: 3 },
             { id: 'clear', type: ObjectiveType.KILL, description: 'Eliminar ameaças', target: 'any_enemy', progress: 0, required: 3 }
