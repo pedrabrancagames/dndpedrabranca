@@ -48,8 +48,8 @@ export class DialogueSystem {
         // 1. Tentar determinar diálogo pelo contexto da quest
         if (context && context.questId && context.objectiveId) {
             // VERIFICAÇÃO DE PRÉ-REQUISITOS (SEQUENCIAL)
-            if (this.gameManager) {
-                const canProceed = this.checkQuestPrerequisites(context.questId, context.objectiveId);
+            if (this.gameManager && this.gameManager.progressionSystem) {
+                const canProceed = this.gameManager.progressionSystem.checkQuestPrerequisites(context.questId, context.objectiveId);
                 if (!canProceed) {
                     // Se não cumpriu requisitos anteriores, tenta achar um diálogo de "espera"
                     // ou mostra uma mensagem genérica
@@ -91,35 +91,6 @@ export class DialogueSystem {
 
         this.currentNPCId = npcId;
         this.startDialogue(dialogueId);
-    }
-
-    /**
-     * Verifica se os objetivos anteriores da quest estão completos
-     */
-    checkQuestPrerequisites(questId, currentObjectiveId) {
-        if (!this.gameManager || !this.gameManager.gameData) return true;
-
-        const quests = this.gameManager.gameData.quests;
-        const questData = getQuestData(questId);
-
-        // Se não conseguir validar, permite (segurança) ou bloqueia? Melhor permitir para não travar
-        if (!questData || !quests.progress || !quests.progress[questId]) return true;
-
-        const objectives = questData.objectives;
-        const currentIndex = objectives.findIndex(o => o.id === currentObjectiveId);
-
-        if (currentIndex <= 0) return true; // Primeiro objetivo sempre liberado
-
-        // Verificar todos os objetivos ANTERIORES
-        for (let i = 0; i < currentIndex; i++) {
-            const prevObj = objectives[i];
-            const prevProgress = quests.progress[questId][prevObj.id] || 0;
-            if (prevProgress < prevObj.required) {
-                return false; // Bloqueado: objetivo anterior pendente
-            }
-        }
-
-        return true;
     }
 
     /**

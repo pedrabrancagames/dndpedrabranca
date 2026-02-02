@@ -162,6 +162,26 @@ export class MapManager {
     handleMarkerClick(mission) {
         console.log('Marcador clicado:', mission);
 
+        // VERIFICAÇÃO DE PRÉ-REQUISITOS
+        if (mission.questId && mission.objectiveId) {
+            const canProceed = this.gameManager.progressionSystem.checkQuestPrerequisites(mission.questId, mission.objectiveId);
+
+            if (!canProceed) {
+                eventBus.emit('showMessage', {
+                    text: '⚠️ Complete os objetivos anteriores primeiro!',
+                    type: 'warning'
+                });
+
+                // Se for NPC, ainda permitimos abrir para ele dar o diálogo de bloqueio
+                // Se for combate ou coleta, bloqueamos aqui mesmo
+                const isNPC = mission.objectiveType === 'talk' || mission.type === 'npc' || mission.objectiveType === 'deliver';
+                if (!isNPC) {
+                    return;
+                }
+                // Se for NPC, continua para cair no DialogueSystem que tem o texto específico
+            }
+        }
+
         // COMBATE
         if (mission.objectiveType === 'kill' || mission.type === 'combat') {
             this.gameManager.stateManager.setState('combat', {

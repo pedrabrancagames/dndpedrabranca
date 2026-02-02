@@ -4,6 +4,7 @@
  */
 import { eventBus } from '../core/EventEmitter.js';
 import { getUpgradeCost } from '../data/CardDatabase.js';
+import { getQuestData } from '../data/QuestDatabase.js';
 
 /**
  * Tabela de XP necessário por nível
@@ -245,5 +246,35 @@ export class ProgressionSystem {
 
         const required = this.getXPForNextLevel(hero.level);
         return Math.floor((hero.xp / required) * 100);
+    }
+
+    /**
+     * Verifica se os objetivos anteriores da quest estão completos
+     * @param {string} questId
+     * @param {string} currentObjectiveId
+     * @returns {boolean} True se pode prosseguir
+     */
+    checkQuestPrerequisites(questId, currentObjectiveId) {
+        const quests = this.gameManager.gameData.quests;
+        const questData = getQuestData(questId);
+
+        // Se não conseguir validar, permite (segurança) para não travar
+        if (!questData || !quests.progress || !quests.progress[questId]) return true;
+
+        const objectives = questData.objectives;
+        const currentIndex = objectives.findIndex(o => o.id === currentObjectiveId);
+
+        if (currentIndex <= 0) return true; // Primeiro objetivo sempre liberado
+
+        // Verificar todos os objetivos ANTERIORES
+        for (let i = 0; i < currentIndex; i++) {
+            const prevObj = objectives[i];
+            const prevProgress = quests.progress[questId][prevObj.id] || 0;
+            if (prevProgress < prevObj.required) {
+                return false; // Bloqueado: objetivo anterior pendente
+            }
+        }
+
+        return true;
     }
 }
