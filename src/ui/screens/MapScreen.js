@@ -82,36 +82,71 @@ export class MapScreen extends BaseScreen {
 
         console.log(`Gerando marcadores na posição: ${playerPos.lat}, ${playerPos.lng}`);
 
-        quests.active.forEach((questId, index) => {
+        // Inicializar armazenamento de posições se não existir
+        if (!quests.markerPositions) {
+            quests.markerPositions = {};
+        }
+
+        // Coletar todos os objetivos ativos para distribuição global
+        const allObjectives = [];
+        quests.active.forEach(questId => {
             const quest = getQuestData(questId);
             if (!quest) return;
-
             const progress = quests.progress[questId] || {};
 
-            quest.objectives.forEach((objective, objIndex) => {
+            quest.objectives.forEach(objective => {
                 const currentProgress = progress[objective.id] || 0;
-                if (currentProgress >= objective.required) return;
-
-                // Posicionar marcadores em círculo ao redor do jogador
-                const totalMarkers = quest.objectives.length;
-                const angle = ((objIndex + 1) / totalMarkers) * Math.PI * 2;
-                // Distância pequena para aparecer 'perto'
-                const distance = 0.0002; // ~20 metros
-
-                const markerData = this.createQuestMarker(quest, objective, playerPos, angle, distance);
-                mapManager.addMissionMarker(markerData);
+                if (currentProgress < objective.required) {
+                    allObjectives.push({ quest, objective });
+                }
             });
         });
 
-        console.log(`Marcadores de ${quests.active.length} quest(s) criados`);
+        // Gerar marcadores
+        allObjectives.forEach((item, index) => {
+            const { quest, objective } = item;
+            const markerKey = `${quest.id}_${objective.id}`;
+
+            // Tentar recuperar posição salva
+            let lat, lng;
+            const savedPos = quests.markerPositions[markerKey];
+
+            if (savedPos) {
+                // Usar posição salva (fixa no mundo)
+                lat = savedPos.lat;
+                lng = savedPos.lng;
+            } else {
+                // Gerar nova posição distribuída
+                const totalMarkers = allObjectives.length;
+                // Usar índice global para evitar sobreposição
+                // Adicionar offset aleatório leve para não ficar um círculo perfeito
+                const angle = ((index) / totalMarkers) * Math.PI * 2 + (Math.random() * 0.5);
+                const distance = 0.0002 + (Math.random() * 0.0001); // 20-30 metros
+
+                lat = playerPos.lat + Math.cos(angle) * distance;
+                lng = playerPos.lng + Math.sin(angle) * distance;
+
+                // Salvar posição
+                quests.markerPositions[markerKey] = { lat, lng };
+            }
+
+            const markerData = this.createQuestMarker(quest, objective, { lat, lng }, 0, 0); // distance 0 pois já calculamos
+            mapManager.addMissionMarker(markerData);
+        });
+
+        // Salvar persistência das posições
+        this.gameManager.saveGame();
+
+        console.log(`Marcadores de ${allObjectives.length} objetivos criados`);
     }
 
     /**
      * Cria dados do marcador para um objetivo de quest
      */
-    createQuestMarker(quest, objective, playerPos, angle, distance) {
-        const lat = playerPos.lat + Math.cos(angle) * distance;
-        const lng = playerPos.lng + Math.sin(angle) * distance;
+    createQuestMarker(quest, objective, position, angle, distance) {
+        // Se angle/distance forem 0, usa position diretamente
+        const lat = distance > 0 ? position.lat + Math.cos(angle) * distance : position.lat;
+        const lng = distance > 0 ? position.lng + Math.sin(angle) * distance : position.lng;
 
         let type = 'quest';
         let icon = '📍';
