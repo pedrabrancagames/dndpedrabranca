@@ -145,8 +145,12 @@ export class ARSceneManager extends SceneManager {
         // Calcular ângulo base a partir da direção da câmera
         const baseAngle = Math.atan2(this.cameraDirection.x, this.cameraDirection.z);
 
-        // Espalhar inimigos em arco de 60° (30° para cada lado)
-        const spreadAngle = Math.PI / 3;
+        // Espalhar inimigos em arco maior (~150 graus) para formar um semi-círculo
+        // Mas adaptar baseado no número de inimigos para não ficar estranho com poucos
+        const maxSpread = Math.PI * 0.85;
+        // Garante pelo menos 45 graus de separação ou usa o arco máximo
+        const spreadAngle = Math.min(maxSpread, Math.max(Math.PI / 3, (numEnemies - 1) * (Math.PI / 4)));
+
         const startAngle = baseAngle - spreadAngle / 2;
         const angleStep = numEnemies > 1 ? spreadAngle / (numEnemies - 1) : 0;
 
@@ -159,7 +163,8 @@ export class ARSceneManager extends SceneManager {
 
                 // Calcular posição baseada na direção da câmera
                 const angle = numEnemies === 1 ? baseAngle : startAngle + (i * angleStep);
-                const distance = 1.5;
+                // Aumentar distância para dar mais espaço (2.2m)
+                const distance = 2.2;
 
                 const x = this.arenaPosition.x + Math.sin(angle) * distance;
                 const z = this.arenaPosition.z + Math.cos(angle) * distance;
