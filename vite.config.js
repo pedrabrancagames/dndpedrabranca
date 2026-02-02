@@ -86,6 +86,14 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
-    minify: 'esbuild'
+    minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ['three'],
+          leaflet: ['leaflet']
+        }
+      }
+    }
   }
 });

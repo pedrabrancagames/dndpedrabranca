@@ -184,6 +184,19 @@ export class GameManager {
                 this.stateManager.setState(GameState.MAP);
             }
         });
+
+        // Tratamento de fim de sessão AR (ex: botão voltar do navegador ou erro)
+        eventBus.on(EventNames.AR_SESSION_ENDED, () => {
+            console.log('AR Session Ended - Verifying State...');
+
+            // Se o jogo achar que ainda está em COMBBATE, mas a sessão acabou
+            // devemos voltar para uma tela segura (Mapa)
+            if (this.stateManager.isState(GameState.COMBAT)) {
+                console.warn('AR Session ended abruptly during combat. Returning to Map.');
+                this.stateManager.setState(GameState.MAP);
+                this.showToast('Modo AR finalizado', ToastTypes.INFO);
+            }
+        });
     }
 
     showToast(text, type = ToastTypes.INFO) {

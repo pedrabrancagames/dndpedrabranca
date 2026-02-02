@@ -89,17 +89,42 @@ export class ARSceneManager extends SceneManager {
     }
 
     /**
-     * Limpa a arena e todos os modelos
+     * Limpa a arena e todos os modelos, liberando memória
      */
     clearArena() {
         this.spawnedModels.forEach(model => {
             this.scene.remove(model);
+            this.disposeModel(model);
         });
         this.spawnedModels = [];
         this.arenaPlaced = false;
         this.arenaPosition = null;
         this.selectedEnemy = null;
         this.clearEnemyLabels();
+    }
+
+    /**
+     * Helper para descartar recursos e evitar memory leaks
+     * Remove materiais da memória GPU
+     */
+    disposeModel(model) {
+        if (!model) return;
+
+        model.traverse((child) => {
+            if (child.isMesh) {
+                // Materiais são clonados no ModelLoader, então precisam ser descartados
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(m => m.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                }
+
+                // Nota: Não descartamos geometria pois ela é compartilhada (clonada por referência)
+                // dos assets cacheados no ModelLoader
+            }
+        });
     }
 
     /**
