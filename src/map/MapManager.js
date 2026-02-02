@@ -203,13 +203,15 @@ export class MapManager {
     }
 
     /**
-     * Remove um marcador específico pelo ID
+     * Remove um marcador específico pelo ID ou Quest ID
      */
-    removeMissionMarker(missionId) {
+    removeMissionMarker(id) {
         if (!this.markersLayer) return;
 
         this.markersLayer.eachLayer((layer) => {
-            if (layer.missionId === missionId) {
+            // Remove se for match exato de ID ou se o ID conter o questId (ex: quest_deliver_letter...)
+            if (layer.missionId === id || (layer.missionId && layer.missionId.includes(id))) {
+                console.log(`Removing marker: ${layer.missionId}`);
                 this.markersLayer.removeLayer(layer);
             }
         });

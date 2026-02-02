@@ -38,6 +38,31 @@ export class GameMaster {
             this.showDefeatMessage();
         });
 
+        // Eventos de Quest completada via diálogo
+        eventBus.on('questCompleted', ({ questId }) => {
+            console.log(`Quest Completed via GameMaster: ${questId}`);
+
+            // Remover marcador do mapa
+            if (this.gameManager.mapManager) {
+                // Tenta remover todos os marcadores dessa quest
+                this.gameManager.mapManager.removeMissionMarker(questId);
+                // Ou iterar se houver múltiplos
+            }
+
+            // Atualizar dados do jogo (Persistência)
+            if (!this.gameManager.gameData.completedQuests) {
+                this.gameManager.gameData.completedQuests = [];
+            }
+            if (!this.gameManager.gameData.completedQuests.includes(questId)) {
+                this.gameManager.gameData.completedQuests.push(questId);
+
+                // Salvar jogo
+                this.gameManager.saveGame();
+            }
+
+            this.showGMMessage(`Missão "${questId}" completada!`, 'success');
+        });
+
         // Eventos de ação
         eventBus.on('damageTaken', ({ targetId, amount }) => {
             this.checkCombatSituation();
