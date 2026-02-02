@@ -47,7 +47,11 @@ export class ARSceneManager extends SceneManager {
 
         // Raycaster para seleção de inimigos
         this.raycaster = new THREE.Raycaster();
+        this.raycaster = new THREE.Raycaster();
         this.selectedEnemy = null;
+
+        // Fila de spawn para NPCs quando a arena não está pronta
+        this.pendingNPC = null;
 
         // Config inicial do canvas
         this.canvas.style.pointerEvents = 'none';
@@ -115,6 +119,13 @@ export class ARSceneManager extends SceneManager {
 
         // Spawnar inimigos do combate atual
         await this.spawnEnemies();
+
+        // Spawnar NPC pendente (se houver)
+        if (this.pendingNPC) {
+            console.log('Spawning pending NPC:', this.pendingNPC);
+            await this.spawnNPC(this.pendingNPC);
+            this.pendingNPC = null;
+        }
 
         eventBus.emit('arenaPlaced', { position });
     }
@@ -214,9 +225,17 @@ export class ARSceneManager extends SceneManager {
             const spawnPos = position || new THREE.Vector3(-1, 0, 0); // Default offset
 
             // Ajustar para coordenadas do mundo (Arena + Offset)
-            // Se a arena não estiver colocada, não spawna (segurança)
+            // Se a arena não estiver colocada, enfileira o spawn
             if (!this.arenaPlaced) {
-                console.warn('Cannot spawn NPC: Arena not placed');
+                console.log('Arena not ready. Queuing NPC spawn:', npcId);
+                this.pendingNPC = npcId;
+
+                // Mostrar dica para o usuário
+                const hint = document.getElementById('reticle-hint');
+                if (hint) {
+                    hint.textContent = 'Toque em uma superfície para chamar o NPC';
+                    hint.style.display = 'block';
+                }
                 return;
             }
 
