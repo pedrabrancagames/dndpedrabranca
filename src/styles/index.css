@@ -3,6 +3,7 @@
    ================================================ */
 
 @import './dialogue.css';
+@import './shop.css';
 
 /* ==== CSS Variables (Design Tokens) ==== */
 :root {

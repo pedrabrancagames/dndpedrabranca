@@ -15,6 +15,7 @@ import { CombatHUD } from '../ui/CombatHUD.js';
 import { ProgressionSystem } from '../systems/ProgressionSystem.js';
 import { GameMaster } from '../systems/GameMaster.js';
 import { DialogueSystem } from '../systems/DialogueSystem.js';
+import { ShopSystem } from '../systems/ShopSystem.js';
 
 export class GameManager {
     constructor() {
@@ -30,6 +31,7 @@ export class GameManager {
         this.arSceneManager = null;
         this.combatHUD = null;
         this.dialogueSystem = null;
+        this.shopSystem = null;
 
         this.gameData = {
             heroes: [],
@@ -60,6 +62,7 @@ export class GameManager {
             this.arSceneManager = new ARSceneManager('three-canvas', this);
             this.combatHUD = new CombatHUD(this);
             this.dialogueSystem = new DialogueSystem();
+            this.shopSystem = new ShopSystem(this);
             this.uiManager = new UIManager(this);
 
             this.updateLoadingText('Pronto!');

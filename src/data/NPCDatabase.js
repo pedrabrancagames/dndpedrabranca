@@ -33,9 +33,9 @@ export const NPCDatabase = {
 
     merchant_npc: {
         id: 'merchant_npc',
-        name: 'Balthazar', // Nome genérico de mercador
+        name: 'Balthazar',
         role: NPCRole.MERCHANT,
-        model: '/models/npc/merchant.glb',
+        model: '/models/npc/merchant_npc.glb', // Updated path
         scale: 1.0,
         animations: {
             idle: 'Idle',
@@ -47,19 +47,74 @@ export const NPCDatabase = {
         description: 'Um mercador viajante com produtos exóticos.'
     },
 
-    // ========== NPCs Secundários (Futuro) ==========
+    // ========== NPCs Secundários ==========
     guard_captain: {
         id: 'guard_captain',
         name: 'Capitão Valerius',
         role: NPCRole.QUEST_GIVER,
-        model: '/models/npc/guard.glb', // Placeholder
+        model: '/models/npc/guard_captain.glb',
         scale: 1.1,
         animations: {
-            idle: 'Idle_Guard',
-            talk: 'Talk_Military'
+            idle: 'Idle', // Adjusted expected animation names
+            talk: 'Talk'
         },
         dialogueId: 'captain_report',
         description: 'Líder da guarda da cidade.'
+    },
+
+    healer: {
+        id: 'healer',
+        name: 'Sábia Elara',
+        role: NPCRole.HEALER,
+        model: '/models/npc/healer.glb',
+        scale: 1.0,
+        dialogueId: 'healer_intro',
+        description: 'Curandeira local.'
+    },
+
+    city_guard: {
+        id: 'city_guard',
+        name: 'Guarda',
+        role: NPCRole.GUARD,
+        model: '/models/npc/city_guard.glb',
+        scale: 1.1,
+        description: 'Um guarda vigilante.'
+    },
+
+    villager_m: {
+        id: 'villager_m',
+        name: 'Aldeão',
+        role: NPCRole.CIVILIAN,
+        model: '/models/npc/villager_m.glb',
+        scale: 1.0,
+        description: 'Habitante local.'
+    },
+
+    villager_f: {
+        id: 'villager_f',
+        name: 'Aldeã',
+        role: NPCRole.CIVILIAN,
+        model: '/models/npc/villager_f.glb',
+        scale: 1.0,
+        description: 'Habitante local.'
+    },
+
+    messenger: {
+        id: 'messenger',
+        name: 'Mensageiro',
+        role: NPCRole.CIVILIAN,
+        model: '/models/npc/messenger.glb',
+        scale: 1.0,
+        description: 'Entregador de notícias.'
+    },
+
+    merchant_wife: {
+        id: 'merchant_wife',
+        name: 'Sarah',
+        role: NPCRole.MERCHANT,
+        model: '/models/npc/merchant_wife.glb',
+        scale: 1.0,
+        description: 'Esposa do mercador.'
     }
 };
 
