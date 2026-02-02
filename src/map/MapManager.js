@@ -174,21 +174,14 @@ export class MapManager {
         }
         // NPC / DIÁLOGO
         else if (mission.objectiveType === 'talk' || mission.type === 'npc' || mission.objectiveType === 'deliver') {
-            eventBus.emit('showMessage', {
-                text: `💬 Conversando com ${mission.target}...`,
-                type: 'info'
+            this.gameManager.stateManager.setState('combat', {
+                missionId: mission.id,
+                questId: mission.questId,
+                objectiveId: mission.objectiveId,
+                target: mission.target,
+                isNPC: true,
+                npcId: mission.targetId || mission.target.toLowerCase().replace(/\s+/g, '_') // Fallback ID generation
             });
-
-            // Simular completamento após delay
-            setTimeout(() => {
-                eventBus.emit('combat:victory', {
-                    missionId: mission.id,
-                    questId: mission.questId,
-                    objectiveId: mission.objectiveId,
-                    target: mission.target,
-                    enemiesKilled: 1
-                });
-            }, 1000);
         }
         // EXPLORAÇÃO
         else if (mission.objectiveType === 'explore' || mission.type === 'explore' || mission.type === 'collect') {

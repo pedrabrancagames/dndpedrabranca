@@ -152,11 +152,21 @@ export class GameManager {
         eventBus.on('stateChange', ({ from, to, data }) => {
             if (from && from !== GameState.SPLASH) this.saveGame();
 
-            // Iniciar combate
+            // Iniciar combate ou interação AR
             if (to === GameState.COMBAT && data && data.missionId) {
-                // BUGFIX: Passar o objeto 'data' completo para preservar questId e objectiveId
-                this.combatManager.startEncounter(data);
-                this.arSceneManager.startSession();
+                if (data.isNPC) {
+                    console.log('Starting NPC Interaction:', data.npcId);
+                    // Passar dados para renderizar NPC
+                    this.arSceneManager.startSession();
+                    // Pequeno delay para garantir que a sessão AR iniciou antes de spawnar
+                    setTimeout(() => {
+                        this.arSceneManager.spawnNPC(data.npcId || 'mayor');
+                    }, 1000);
+                } else {
+                    // BUGFIX: Passar o objeto 'data' completo
+                    this.combatManager.startEncounter(data);
+                    this.arSceneManager.startSession();
+                }
             }
         });
 
