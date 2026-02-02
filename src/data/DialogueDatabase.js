@@ -49,6 +49,59 @@ export const DialogueDatabase = {
         }
     },
 
+    // Diálogos específicos da missão Goblin Threat
+    mayor_goblin_threat_scout: {
+        start: {
+            text: "Você ainda não investigou o acampamento? Vá rápido, antes que eles ataquem!",
+            speaker: "Prefeito Magnus",
+            options: [
+                { text: "Estou indo.", next: "end" }
+            ]
+        },
+        end: {
+            text: "Conto com você.",
+            speaker: "Prefeito Magnus",
+            isEnd: true
+        }
+    },
+
+    mayor_goblin_threat_kill_goblins: {
+        start: {
+            text: "Recebi seu relatório sobre o acampamento. Agora precisamos agir! Derrote aqueles batedores.",
+            speaker: "Prefeito Magnus",
+            options: [
+                { text: "Vou cuidar disso.", next: "end" }
+            ]
+        },
+        end: {
+            text: "Boa sorte, aventureiro.",
+            speaker: "Prefeito Magnus",
+            isEnd: true
+        }
+    },
+
+    mayor_goblin_threat_report: {
+        start: {
+            text: "Pelos deuses! Você conseguiu limpar o acampamento? Pedra Branca tem uma dívida de gratidão com você.",
+            speaker: "Prefeito Magnus",
+            options: [
+                { text: "Foi um prazer ajudar.", next: "reward", action: "COMPLETE_QUEST:goblin_threat" }
+            ]
+        },
+        reward: {
+            text: "Aqui está a recompensa prometida. Que isso ajude em sua jornada.",
+            speaker: "Prefeito Magnus",
+            options: [
+                { text: "Obrigado, Prefeito.", next: "end" }
+            ]
+        },
+        end: {
+            text: "Se precisar de mais trabalho, volte a falar comigo.",
+            speaker: "Prefeito Magnus",
+            isEnd: true
+        }
+    },
+
     mayor_deliver_letter_deliver: {
         start: {
             text: "Oh! Você trouxe a carta do conselho? Excelente notícia, estávamos esperando ansiosamente.",
