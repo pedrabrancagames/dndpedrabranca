@@ -34,7 +34,7 @@ export const ARSessionMixin = {
                 const session = await navigator.xr.requestSession('immersive-ar', {
                     requiredFeatures: ['hit-test'],
                     optionalFeatures: ['dom-overlay'],
-                    domOverlay: { root: document.getElementById('combat-hud') }
+                    domOverlay: { root: document.getElementById('app') }
                 });
 
                 session.addEventListener('end', () => this.onSessionEnded());
