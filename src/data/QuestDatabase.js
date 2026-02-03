@@ -149,3 +149,44 @@ export const QuestDatabase = {
 export function getQuestData(id) {
     return QuestDatabase[id];
 }
+
+export function getQuestsByChapter(chapter) {
+    // Por enquanto retorna todas, sistema de capítulos simplificado
+    return Object.values(QuestDatabase);
+}
+
+export function getQuestProgress(quest) {
+    // Calculado no runtime via MissionManager, mas para exibição estática:
+    if (!quest.objectives) return 0;
+    // Retorna 0 como base se não tiver dados de progresso injetados
+    // A UI deve injetar o progresso antes de chamar ou tratar aqui se for objeto de estado
+    if (quest.progress !== undefined) return quest.progress; // Se já vier com progresso
+
+    // Se for o objeto estático, não tem progresso salvo nele.
+    return 0;
+}
+
+export function getQuestTypeName(type) {
+    const map = {
+        [QuestType.COMBAT]: 'Combate',
+        [QuestType.COLLECTION]: 'Coleta',
+        [QuestType.PUZZLE]: 'Enigma',
+        [QuestType.INTERACTION]: 'Interação'
+    };
+    return map[type] || 'Desconhecido';
+}
+
+export function getQuestTypeIcon(type) {
+    const map = {
+        [QuestType.COMBAT]: '⚔️',
+        [QuestType.COLLECTION]: '🎒',
+        [QuestType.PUZZLE]: '🧩',
+        [QuestType.INTERACTION]: '💬'
+    };
+    return map[type] || '❓';
+}
+
+export function canAcceptQuest(quest, playerData) {
+    // Implementação básica
+    return true;
+}
