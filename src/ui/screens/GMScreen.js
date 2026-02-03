@@ -255,12 +255,12 @@ export class GMScreen extends BaseScreen {
         const objectivesList = this.findElement('#objectives-list');
         if (objectivesList) {
             objectivesList.innerHTML = quest.objectives.map(obj => {
-                const completed = obj.progress >= obj.required;
+                const completed = obj.progress >= obj.amount;
                 return `
                     <div class="objective-item ${completed ? 'completed' : ''}">
                         <span class="objective-check">${completed ? '✅' : '⬜'}</span>
                         <span class="objective-text">${obj.description}</span>
-                        <span class="objective-progress">${obj.progress}/${obj.required}</span>
+                        <span class="objective-progress">${obj.progress}/${obj.amount}</span>
                     </div>
                 `;
             }).join('');
