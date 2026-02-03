@@ -3,7 +3,7 @@
  * Controla o fluxo de conversas, opções e interações de missão
  */
 import { eventBus } from '../core/EventEmitter.js';
-import { getQuestData } from '../data/QuestDatabase.js';
+import { getQuestData, QuestDatabase, QuestStatus } from '../data/QuestDatabase.js';
 import { missionManager } from './MissionManager.js';
 
 export class DialogueSystem {
@@ -42,9 +42,7 @@ export class DialogueSystem {
         // Simplificação: vamos varrer o DB para achar quests deste NPC (giverId)
         // Em um projeto maior, o NPC teria uma lista de quests nele.
 
-        // Importar DB dinamicamente ou usar helper se disponível. 
-        // Aqui vamos assumir que o QuestDatabase é um objeto global ou im-memory para simplificar a busca
-        const { QuestDatabase, QuestStatus } = require('../data/QuestDatabase.js'); // Hack para demo, ideal é importar topo
+        // QuestDatabase e QuestStatus já importados no topo
 
         let targetQuest = null;
         let dialogueType = 'default'; // 'offer', 'active', 'completed', 'default'
