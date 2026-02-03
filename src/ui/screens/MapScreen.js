@@ -296,23 +296,24 @@ export class MapScreen extends BaseScreen {
         if (!objective) return;
 
         const currentProgress = quests.progress[questId][objectiveId] || 0;
-        const newProgress = Math.min(currentProgress + amount, objective.required);
+        const newProgress = Math.min(currentProgress + amount, objective.amount);
         quests.progress[questId][objectiveId] = newProgress;
 
-        if (newProgress >= objective.required) {
+        if (newProgress >= objective.amount) {
             eventBus.emit('showMessage', {
                 text: `✅ Objetivo completo: ${objective.description}`,
                 type: 'success'
             });
         } else {
             eventBus.emit('showMessage', {
-                text: `📝 ${objective.description}: ${newProgress}/${objective.required}`,
+                text: `📝 ${objective.description}: ${newProgress}/${objective.amount}`,
                 type: 'info'
             });
         }
 
         this.checkQuestCompletion(questId);
         this.gameManager.saveGame();
+        this.updateQuestMarkers(); // Refresh markers to remove completed objectives
     }
 
     /**
@@ -326,7 +327,7 @@ export class MapScreen extends BaseScreen {
         const progress = quests.progress[questId] || {};
         const allComplete = quest.objectives.every(obj => {
             const current = progress[obj.id] || 0;
-            return current >= obj.required;
+            return current >= obj.amount;
         });
 
         if (allComplete) {
