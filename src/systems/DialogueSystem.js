@@ -1,17 +1,15 @@
 /**
  * DialogueSystem - Sistema de Gerenciamento de Diálogos
- * Controla o fluxo de conversas, opções e eventos
+ * Controla o fluxo de conversas, opções e interações de missão
  */
 import { eventBus } from '../core/EventEmitter.js';
-import { getDialogue } from '../data/DialogueDatabase.js'; // Ensure this path is correct relative to src/systems
-import { getNPCData } from '../data/NPCDatabase.js';     // Ensure this path is correct
 import { getQuestData } from '../data/QuestDatabase.js';
+import { missionManager } from './MissionManager.js';
 
 export class DialogueSystem {
     constructor(gameManager) {
         this.gameManager = gameManager;
-        this.activeDialogue = null;
-        this.currentNodeId = null;
+        this.activeQuestId = null;
         this.currentNPCId = null;
 
         // UI Elements
@@ -20,7 +18,6 @@ export class DialogueSystem {
             speakerName: document.getElementById('dialogue-speaker'),
             text: document.getElementById('dialogue-text'),
             optionsContainer: document.getElementById('dialogue-options'),
-            // Portrait/image if added later
         };
 
         this.setupEventListeners();
@@ -29,244 +26,174 @@ export class DialogueSystem {
     setupEventListeners() {
         // Iniciar diálogo quando NPC é selecionado
         eventBus.on('npcSelected', (data) => {
-            console.log('Dialogue Requested for:', data.npcId, 'Context:', data.context);
-            this.startDialogueForNPC(data.npcId, data.context);
+            console.log('Dialogue Requested for:', data.npcId);
+            this.startDialogueForNPC(data.npcId);
         });
     }
 
     /**
      * Inicia o diálogo associado a um NPC
+     * Verifica se o NPC tem quests associadas e qual o estado delas
      */
-    /**
-     * Inicia o diálogo associado a um NPC
-     * @param {string} npcId
-     * @param {object} context - Contexto opcional (questId, objectiveId, etc)
-     */
-    startDialogueForNPC(npcId, context = null) {
-        let dialogueId = null;
+    startDialogueForNPC(npcId) {
+        this.currentNPCId = npcId;
 
-        // 1. Tentar determinar diálogo pelo contexto da quest
-        if (context && context.questId && context.objectiveId) {
-            // VERIFICAÇÃO DE PRÉ-REQUISITOS (SEQUENCIAL)
-            if (this.gameManager && this.gameManager.progressionSystem) {
-                const canProceed = this.gameManager.progressionSystem.checkQuestPrerequisites(context.questId, context.objectiveId);
-                if (!canProceed) {
-                    // Se não cumpriu requisitos anteriores, tenta achar um diálogo de "espera"
-                    // ou mostra uma mensagem genérica
-                    console.log('Prerequisites not met for:', context.objectiveId);
+        // 1. Verificar se este NPC tem alguma quest ativa ou disponível
+        // Simplificação: vamos varrer o DB para achar quests deste NPC (giverId)
+        // Em um projeto maior, o NPC teria uma lista de quests nele.
 
-                    // Tentar diálogo específico de "bloqueado"
-                    const lockedId = `${npcId}_${context.questId}_${context.objectiveId}_blocked`;
-                    if (getDialogue(lockedId)) {
-                        this.currentNPCId = npcId;
-                        this.startDialogue(lockedId);
-                        return;
-                    }
+        // Importar DB dinamicamente ou usar helper se disponível. 
+        // Aqui vamos assumir que o QuestDatabase é um objeto global ou im-memory para simplificar a busca
+        const { QuestDatabase, QuestStatus } = require('../data/QuestDatabase.js'); // Hack para demo, ideal é importar topo
 
-                    // Fallback: Diálogo genérico de "Não está pronto"
-                    this.startGenericDialogue(npcId, "Preciso que você termine suas tarefas antes de falarmos sobre isso.", "Entendido");
-                    return;
+        let targetQuest = null;
+        let dialogueType = 'default'; // 'offer', 'active', 'completed', 'default'
+
+        const allQuests = Object.values(QuestDatabase);
+
+        // Prioridade: Completar > Ativa > Oferecer
+
+        // A. Verificar Completas (Prontas para entregar)
+        const activeQuests = missionManager.getActiveQuests();
+        const readyToComplete = activeQuests.find(qState => {
+            const qDef = QuestDatabase[qState.id];
+            return qDef && qDef.giverId === npcId && missionManager.canComplete(qState.id);
+        });
+
+        if (readyToComplete) {
+            targetQuest = QuestDatabase[readyToComplete.id];
+            dialogueType = 'completed';
+        } else {
+            // B. Verificar Ativas (Em progresso)
+            const inProgress = activeQuests.find(qState => {
+                const qDef = QuestDatabase[qState.id];
+                return qDef && qDef.giverId === npcId;
+            });
+
+            if (inProgress) {
+                targetQuest = QuestDatabase[inProgress.id];
+                dialogueType = 'active';
+            } else {
+                // C. Verificar Disponíveis (Novas)
+                // TODO: Verificar requisitos de nível aqui se necessário
+                const available = allQuests.find(q =>
+                    q.giverId === npcId &&
+                    missionManager.getQuestState(q.id) === QuestStatus.AVAILABLE
+                );
+
+                if (available) {
+                    targetQuest = available;
+                    dialogueType = 'offer';
                 }
             }
-
-            // Convenção: npcId_questId_objectiveId
-            const specificId = `${npcId}_${context.questId}_${context.objectiveId}`;
-            if (getDialogue(specificId)) {
-                dialogueId = specificId;
-            }
         }
 
-        // 2. Fallback para diálogo padrão do NPC
-        if (!dialogueId) {
-            const npcData = getNPCData(npcId);
-            if (npcData) {
-                dialogueId = npcData.dialogueId;
-            }
+        if (targetQuest && targetQuest.dialogue && targetQuest.dialogue[dialogueType]) {
+            this.activeQuestId = targetQuest.id;
+            this.showDialogueNode(targetQuest.dialogue[dialogueType], npcId);
+        } else {
+            // Fallback: Diálogo genérico
+            this.showGenericDialogue(npcId, "Saudações, viajante.");
         }
-
-        if (!dialogueId) {
-            console.warn(`No dialogue found for NPC: ${npcId} with context:`, context);
-            return;
-        }
-
-        this.currentNPCId = npcId;
-        this.startDialogue(dialogueId);
     }
 
-    /**
-     * Inicia um diálogo construído dinamicamente
-     */
-    startGenericDialogue(npcId, text, optionText) {
-        this.currentNPCId = npcId;
-        this.activeDialogue = {
-            start: {
-                text: text,
-                speaker: npcId === 'mayor' ? 'Prefeito Magnus' : 'NPC', // Simples mapeamento ou pegar do DB
-                options: [{ text: optionText, next: '_exit' }],
-                isEnd: true
-            }
+    showDialogueNode(nodeData, speakerId) {
+        this.showUI(true);
+
+        // Configurar Texto e Speaker
+        // Mapeamento simples de ID -> Nome (num jogo real estaria no DB de NPCs)
+        const speakerNames = {
+            'mayor': 'Prefeito Magnus',
+            'healer': 'Curandeira Elara',
+            'guard': 'Guarda'
         };
-        this.showUI(true);
-        this.displayNode('start');
-    }
 
-    /**
-     * Carrega e exibe um diálogo específico
-     */
-    startDialogue(dialogueId) {
-        const dialogueData = getDialogue(dialogueId);
-        if (!dialogueData) {
-            console.error(`Dialogue ID not found: ${dialogueId}`);
-            return;
-        }
-
-        this.activeDialogue = dialogueData;
-        this.currentNodeId = 'start';
-
-        this.showUI(true);
-        this.displayNode('start');
-
-        eventBus.emit('dialogueStarted', { dialogueId });
-    }
-
-    /**
-     * Exibe um nó específico do diálogo atual
-     */
-    displayNode(nodeId) {
-        if (!this.activeDialogue || !this.activeDialogue[nodeId]) {
-            console.error(`Node not found: ${nodeId}`);
-            this.endDialogue();
-            return;
-        }
-
-        const node = this.activeDialogue[nodeId];
-        this.currentNodeId = nodeId;
-
-        // Atualizar Texto
-        if (this.ui.speakerName) this.ui.speakerName.textContent = node.speaker || '???';
-        if (this.ui.text) this.ui.text.textContent = node.text;
+        this.ui.speakerName.textContent = speakerNames[speakerId] || 'NPC';
+        this.ui.text.textContent = nodeData.text;
 
         // Renderizar Opções
-        this.renderOptions(node.options || []);
-
-        // Processar Ações do Nó (se tiver)
-        if (node.action) {
-            this.handleAction(node.action);
-        }
-
-        // Se for nó final, encerrar após clique (gerenciado nas opções ou clique na tela)
-        if (node.isEnd) {
-            // Se não tiver options, adicionar opção "Sair" padrão
-            if (!node.options || node.options.length === 0) {
-                this.renderOptions([{ text: "Sair", next: "_exit" }]);
-            }
-        }
+        this.renderOptions(nodeData.options);
     }
 
-    /**
-     * Renderiza os botões de opção
-     */
-    renderOptions(options) {
-        if (!this.ui.optionsContainer) return;
+    showGenericDialogue(speakerId, text) {
+        this.showUI(true);
+        this.ui.speakerName.textContent = 'NPC';
+        this.ui.text.textContent = text;
 
+        this.renderOptions([
+            { text: "Até logo.", action: 'close' }
+        ]);
+    }
+
+    renderOptions(options) {
         this.ui.optionsContainer.innerHTML = '';
 
-        options.forEach(option => {
+        options.forEach(opt => {
             const btn = document.createElement('button');
             btn.className = 'dialogue-option-btn';
-            btn.textContent = option.text;
+            btn.textContent = opt.text;
 
-            btn.addEventListener('click', () => {
-                this.selectOption(option);
-            });
+            // Estilizar botões baseado na ação (accept, refuse, abandon)
+            if (opt.action === 'accept') btn.classList.add('accept');
+            if (opt.action === 'refuse' || opt.action === 'abandon') btn.classList.add('refuse');
+
+            btn.onclick = () => this.handleAction(opt.action);
 
             this.ui.optionsContainer.appendChild(btn);
         });
     }
 
-    /**
-     * Processa a seleção de uma opção
-     */
-    selectOption(option) {
-        // Processar ação da opção
-        if (option.action) {
-            this.handleAction(option.action);
-        }
+    handleAction(action) {
+        console.log(`Action selected: ${action}`);
 
-        // Navegacao
-        if (option.next === '_exit' || option.next === 'end') {
-            this.endDialogue();
-        } else if (option.next) {
-            this.displayNode(option.next);
-        } else {
-            this.endDialogue();
-        }
-    }
-
-    /**
-     * Gerencia ações especiais (Quests, Loja, etc)
-     */
-    handleAction(actionString) {
-        console.log(`Dialogue Action: ${actionString}`);
-
-        const [actionType, payload] = actionString.split(':');
-
-        switch (actionType) {
-            case 'START_QUEST':
-                eventBus.emit('questStarted', { questId: payload });
-                // TODO: Adicionar notificação visual
+        switch (action) {
+            case 'accept':
+                if (this.activeQuestId) {
+                    missionManager.acceptQuest(this.activeQuestId);
+                    // Feedback visual pode ser um Toast notification
+                    console.log("Mission Accepted!");
+                }
+                this.endDialogue();
                 break;
 
-            case 'COMPLETE_QUEST':
-                console.log('Completing quest via dialogue:', payload);
-                // Emitir evento para o GameMaster completar a quest
-                eventBus.emit('combat:victory', {
-                    questId: payload, // Ex: 'deliver_letter'
-                    // Para quests de entrega, geralmente não precisa de objectiveId específico se for a quest toda,
-                    // mas podemos passar um genérico ou o sistema de quest lida com isso.
-                    // Assumindo que payload é 'quest_id' ou 'quest_id:objective_id'
-                });
-                // Alternativa mais direta para o GameMaster:
-                eventBus.emit('questCompleted', { questId: payload });
+            case 'abandon':
+                if (this.activeQuestId) {
+                    missionManager.abandonQuest(this.activeQuestId);
+                    console.log("Mission Abandoned!");
+                }
+                this.endDialogue();
                 break;
 
-            case 'OPEN_SHOP':
-                this.endDialogue(); // Fecha diálogo para abrir loja
-                eventBus.emit('openShop', { npcId: this.currentNPCId });
+            case 'complete':
+                if (this.activeQuestId) {
+                    missionManager.completeQuest(this.activeQuestId);
+                    console.log("Mission Completed!");
+                }
+                this.endDialogue();
                 break;
 
+            case 'refuse':
+            case 'close':
             default:
-                console.warn(`Unknown dialogue action: ${actionType}`);
+                this.endDialogue();
+                break;
         }
     }
 
-    /**
-     * Encerra o diálogo e esconde a UI
-     */
     endDialogue() {
-        this.activeDialogue = null;
-        this.currentNodeId = null;
-        this.currentNPCId = null;
         this.showUI(false);
+        this.currentNPCId = null;
+        this.activeQuestId = null;
         eventBus.emit('dialogueEnded');
     }
 
-    /**
-     * Mostra/Esconde a UI
-     */
     showUI(visible) {
-        if (!this.ui.overlay) {
-            // Tentar buscar elementos novamente caso o DOM tenha mudado
-            this.ui.overlay = document.getElementById('dialogue-overlay');
-            if (!this.ui.overlay) return;
-        }
-
         if (visible) {
-            this.ui.overlay.style.display = 'flex'; // ou 'block' dependendo do CSS
             this.ui.overlay.classList.remove('hidden');
+            this.ui.overlay.style.display = 'flex';
         } else {
-            this.ui.overlay.style.display = 'none';
             this.ui.overlay.classList.add('hidden');
+            this.ui.overlay.style.display = 'none';
         }
     }
 }

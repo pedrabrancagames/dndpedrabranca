@@ -16,6 +16,7 @@ import { ProgressionSystem } from '../systems/ProgressionSystem.js';
 import { GameMaster } from '../systems/GameMaster.js';
 import { DialogueSystem } from '../systems/DialogueSystem.js';
 import { ShopSystem } from '../systems/ShopSystem.js';
+import { missionManager } from '../systems/MissionManager.js'; // Singleton
 import { ItemIDs, HeroIDs, EventNames, NPCIDs, ToastTypes } from '../data/GameConstants.js';
 
 export class GameManager {
@@ -27,6 +28,8 @@ export class GameManager {
         this.combatManager = new CombatManager(this);
         this.progressionSystem = new ProgressionSystem(this);
         this.gameMaster = new GameMaster(this);
+        this.missionManager = missionManager; // Link singleton
+
 
         // Inicializado após DOM
         this.arSceneManager = null;

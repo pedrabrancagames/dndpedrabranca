@@ -42,24 +42,61 @@
 
 .dialogue-options {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
+    flex-direction: row;
+    /* Horizontal buttons */
+    justify-content: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
 }
 
 .dialogue-option-btn {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    padding: var(--space-md);
-    border-radius: var(--radius-md);
-    text-align: left;
+    padding: var(--space-md) var(--space-xl);
+    border-radius: var(--radius-full);
+    text-align: center;
     transition: all var(--transition-fast);
+    font-weight: 600;
+    min-width: 120px;
+    flex: 1;
 }
 
 .dialogue-option-btn:hover,
 .dialogue-option-btn:active {
-    background: var(--color-primary-dark);
-    border-color: var(--color-primary);
-    transform: translateX(5px);
+    background: var(--color-primary);
+    border-color: var(--color-primary-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(233, 69, 96, 0.4);
+}
+
+.dialogue-option-btn.accept {
+    border-color: var(--color-success);
+    color: var(--color-success);
+}
+
+.dialogue-option-btn.accept:hover {
+    background: var(--color-success);
+    color: white;
+}
+
+.dialogue-option-btn.refuse {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+}
+
+.dialogue-option-btn.refuse:hover {
+    background: var(--color-danger);
+    color: white;
+}
+
+.dialogue-option-btn.abandon {
+    border-color: var(--color-text-muted);
+    color: var(--color-text-muted);
+}
+
+.dialogue-option-btn.abandon:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
 }
 
 .hidden {
