@@ -173,6 +173,7 @@ export class MapScreen extends BaseScreen {
 
                 if (objState.type === 'kill') { icon = '⚔️'; type = 'combat'; }
                 if (objState.type === 'collect') { icon = '📦'; type = 'collect'; }
+                if (objState.type === 'interact') { icon = '🧩'; type = 'puzzle'; }
 
                 mapManager.addMissionMarker({
                     id: `obj_${questDef.id}_${objState.id}_${i}`,
@@ -184,6 +185,7 @@ export class MapScreen extends BaseScreen {
                     lng: mLng,
                     questId: questDef.id,
                     objectiveId: objState.id,
+                    objectiveType: objState.type, // IMPORTANT: Pass this for MapManager logic
                     target: objState.target, // Modelo 3D
                     isObjective: true
                 });
