@@ -94,34 +94,31 @@ export class MapScreen extends BaseScreen {
             // O NPC deve aparecer se a quest está Disponível, Ativa ou Completa (para entregar)
             // Se estiver Falhou, talvez não apareça, ou apareça para reiniciar.
 
-            // Gerar posição "fixa" determinística para o NPC baseada no ID
-            const hash = questDef.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            const angle = (hash % 360) * (Math.PI / 180);
-            const distance = 0.0003; // ~30m do jogador inicial (simulado)
+            // Gerar posição distribuída uniformemente baseada no índice para evitar sobreposições
+            const index = allQuestDefs.findIndex(q => q.id === questDef.id);
+            const totalQuests = allQuestDefs.length;
+            const angle = (index / totalQuests) * (Math.PI * 2); // Distribuição radial uniforme
+            const distance = 0.0008; // ~80m do jogador (Aumentado de 0.0003)
 
-            // TODO: Se tiver posição salva da primeira vez, usar ela. Para agora, recalcula baseada no playerPos se não tiver "fixed"
-            // Hack: vamos fixar relative ao primeiro load ou usar playerPos atual sempre (vai mover com o player se reiniciar, ok para demo)
             const npcLat = playerPos.lat + Math.cos(angle) * distance;
             const npcLng = playerPos.lng + Math.sin(angle) * distance;
 
-            let npcIcon = '❗'; // Padrão: Disponível
+            let npcIcon = questDef.markerIcon || '❗'; // Usar ícone da quest se disponível, fallback para padrão
             let npcDesc = 'Nova Missão disponível';
             let showNPC = false;
 
             if (questState === 'available') {
-                if (canAcceptQuest(questDef, { level: 1, completedQuests: [] })) { // TODO: Pegar dados reais player
+                if (canAcceptQuest(questDef, { level: 1, completedQuests: [] })) {
                     showNPC = true;
-                    npcIcon = '❗';
+                    // Se estiver disponível, mantemos o ícone da quest ou o de exclamação para indicar novo?
+                    // O usuário reclamou de icones iguais. Vamos tentar usar o icone temático da quest.
                     npcDesc = 'Nova Missão disponível';
                 }
             } else if (questState === 'active') {
                 showNPC = true;
-                npcIcon = '💬'; // Em progresso (Talk/Desistir)
+                npcIcon = '💬'; // Em progresso (Talk/Desistir) -> Mantemos padrao para indicar interação
                 npcDesc = 'Missão em andamento';
             } else if (questState === 'completed') {
-                // Tecnicamente "completed" no manager significa que já entregou.
-                // Mas se tiver "ready to complete" (objetivos todos feitos), ainda é 'active' no manager até entregar.
-                // O estado 'active' do manager precisa diferenciar "em progresso" de "pronto para entregar".
                 if (missionManager.canComplete(questDef.id)) {
                     showNPC = true;
                     npcIcon = '🎁'; // Pronto para entregar
@@ -134,7 +131,7 @@ export class MapScreen extends BaseScreen {
                     id: `npc_${questDef.id}`,
                     type: 'npc',
                     icon: npcIcon,
-                    title: questDef.title || questDef.name, // Suporte aos dois schemas
+                    title: questDef.title || questDef.name,
                     description: npcDesc,
                     lat: npcLat,
                     lng: npcLng,
@@ -173,7 +170,7 @@ export class MapScreen extends BaseScreen {
                 // Usar hash composto para posição determinística mas única
                 const objHash = (questDef.id.length + index + i) * 123;
                 const angle = (objHash % 360) * (Math.PI / 180);
-                const dist = 0.0004 + (Math.random() * 0.0002); // um pouco mais longe que o NPC
+                const dist = 0.0012 + (Math.random() * 0.0005); // Mais afastado (antes era 0.0004)
 
                 const mLat = centerPos.lat + Math.cos(angle) * dist;
                 const mLng = centerPos.lng + Math.sin(angle) * dist;

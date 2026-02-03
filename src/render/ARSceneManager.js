@@ -285,7 +285,7 @@ export class ARSceneManager extends SceneManager {
             model.position.set(worldX, this.arenaPosition.y, worldZ);
 
             // Escala conforme DB
-            const scale = npcData.scale || 1.0;
+            const scale = npcData.scale || 2.0;
             model.scale.set(0, 0, 0); // Começa invisível para animação
 
             // Metadados para interação
