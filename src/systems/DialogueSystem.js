@@ -26,16 +26,19 @@ export class DialogueSystem {
     setupEventListeners() {
         // Iniciar diálogo quando NPC é selecionado
         eventBus.on('npcSelected', (data) => {
-            console.log('Dialogue Requested for:', data.npcId);
-            this.startDialogueForNPC(data.npcId);
+            console.log('Dialogue Requested for:', data.npcId, 'Context:', data.context);
+            // Passar o contexto (que contém questId se vier de um marker específico)
+            this.startDialogueForNPC(data.npcId, data.context);
         });
     }
 
     /**
      * Inicia o diálogo associado a um NPC
      * Verifica se o NPC tem quests associadas e qual o estado delas
+     * @param {string} npcId
+     * @param {object} context - Contexto opcional (ex: { questId: '...' })
      */
-    startDialogueForNPC(npcId) {
+    startDialogueForNPC(npcId, context = null) {
         this.currentNPCId = npcId;
 
         // 1. Verificar se este NPC tem alguma quest ativa ou disponível
@@ -49,39 +52,73 @@ export class DialogueSystem {
 
         const allQuests = Object.values(QuestDatabase);
 
-        // Prioridade: Completar > Ativa > Oferecer
+        // --- PRIORIDADE 0: Contexto Específico (Clicou num marker específico) ---
+        if (context && context.questId) {
+            const specificQuest = QuestDatabase[context.questId];
+            if (specificQuest && specificQuest.giverId === npcId) {
+                // Verificar estado desta quest específica
+                const qState = missionManager.getQuestState(specificQuest.id);
 
-        // A. Verificar Completas (Prontas para entregar)
-        const activeQuests = missionManager.getActiveQuests();
-        const readyToComplete = activeQuests.find(qState => {
-            const qDef = QuestDatabase[qState.id];
-            return qDef && qDef.giverId === npcId && missionManager.canComplete(qState.id);
-        });
+                if (qState === QuestStatus.COMPLETED || missionManager.canComplete(specificQuest.id)) {
+                    // Verifica se pode completar (mesmo que status no manager seja active, se objectives done -> completed dialogue)
+                    if (missionManager.canComplete(specificQuest.id)) {
+                        targetQuest = specificQuest;
+                        dialogueType = 'completed';
+                    } else {
+                        // Já completou/entregou? Talvez mostrar msg genérica ou nada.
+                        // Se status é COMPLETED, já entregou.
+                        // Mas aqui vamos assumir que se clicou, quer ver algo.
+                    }
+                } else if (qState === QuestStatus.ACTIVE) {
+                    targetQuest = specificQuest;
+                    dialogueType = 'active';
+                } else if (qState === QuestStatus.AVAILABLE) {
+                    targetQuest = specificQuest;
+                    dialogueType = 'offer';
+                }
 
-        if (readyToComplete) {
-            targetQuest = QuestDatabase[readyToComplete.id];
-            dialogueType = 'completed';
-        } else {
-            // B. Verificar Ativas (Em progresso)
-            const inProgress = activeQuests.find(qState => {
+                if (targetQuest) {
+                    console.log(`[Dialogue] Usando quest específica do contexto: ${targetQuest.id} (${dialogueType})`);
+                }
+            }
+        }
+
+        // Se não achou via contexto, usa a lógica de prioridade padrão
+        if (!targetQuest) {
+            // Prioridade: Completar > Ativa > Oferecer
+
+            // A. Verificar Completas (Prontas para entregar)
+            const activeQuests = missionManager.getActiveQuests();
+            const readyToComplete = activeQuests.find(qState => {
                 const qDef = QuestDatabase[qState.id];
-                return qDef && qDef.giverId === npcId;
+                return qDef && qDef.giverId === npcId && missionManager.canComplete(qState.id);
             });
 
-            if (inProgress) {
-                targetQuest = QuestDatabase[inProgress.id];
-                dialogueType = 'active';
+            if (readyToComplete) {
+                targetQuest = QuestDatabase[readyToComplete.id];
+                dialogueType = 'completed';
             } else {
-                // C. Verificar Disponíveis (Novas)
-                // TODO: Verificar requisitos de nível aqui se necessário
-                const available = allQuests.find(q =>
-                    q.giverId === npcId &&
-                    missionManager.getQuestState(q.id) === QuestStatus.AVAILABLE
-                );
+                // B. Verificar Ativas (Em progresso)
+                const inProgress = activeQuests.find(qState => {
+                    const qDef = QuestDatabase[qState.id];
+                    return qDef && qDef.giverId === npcId;
+                });
 
-                if (available) {
-                    targetQuest = available;
-                    dialogueType = 'offer';
+                if (inProgress) {
+                    targetQuest = QuestDatabase[inProgress.id];
+                    dialogueType = 'active';
+                } else {
+                    // C. Verificar Disponíveis (Novas)
+                    // TODO: Verificar requisitos de nível aqui se necessário
+                    const available = allQuests.find(q =>
+                        q.giverId === npcId &&
+                        missionManager.getQuestState(q.id) === QuestStatus.AVAILABLE
+                    );
+
+                    if (available) {
+                        targetQuest = available;
+                        dialogueType = 'offer';
+                    }
                 }
             }
         }
