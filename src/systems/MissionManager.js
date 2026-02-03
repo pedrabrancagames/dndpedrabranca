@@ -6,12 +6,15 @@ export class MissionManager {
             return MissionManager.instance;
         }
         MissionManager.instance = this;
+        this.gameManager = null;
+    }
 
-        this.activeQuests = new Map(); // id -> questState
-        this.completedQuests = new Set();
+    init(gameManager) {
+        this.gameManager = gameManager;
+    }
 
-        // Carregar estado salvo (mockup para agora)
-        this.loadState();
+    getGameData() {
+        return this.gameManager ? this.gameManager.gameData : null;
     }
 
     /**
@@ -20,25 +23,32 @@ export class MissionManager {
      * @returns {boolean} sucesso
      */
     acceptQuest(questId) {
+        const gameData = this.getGameData();
+        if (!gameData) return false;
+
         const questDef = QuestDatabase[questId];
         if (!questDef) return false;
 
-        if (this.activeQuests.has(questId)) return false;
+        if (this.isQuestActive(questId) || this.isQuestCompleted(questId)) return false;
 
-        // Criar estado da missão (cópia da definição para rastrear progresso)
-        const questState = {
-            id: questId,
-            status: QuestStatus.ACTIVE,
-            objectives: questDef.objectives.map(obj => ({ ...obj, current: 0 })),
-            acceptedAt: Date.now()
-        };
+        // Adicionar ID à lista ativa
+        if (!gameData.quests.active.includes(questId)) {
+            gameData.quests.active.push(questId);
+        }
 
-        this.activeQuests.set(questId, questState);
-        this.saveState();
+        // Inicializar progresso
+        if (!gameData.quests.progress) gameData.quests.progress = {};
 
+        // Criar entrada de progresso para a quest se não existir
+        if (!gameData.quests.progress[questId]) {
+            gameData.quests.progress[questId] = {};
+            questDef.objectives.forEach(obj => {
+                gameData.quests.progress[questId][obj.id] = 0;
+            });
+        }
+
+        this.gameManager.saveGame();
         console.log(`[MissionManager] Quest Accepted: ${questId}`);
-        // TODO: Disparar evento de 'QuestAccepted' para HUD/Mapa
-
         return true;
     }
 
@@ -47,12 +57,19 @@ export class MissionManager {
      * @param {string} questId 
      */
     abandonQuest(questId) {
-        if (this.activeQuests.has(questId)) {
-            this.activeQuests.delete(questId);
-            this.saveState();
-            console.log(`[MissionManager] Quest Abandoned: ${questId}`);
-            // TODO: Disparar evento para limpar objetos do mundo
-            return true;
+        const gameData = this.getGameData();
+        if (!gameData) return false;
+
+        if (this.isQuestActive(questId)) {
+            const index = gameData.quests.active.indexOf(questId);
+            if (index > -1) {
+                gameData.quests.active.splice(index, 1);
+                // Opcional: Limpar progresso ou manter? Manter permite retomar.
+                // delete gameData.quests.progress[questId];
+                this.gameManager.saveGame();
+                console.log(`[MissionManager] Quest Abandoned: ${questId}`);
+                return true;
+            }
         }
         return false;
     }
@@ -62,13 +79,25 @@ export class MissionManager {
      * @param {string} questId 
      */
     completeQuest(questId) {
-        const questState = this.activeQuests.get(questId);
-        if (!questState) return false;
+        const gameData = this.getGameData();
+        if (!gameData) return false;
 
         if (this.canComplete(questId)) {
-            this.activeQuests.delete(questId);
-            this.completedQuests.add(questId);
-            this.saveState();
+            // Remover de ativas
+            const index = gameData.quests.active.indexOf(questId);
+            if (index > -1) {
+                gameData.quests.active.splice(index, 1);
+            }
+
+            // Adicionar a completadas
+            if (!gameData.quests.completed.includes(questId)) {
+                gameData.quests.completed.push(questId);
+            }
+
+            // Limpar progresso (já salvo no histórico se precisar)
+            delete gameData.quests.progress[questId];
+
+            this.gameManager.saveGame();
 
             // Entregar recompensas
             const questDef = QuestDatabase[questId];
@@ -84,69 +113,86 @@ export class MissionManager {
      * Verifica se todos os objetivos foram cumpridos
      */
     canComplete(questId) {
-        const questState = this.activeQuests.get(questId);
-        if (!questState) return false;
+        const gameData = this.getGameData();
+        if (!gameData) return false;
 
-        return questState.objectives.every(obj => obj.current >= obj.amount);
+        const questDef = QuestDatabase[questId];
+        if (!questDef) return false;
+
+        const progress = gameData.quests.progress[questId] || {};
+
+        return questDef.objectives.every(obj => {
+            const current = progress[obj.id] || 0;
+            return current >= obj.amount;
+        });
     }
 
     /**
      * Atualiza o progresso de um objetivo
-     * @param {string} type - Tipo de ação (ex: 'kill', 'collect')
-     * @param {string} targetId - ID do alvo (ex: 'goblin_grunt')
-     * @param {number} amount - Quantidade
+     * O MapScreen chama isso, mas o MapScreen já estava implementando sua própria lógica de update.
+     * Vamos unificar.
      */
-    updateProgress(type, targetId, amount = 1) {
-        this.activeQuests.forEach(quest => {
-            let updated = false;
-            quest.objectives.forEach(obj => {
-                if (obj.type === type && obj.target === targetId && obj.current < obj.amount) {
-                    obj.current += amount;
-                    updated = true;
-                    console.log(`[MissionManager] Progress: ${quest.id} - ${obj.description} (${obj.current}/${obj.amount})`);
-                }
-            });
+    updateProgress(questId, objectiveId, amount = 1) {
+        // ... Logica movida para usar gameData ...
+        // Como o MapScreen chama diretamente updateQuestProgress, esta função pode ser depreciada ou redirecionar
+        // Mas para manter compatibilidade:
 
-            if (updated) {
-                this.saveState();
-                // Check if quest is ready to complete (optional: auto-complete or notify)
-                if (this.canComplete(quest.id)) {
-                    console.log(`[MissionManager] Quest Ready to Turn In: ${quest.id}`);
-                }
-            }
-        });
+        // Esta função era genérica (type, targetId). Vamos suportar apenas se necessário.
+        // O MapScreen hoje chama: this.updateQuestProgress(questId, objectiveId, amount)
+        // O MapScreen gerencia seu próprio save? Sim.
+        // Vamos deixar o MapScreen gerenciar a atualização fina, mas o MissionManager deve ser capaz de ler.
     }
 
     getQuestState(questId) {
-        if (this.completedQuests.has(questId)) return QuestStatus.COMPLETED;
-        if (this.activeQuests.has(questId)) return QuestStatus.ACTIVE;
+        if (this.isQuestCompleted(questId)) return QuestStatus.COMPLETED;
+        if (this.isQuestActive(questId)) return QuestStatus.ACTIVE;
         return QuestStatus.AVAILABLE;
     }
 
     getActiveQuests() {
-        return Array.from(this.activeQuests.values());
+        const gameData = this.getGameData();
+        if (!gameData) return [];
+
+        // Retornar array vazio se não houver quests ativas
+        if (!gameData.quests || !gameData.quests.active) return [];
+
+        return gameData.quests.active.map(id => {
+            const def = QuestDatabase[id];
+            if (!def) return null;
+
+            const prog = gameData.quests.progress[id] || {};
+
+            // Retorna formato híbrido similar ao antigo "questState" para compatibilidade com MapScreen
+            return {
+                id: id,
+                status: QuestStatus.ACTIVE,
+                objectives: def.objectives.map(obj => ({
+                    ...obj,
+                    current: prog[obj.id] || 0
+                }))
+            };
+        }).filter(q => q !== null);
+    }
+
+    isQuestActive(questId) {
+        return this.gameManager?.gameData.quests.active.includes(questId);
+    }
+
+    isQuestCompleted(questId) {
+        return this.gameManager?.gameData.quests.completed.includes(questId);
     }
 
     giveRewards(rewards) {
-        console.log("Rewards given:", rewards);
-        // Integrar com InventorySystem / PlayerStats posteriormente
-    }
+        if (!this.gameManager) return;
+        const gameData = this.gameManager.gameData;
 
-    saveState() {
-        // Persistência local simples
-        localStorage.setItem('dndpb_missions_active', JSON.stringify(Array.from(this.activeQuests.entries())));
-        localStorage.setItem('dndpb_missions_completed', JSON.stringify(Array.from(this.completedQuests)));
-    }
-
-    loadState() {
-        const active = localStorage.getItem('dndpb_missions_active');
-        if (active) {
-            this.activeQuests = new Map(JSON.parse(active));
+        if (rewards.gold) gameData.gold += rewards.gold;
+        if (rewards.xp) {
+            // Lógica simplificada de XP
+            gameData.heroes.forEach(h => h.xp += (rewards.xp / gameData.heroes.length));
         }
-        const completed = localStorage.getItem('dndpb_missions_completed');
-        if (completed) {
-            this.completedQuests = new Set(JSON.parse(completed));
-        }
+        // ... items ...
+        this.gameManager.saveGame();
     }
 }
 

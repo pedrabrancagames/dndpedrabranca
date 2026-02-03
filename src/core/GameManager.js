@@ -29,6 +29,7 @@ export class GameManager {
         this.progressionSystem = new ProgressionSystem(this);
         this.gameMaster = new GameMaster(this);
         this.missionManager = missionManager; // Link singleton
+        this.missionManager.init(this); // Initialize with reference
 
 
         // Inicializado após DOM
