@@ -26,11 +26,11 @@ Este documento serve como checklist para acompanhar o progresso da implementaç�
 - [x] Implementar interação de RA "Clicar para Coletar" para itens.
 
 ## Fase 4: Tipos de Missão Específicos
-- [ ] Implementar lógica específica para missões de **Combate** (rastrear kills).
-- [ ] Implementar lógica específica para missões de **Coleta** (rastrear inventário/interações).
+- [x] Implementar lógica específica para missões de **Combate** (rastrear kills).
+- [x] Implementar lógica específica para missões de **Coleta** (rastrear inventário/interações).
 - [ ] Implementar lógica específica para missões de **Puzzle/Investigação**.
 
 ## Plano de Verificação
-- [ ] **Teste de Desistência**: Aceitar missão -> Verificar NPC no mapa -> Desistir -> Verificar limpeza de objetivos.
-- [ ] **Teste de Combate**: Aceitar missão -> Matar inimigos -> Concluir.
-- [ ] **Teste de Coleta**: Aceitar missão -> Coletar itens em RA -> Concluir.
+- [x] **Teste de Desistência**: Aceitar missão -> Verificar NPC no mapa -> Desistir -> Verificar limpeza de objetivos.
+- [x] **Teste de Combate**: Aceitar missão -> Matar inimigos -> Concluir.
+- [x] **Teste de Coleta**: Aceitar missão -> Coletar itens em RA -> Concluir.
