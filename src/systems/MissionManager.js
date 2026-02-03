@@ -17,6 +17,10 @@ export class MissionManager {
         return this.gameManager ? this.gameManager.gameData : null;
     }
 
+    getQuestById(id) {
+        return QuestDatabase[id];
+    }
+
     /**
      * Aceita uma missão, movendo-a para a lista ativa
      * @param {string} questId 
