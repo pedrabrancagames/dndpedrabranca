@@ -64,6 +64,8 @@ export class MapManager {
      * Inicia o rastreamento GPS - sempre usa localização real
      */
     startTracking() {
+        if (this.watchId) return; // Já está rastreando
+
         if ('geolocation' in navigator) {
             // Tentar obter posição inicial rapidamente
             navigator.geolocation.getCurrentPosition(
@@ -87,11 +89,23 @@ export class MapManager {
                 (err) => console.warn('GPS tracking error:', err.message),
                 { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
             );
+            console.log('GPS: Tracking iniciado');
         } else {
             console.warn('Geolocation not supported');
             if (!this.currentPosition) {
                 this.setDefaultPosition();
             }
+        }
+    }
+
+    /**
+     * Para o rastreamento GPS para economizar bateria
+     */
+    stopTracking() {
+        if (this.watchId) {
+            navigator.geolocation.clearWatch(this.watchId);
+            this.watchId = null;
+            console.log('GPS: Tracking pausado');
         }
     }
 
@@ -202,7 +216,7 @@ export class MapManager {
                 isNPC: true,
                 target: mission.target,
                 isNPC: true,
-                npcId: mission.targetId || mission.target.toLowerCase().replace(/\s+/g, '_'),
+                npcId: mission.targetId || (mission.target ? mission.target.toLowerCase().replace(/\s+/g, '_') : 'unknown'),
                 // Passar contexto da quest se disponível (para iniciar diálogos de missões disponíveis)
                 questId: mission.questId
             });

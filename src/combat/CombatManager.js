@@ -105,7 +105,7 @@ export class CombatManager {
             // Limpar efeitos temporários
             if (enemy.defending) {
                 enemy.defending = false;
-                enemy.tempDef = 0;
+                enemy.tempDefense = 0;
             }
 
             this.turnManager.nextTurn();

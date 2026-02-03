@@ -284,7 +284,7 @@ export class GMScreen extends BaseScreen {
                     <div class="objective-item ${completed ? 'completed' : ''}">
                         <span class="objective-check">${completed ? '✅' : '⬜'}</span>
                         <span class="objective-text">${obj.description}</span>
-                        <span class="objective-progress">${obj.progress}/${obj.amount}</span>
+                        <span class="objective-progress">${obj.progress || 0}/${obj.amount}</span>
                     </div>
                 `;
             }).join('');
@@ -341,11 +341,11 @@ export class GMScreen extends BaseScreen {
             });
 
             eventBus.emit('showMessage', {
-                text: `Missão "${this.selectedQuest.name}" aceita!`,
+                text: `Missão "${this.selectedQuest.title}" aceita!`,
                 type: 'success'
             });
 
-            this.addToEventLog(`📜 Aceitou a missão: ${this.selectedQuest.name}`);
+            this.addToEventLog(`📜 Aceitou a missão: ${this.selectedQuest.title}`);
         }
 
         this.closeQuestModal();
@@ -364,11 +364,11 @@ export class GMScreen extends BaseScreen {
             delete quests.progress[this.selectedQuest.id];
 
             eventBus.emit('showMessage', {
-                text: `Missão "${this.selectedQuest.name}" abandonada.`,
+                text: `Missão "${this.selectedQuest.title}" abandonada.`,
                 type: 'info'
             });
 
-            this.addToEventLog(`❌ Abandonou a missão: ${this.selectedQuest.name}`);
+            this.addToEventLog(`❌ Abandonou a missão: ${this.selectedQuest.title}`);
         }
 
         this.closeQuestModal();
@@ -403,11 +403,11 @@ export class GMScreen extends BaseScreen {
             }
 
             eventBus.emit('showMessage', {
-                text: `🏆 Missão "${this.selectedQuest.name}" concluída! Recompensas recebidas.`,
+                text: `🏆 Missão "${this.selectedQuest.title}" concluída! Recompensas recebidas.`,
                 type: 'success'
             });
 
-            this.addToEventLog(`🏆 Completou a missão: ${this.selectedQuest.name}`);
+            this.addToEventLog(`🏆 Completou a missão: ${this.selectedQuest.title}`);
         }
 
         this.closeQuestModal();
@@ -504,10 +504,10 @@ export class GMScreen extends BaseScreen {
         let modifier = 0;
         switch (check.stat) {
             case 'str': modifier = Math.floor((hero.atk - 10) / 2); break;
-            case 'dex': modifier = Math.floor((hero.dex || 10 - 10) / 2); break;
-            case 'con': modifier = Math.floor((hero.con || 12 - 10) / 2); break;
-            case 'int': modifier = Math.floor((hero.int || 10 - 10) / 2); break;
-            case 'cha': modifier = Math.floor((hero.cha || 10 - 10) / 2); break;
+            case 'dex': modifier = Math.floor(((hero.dex || 10) - 10) / 2); break;
+            case 'con': modifier = Math.floor(((hero.con || 12) - 10) / 2); break;
+            case 'int': modifier = Math.floor(((hero.int || 10) - 10) / 2); break;
+            case 'cha': modifier = Math.floor(((hero.cha || 10) - 10) / 2); break;
             default: modifier = 0;
         }
 

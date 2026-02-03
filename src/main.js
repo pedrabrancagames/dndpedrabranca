@@ -23,8 +23,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Debug: Spawn NPC
         window.spawnNPC = (id) => {
-            if (game.gameManager.arSceneManager) {
-                game.gameManager.arSceneManager.spawnNPC(id || 'mayor');
+            if (game.arSceneManager) {
+                game.arSceneManager.spawnNPC(id || 'mayor');
             } else {
                 console.warn('AR Scene not active');
             }

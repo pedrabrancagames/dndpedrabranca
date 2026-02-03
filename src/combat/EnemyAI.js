@@ -279,7 +279,7 @@ export class EnemyAI {
 
             case 'defend':
                 action.source.defending = true;
-                action.source.tempDef = (action.source.tempDef || 0) + action.defenseBonus;
+                action.source.tempDefense = (action.source.tempDefense || 0) + action.defenseBonus;
 
                 console.log(`${action.source.name} está se defendendo (+${action.defenseBonus} DEF)`);
                 break;

@@ -60,6 +60,9 @@ export class GameManager {
             if (savedData) this.gameData = { ...this.gameData, ...savedData };
             else this.initNewGame();
 
+            // Iniciar auto-save
+            this.saveManager.startAutoSave(this);
+
             await this.loadEssentialAssets();
             this.setupEventListeners();
 
@@ -271,6 +274,18 @@ export class GameManager {
                 this.stateManager.setState(GameState.MAP);
                 this.showToast('Modo AR finalizado', ToastTypes.INFO);
             }
+        });
+
+        // Auto-save em visibilitychange e pagehide
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                this.saveGame();
+                console.log('App hidden: Game saved');
+            }
+        });
+
+        window.addEventListener('pagehide', () => {
+            this.saveGame();
         });
     }
 

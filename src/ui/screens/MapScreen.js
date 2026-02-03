@@ -19,6 +19,10 @@ export class MapScreen extends BaseScreen {
     }
 
     onShow() {
+        if (this.gameManager.mapManager) {
+            this.gameManager.mapManager.startTracking();
+        }
+
         if (!this.mapInitialized && this.gameManager.mapManager) {
             setTimeout(() => {
                 this.gameManager.mapManager.init('map-container');
@@ -33,6 +37,12 @@ export class MapScreen extends BaseScreen {
                 }
                 this.updateQuestMarkers();
             }, 100);
+        }
+    }
+
+    onHide() {
+        if (this.gameManager.mapManager) {
+            this.gameManager.mapManager.stopTracking();
         }
     }
 
