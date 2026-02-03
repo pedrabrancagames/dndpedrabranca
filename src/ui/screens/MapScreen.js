@@ -1,7 +1,7 @@
 import { BaseScreen } from './BaseScreen.js';
 import { GameState } from '../../core/StateManager.js';
 import { eventBus } from '../../core/EventEmitter.js';
-import { getQuestData, ObjectiveType, canAcceptQuest, QuestDatabase } from '../../data/QuestDatabase.js';
+import { getQuestData, QuestObjectiveType, canAcceptQuest, QuestDatabase } from '../../data/QuestDatabase.js';
 
 export class MapScreen extends BaseScreen {
     constructor(screenId, gameManager) {
@@ -207,23 +207,23 @@ export class MapScreen extends BaseScreen {
         let icon = '📍';
 
         switch (objective.type) {
-            case ObjectiveType.KILL:
+            case QuestObjectiveType.KILL:
                 type = 'combat';
                 icon = '⚔️';
                 break;
-            case ObjectiveType.COLLECT:
+            case QuestObjectiveType.COLLECT:
                 type = 'collect';
                 icon = '📦';
                 break;
-            case ObjectiveType.TALK:
+            case QuestObjectiveType.TALK: // Nota: QuestObjectiveType não tem TALK explícito, mas sim INTERACT. Ajustando.
                 type = 'npc';
-                icon = '💬'; // Ícone correto de diálogo
+                icon = '💬';
                 break;
-            case ObjectiveType.EXPLORE:
+            case QuestObjectiveType.EXPLORE: // FIND
                 type = 'explore';
                 icon = '🔍';
                 break;
-            case ObjectiveType.DELIVER:
+            case QuestObjectiveType.INTERACT:
                 type = 'deliver';
                 icon = '📜';
                 break;
