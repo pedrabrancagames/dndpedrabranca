@@ -146,10 +146,14 @@ export class ARSceneManager extends SceneManager {
         // Spawnar inimigos do combate atual
         await this.spawnEnemies();
 
-        // Spawnar NPC pendente (se houver)
+        // Spawnar NPC ou Item pendente (se houver)
         if (this.pendingNPC) {
-            console.log('Spawning pending NPC:', this.pendingNPC.id);
-            await this.spawnNPC(this.pendingNPC.id, null, this.pendingNPC.context);
+            console.log('Spawning pending object:', this.pendingNPC.id);
+            if (this.pendingNPC.isCollection) {
+                await this.spawnCollectionItem(this.pendingNPC.id, this.pendingNPC.modelPath, null, this.pendingNPC.context);
+            } else {
+                await this.spawnNPC(this.pendingNPC.id, null, this.pendingNPC.context);
+            }
             this.pendingNPC = null;
         }
 
@@ -312,6 +316,66 @@ export class ARSceneManager extends SceneManager {
 
         } catch (error) {
             console.error(`Failed to spawn NPC ${npcId}:`, error);
+        }
+    }
+
+    /**
+     * Spawna um item colecionável na cena
+     */
+    async spawnCollectionItem(itemId, modelPath, position = null, context = null) {
+        try {
+            // Usar o model path passado ou um default
+            const path = modelPath || '/models/items/bag.glb';
+            const model = await this.modelLoader.load(path);
+
+            const spawnPos = position || new THREE.Vector3(0, 0, 0);
+
+            if (!this.arenaPlaced) {
+                console.log('Arena not ready. Queuing Collection Item spawn:', itemId);
+                this.pendingNPC = { id: itemId, context: context, isCollection: true, modelPath: path }; // Reusing pendingNPC for convenience or create pendingObject
+
+                const hint = document.getElementById('reticle-hint');
+                if (hint) {
+                    hint.textContent = 'Toque em uma superfície para colocar o item';
+                    hint.style.display = 'block';
+                }
+                return;
+            }
+
+            const worldX = this.arenaPosition.x + spawnPos.x;
+            const worldZ = this.arenaPosition.z + spawnPos.z;
+
+            // Item flutuando levemente e girando (animação idle pode ser add depois)
+            model.position.set(worldX, this.arenaPosition.y + 0.5, worldZ);
+            model.scale.set(0, 0, 0);
+
+            model.userData = {
+                type: 'collection',
+                id: itemId,
+                name: 'Item Colecionável',
+                context: context
+            };
+
+            // Olhar para a câmera
+            const lookAtPos = new THREE.Vector3(
+                this.arenaPosition.x - this.cameraDirection.x,
+                this.arenaPosition.y,
+                this.arenaPosition.z - this.cameraDirection.z
+            );
+            model.lookAt(lookAtPos);
+
+            this.scene.add(model);
+            this.spawnedModels.push(model);
+
+            AnimationUtils.animateSpawn(model, {
+                targetScale: 0.5, // Itens são menores
+                delay: 0
+            });
+
+            console.log(`Spawned Collection Item ${itemId} at`, model.position);
+
+        } catch (error) {
+            console.error(`Failed to spawn item ${itemId}:`, error);
         }
     }
 

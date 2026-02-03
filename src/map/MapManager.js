@@ -207,22 +207,17 @@ export class MapManager {
                 questId: mission.questId
             });
         }
-        // EXPLORAÇÃO
+        // EXPLORAÇÃO / COLETA
         else if (mission.objectiveType === 'explore' || mission.type === 'explore' || mission.type === 'collect') {
-            eventBus.emit('showMessage', {
-                text: `🔍 Explorando a área...`,
-                type: 'info'
+            this.gameManager.stateManager.setState('combat', {
+                missionId: mission.id,
+                questId: mission.questId,
+                objectiveId: mission.objectiveId,
+                target: mission.target,
+                isCollection: true,
+                // Mapear modelo baseado no target (ex: moon_herb -> herb.glb)
+                modelPath: mission.target === 'moon_herb' ? '/models/items/herb.glb' : '/models/items/bag.glb'
             });
-
-            setTimeout(() => {
-                eventBus.emit('combat:victory', {
-                    missionId: mission.id,
-                    questId: mission.questId,
-                    objectiveId: mission.objectiveId,
-                    target: mission.target,
-                    enemiesKilled: 1
-                });
-            }, 1000);
         }
     }
 

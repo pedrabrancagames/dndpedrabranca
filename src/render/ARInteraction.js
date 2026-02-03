@@ -115,9 +115,10 @@ export const ARInteractionMixin = {
 
         this.selectedEnemy = model; // Mantemos o nome da var, mas pode ser NPC
         const isNPC = model.userData?.type === 'npc';
+        const isCollection = model.userData?.type === 'collection';
 
         // Highlight com cor diferente
-        const highlightColor = isNPC ? 0x00ff00 : 0xff4444;
+        const highlightColor = isNPC ? 0x00ff00 : (isCollection ? 0xffff00 : 0xff4444);
         this.highlightModel(model, true, highlightColor);
 
         if (isNPC) {
@@ -125,7 +126,14 @@ export const ARInteractionMixin = {
             eventBus.emit('npcSelected', {
                 npcId: model.userData.id,
                 model: model,
-                context: model.userData.context // Extract context
+                context: model.userData.context
+            });
+        } else if (isCollection) {
+            console.log(`Selected Collection Item: ${model.userData.name}`);
+            eventBus.emit('collectionItemSelected', {
+                itemId: model.userData.id,
+                model: model,
+                context: model.userData.context
             });
         } else {
             // Lógica antiga de inimigo

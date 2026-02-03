@@ -175,12 +175,50 @@ export class GameManager {
                         // Passar o objeto 'data' inteiro como contexto (contém questId, objectiveId, etc)
                         this.arSceneManager.spawnNPC(data.npcId || NPCIDs.MAYOR, null, data);
                     }, 1000);
+                } else if (data.isCollection) {
+                    console.log('Starting Collection:', data.target);
+                    this.combatManager.clearEnemies();
+                    this.arSceneManager.startSession();
+                    setTimeout(() => {
+                        this.arSceneManager.spawnCollectionItem(data.target, data.modelPath, null, data);
+                    }, 1000);
                 } else {
                     // BUGFIX: Passar o objeto 'data' completo
                     this.combatManager.startEncounter(data);
                     this.arSceneManager.startSession();
                 }
             }
+        });
+
+        // Evento de item coletado em AR
+        eventBus.on('collectionItemSelected', ({ itemId, model, context }) => {
+            console.log('Item collected:', itemId);
+            this.showToast('Item coletado! +1', ToastTypes.SUCCESS);
+
+            // Animar saída (ex: subir e sumir)
+            if (model) {
+                // Pequena animação manual ou via AnimationUtils se tivesse support
+                // Por enquanto removemos logo após um delay
+            }
+
+            // Atualizar progresso
+            if (context) {
+                // Disparar evento de vitoria para reusar lógica do MapScreen (que ouve combat:victory)
+                // Ou chamar missionManager diretamente. MapScreen ouve 'combat:victory'.
+                // Vamos simular 'combat:victory' para manter consistência com MapScreen update
+                eventBus.emit('combat:victory', {
+                    missionId: context.missionId,
+                    questId: context.questId,
+                    objectiveId: context.objectiveId,
+                    enemiesKilled: 1
+                });
+            }
+
+            // Encerrar sessão após breve delay
+            setTimeout(() => {
+                this.arSceneManager.endSession();
+                this.stateManager.setState(GameState.MAP);
+            }, 1500);
         });
 
         // Toast messages
