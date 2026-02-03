@@ -182,6 +182,13 @@ export class GameManager {
                     setTimeout(() => {
                         this.arSceneManager.spawnCollectionItem(data.target, data.modelPath, null, data);
                     }, 1000);
+                } else if (data.isPuzzle) {
+                    console.log('Starting Puzzle:', data.puzzleData);
+                    this.combatManager.clearEnemies();
+                    this.arSceneManager.startSession();
+                    setTimeout(() => {
+                        this.arSceneManager.spawnPuzzleElements(data.puzzleData, data);
+                    }, 1000);
                 } else {
                     // BUGFIX: Passar o objeto 'data' completo
                     this.combatManager.startEncounter(data);
@@ -219,6 +226,26 @@ export class GameManager {
                 this.arSceneManager.endSession();
                 this.stateManager.setState(GameState.MAP);
             }, 1500);
+        });
+
+        // Evento de Puzzle Resolvido
+        eventBus.on('puzzleSolved', ({ context }) => {
+            console.log('Puzzle Solved!', context);
+            this.showToast('Enigma Resolvido! ✨', ToastTypes.SUCCESS);
+
+            if (context) {
+                eventBus.emit('combat:victory', {
+                    missionId: context.missionId,
+                    questId: context.questId,
+                    objectiveId: context.objectiveId,
+                    enemiesKilled: 1 // Workaround para contar progresso de 1
+                });
+            }
+
+            setTimeout(() => {
+                this.arSceneManager.endSession();
+                this.stateManager.setState(GameState.MAP);
+            }, 2000);
         });
 
         // Toast messages

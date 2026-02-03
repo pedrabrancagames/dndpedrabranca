@@ -143,6 +143,66 @@ export const QuestDatabase = {
             gold: 20
         }
     }
+},
+
+    // --- Missão de Puzzle (Runes) ---
+    ancient_secrets: {
+        id: 'ancient_secrets',
+        title: 'Segredo dos Antigos',
+        description: 'Decifre a sequência das runas para abrir o selo.',
+        type: QuestType.PUZZLE,
+        giverId: 'mayor', // Prefeito dá a missão
+        markerIcon: '🧩',
+        location: { x: -5, z: 0 },
+
+        dialogue: {
+            offer: {
+                text: "Ah, que bom te ver! Encontrei escrituras antigas. Dizem: 'Fogo queima, Água apaga, Terra sustenta'. Pode investigar?",
+                options: [
+                    { text: "Parece um enigma. Eu aceito.", action: 'accept' },
+                    { text: "Não sou bom com charadas.", action: 'refuse' }
+                ]
+            },
+            active: {
+                text: "Lembre-se da ordem: Fogo primeiro, depois Água, por fim a Terra.",
+                options: [
+                    { text: "Entendido.", action: 'close' },
+                    { text: "Desisto, é muito difícil.", action: 'abandon' }
+                ]
+            },
+            completed: {
+                text: "Incrível! O selo foi quebrado e os conhecimentos antigos recuperados.",
+                options: [
+                    { text: "Foi um prazer.", action: 'complete' }
+                ]
+            }
+        },
+
+        objectives: [
+            {
+                id: 'solve_runes',
+                type: QuestObjectiveType.INTERACT,
+                target: 'runes_puzzle',
+                amount: 1,
+                current: 0,
+                description: "Resolva a Sequência das Runas",
+                puzzleData: {
+                    sequence: ['rune_red', 'rune_blue', 'rune_green'], // Fogo, Água, Terra
+                    models: [
+                        { id: 'rune_red', model: '/models/items/gem.glb', color: 0xff0000 },
+                        { id: 'rune_blue', model: '/models/items/gem.glb', color: 0x0000ff },
+                        { id: 'rune_green', model: '/models/items/gem.glb', color: 0x00ff00 }
+                    ]
+                }
+            }
+        ],
+
+        rewards: {
+            xp: 150,
+            gold: 100,
+            items: ['gem']
+        }
+    }
 };
 
 /** Helpers */

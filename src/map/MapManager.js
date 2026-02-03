@@ -207,7 +207,21 @@ export class MapManager {
                 questId: mission.questId
             });
         }
-        // EXPLORAÇÃO / COLETA
+        // PUZZLE
+        else if (mission.objectiveType === 'interact' || mission.type === 'puzzle') {
+            const questData = this.gameManager.missionManager.getQuestById(mission.questId);
+            // Encontrar o objetivo específico para pegar os dados do puzzle
+            const objective = questData.objectives.find(o => o.id === mission.objectiveId);
+
+            this.gameManager.stateManager.setState('combat', {
+                missionId: mission.id,
+                questId: mission.questId,
+                objectiveId: mission.objectiveId,
+                isPuzzle: true,
+                puzzleData: objective ? objective.puzzleData : null
+            });
+        }
+        // EXPLORAÇÃO / COLETA / COLETA
         else if (mission.objectiveType === 'explore' || mission.type === 'explore' || mission.type === 'collect') {
             this.gameManager.stateManager.setState('combat', {
                 missionId: mission.id,

@@ -116,9 +116,10 @@ export const ARInteractionMixin = {
         this.selectedEnemy = model; // Mantemos o nome da var, mas pode ser NPC
         const isNPC = model.userData?.type === 'npc';
         const isCollection = model.userData?.type === 'collection';
+        const isPuzzle = model.userData?.type === 'puzzle';
 
         // Highlight com cor diferente
-        const highlightColor = isNPC ? 0x00ff00 : (isCollection ? 0xffff00 : 0xff4444);
+        const highlightColor = isNPC ? 0x00ff00 : (isCollection ? 0xffff00 : (isPuzzle ? 0x00ffff : 0xff4444));
         this.highlightModel(model, true, highlightColor);
 
         if (isNPC) {
@@ -135,6 +136,9 @@ export const ARInteractionMixin = {
                 model: model,
                 context: model.userData.context
             });
+        } else if (isPuzzle) {
+            console.log(`Selected Rune: ${model.userData.id}`);
+            this.handlePuzzleInteraction(model);
         } else {
             // Lógica antiga de inimigo
             const enemies = this.gameManager.combatManager?.enemies || [];
@@ -145,6 +149,52 @@ export const ARInteractionMixin = {
                 eventBus.emit('enemySelected', { enemy, model });
             }
         }
+    },
+
+    handlePuzzleInteraction(model) {
+        if (!this.currentPuzzleState) return;
+
+        const selectedRuneId = model.userData.id;
+        const expectedRuneId = this.currentPuzzleState.sequence[this.currentPuzzleState.progress];
+
+        if (selectedRuneId === expectedRuneId) {
+            // ACERTO
+            this.currentPuzzleState.progress++;
+            console.log('Rune Correct! Progress:', this.currentPuzzleState.progress);
+
+            // Visual feedback - Piscar branco
+            this.flashModelColor(model, 0xffffff, 300);
+
+            // Tocar som (emitir evento)
+            eventBus.emit('showMessage', { text: '✨ Runa ativada!', type: 'info' });
+
+            // Verificar vitória
+            if (this.currentPuzzleState.progress >= this.currentPuzzleState.sequence.length) {
+                console.log('Puzzle Solved!');
+                eventBus.emit('puzzleSolved', { context: this.currentPuzzleState.context });
+                this.currentPuzzleState = null;
+            }
+        } else {
+            // ERRO
+            console.log('Rune Wrong! Resetting...');
+            this.currentPuzzleState.progress = 0; // Reset
+
+            // Visual feedback - Piscar vermelho
+            this.flashModelColor(model, 0xff0000, 500);
+            eventBus.emit('showMessage', { text: '❌ Sequência incorreta! Tente novamente.', type: 'error' });
+        }
+    },
+
+    flashModelColor(model, colorHex, duration) {
+        model.traverse((child) => {
+            if (child.isMesh && child.material) {
+                const original = child.material.color.getHex();
+                child.material.color.setHex(colorHex);
+                setTimeout(() => {
+                    if (child.material) child.material.color.setHex(original);
+                }, duration);
+            }
+        });
     },
 
     /**

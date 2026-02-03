@@ -151,6 +151,8 @@ export class ARSceneManager extends SceneManager {
             console.log('Spawning pending object:', this.pendingNPC.id);
             if (this.pendingNPC.isCollection) {
                 await this.spawnCollectionItem(this.pendingNPC.id, this.pendingNPC.modelPath, null, this.pendingNPC.context);
+            } else if (this.pendingNPC.isPuzzle) {
+                await this.spawnPuzzleElements(this.pendingNPC.puzzleData, this.pendingNPC.context);
             } else {
                 await this.spawnNPC(this.pendingNPC.id, null, this.pendingNPC.context);
             }
@@ -378,33 +380,112 @@ export class ARSceneManager extends SceneManager {
             console.error(`Failed to spawn item ${itemId}:`, error);
         }
     }
+}
 
     /**
-     * Executa animação de morte para um inimigo
-     * @param {string} enemyId - ID do inimigo
+     * Spawna elementos de um puzzle na cena
      */
-    playDeathAnimation(enemyId) {
-        // Encontrar inimigo pelo ID
-        const enemy = this.gameManager.combatManager.enemies.find(e => e.id === enemyId);
-        if (!enemy?.model) return;
+    async spawnPuzzleElements(puzzleData, context) {
+    if (!puzzleData || !puzzleData.models) return;
 
-        // Esconder barra de HP
-        const spriteData = this.enemyHPSprites.get(enemyId);
-        if (spriteData) {
-            spriteData.sprite.visible = false;
+    if (!this.arenaPlaced) {
+        console.log('Arena not ready. Queuing Puzzle spawn');
+        this.pendingNPC = { id: 'puzzle', context: context, isPuzzle: true, puzzleData: puzzleData }; // Reusing pendingNPC struct
+
+        const hint = document.getElementById('reticle-hint');
+        if (hint) {
+            hint.textContent = 'Toque em uma superfície para iniciar o puzzle';
+            hint.style.display = 'block';
         }
-
-        // Animar morte usando AnimationUtils
-        AnimationUtils.animateDeath(enemy.model, {
-            onComplete: () => {
-                this.scene.remove(enemy.model);
-                const index = this.spawnedModels.indexOf(enemy.model);
-                if (index > -1) {
-                    this.spawnedModels.splice(index, 1);
-                }
-            }
-        });
+        return;
     }
+
+    const numModels = puzzleData.models.length;
+    const radius = 1.0; // Raio do círculo de runas
+    const angleStep = (Math.PI * 2) / numModels;
+
+    // Resetar estado do puzzle
+    this.currentPuzzleState = {
+        sequence: puzzleData.sequence,
+        progress: 0,
+        context: context
+    };
+    console.log('Iniciando Puzzle:', puzzleData.sequence);
+
+    for (let i = 0; i < numModels; i++) {
+        const data = puzzleData.models[i];
+        try {
+            const model = await this.modelLoader.load(data.model);
+
+            // Posicionar em círculo flutuante
+            const angle = i * angleStep;
+            const x = this.arenaPosition.x + Math.sin(angle) * radius;
+            const z = this.arenaPosition.z + Math.cos(angle) * radius;
+
+            model.position.set(x, this.arenaPosition.y + 1.2, z); // Flutuando alto
+            model.scale.set(0, 0, 0);
+
+            // Aplicar cor (tint)
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    // Clonar material para poder mudar cor individualmente
+                    child.material = child.material.clone();
+                    child.material.color.setHex(data.color);
+                    // Guardar cor original para highlight
+                    child.material._originalColor = child.material.color.clone();
+                }
+            });
+
+            model.userData = {
+                type: 'puzzle',
+                id: data.id,
+                name: 'Runa Mágica',
+                context: context
+            };
+
+            // Olhar para o centro/câmera
+            model.lookAt(this.arenaPosition.x, this.arenaPosition.y + 1.2, this.arenaPosition.z);
+
+            this.scene.add(model);
+            this.spawnedModels.push(model);
+
+            AnimationUtils.animateSpawn(model, {
+                targetScale: 0.8,
+                delay: i * 200
+            });
+
+        } catch (error) {
+            console.error(`Failed to spawn rune ${data.id}:`, error);
+        }
+    }
+}
+
+/**
+ * Executa animação de morte para um inimigo
+ * @param {string} enemyId - ID do inimigo
+ */
+playDeathAnimation(enemyId) {
+    // Encontrar inimigo pelo ID
+    const enemy = this.gameManager.combatManager.enemies.find(e => e.id === enemyId);
+    if (!enemy?.model) return;
+
+    // Esconder barra de HP
+    const spriteData = this.enemyHPSprites.get(enemyId);
+    if (spriteData) {
+        spriteData.sprite.visible = false;
+    }
+
+    // Animar morte usando AnimationUtils
+    AnimationUtils.animateDeath(enemy.model, {
+        onComplete: () => {
+            this.scene.remove(enemy.model);
+            const index = this.spawnedModels.indexOf(enemy.model);
+            if (index > -1) {
+                this.spawnedModels.splice(index, 1);
+            }
+        }
+    });
+}
 }
 
 // Aplicar mixins para injetar funcionalidades
