@@ -11,6 +11,7 @@ import {
     getQuestTypeIcon,
     canAcceptQuest
 } from '../../data/QuestDatabase.js';
+import { getNPCData } from '../../data/NPCDatabase.js';
 import {
     ExplorationEvents,
     ConsequenceType,
@@ -168,12 +169,31 @@ export class GMScreen extends BaseScreen {
 
         const progress = this.gameManager.gameData.quests?.progress?.[questId] || {};
 
-        // Mesclar progresso com objetivos
+        // Mesclar progresso com objetivos e calcular porcentagem total
         const questWithProgress = { ...quest };
-        questWithProgress.objectives = quest.objectives.map(obj => ({
-            ...obj,
-            progress: progress[obj.id] || 0
-        }));
+        let totalObjectives = 0;
+        let completedObjectives = 0;
+        let totalProgressPct = 0;
+
+        questWithProgress.objectives = quest.objectives.map(obj => {
+            const current = progress[obj.id] || 0;
+            const required = obj.amount || 1;
+
+            // Contribuição deste objetivo para o total (simplificado: média simples dos % dos objetivos)
+            const objPct = Math.min(100, (current / required) * 100);
+            totalProgressPct += objPct;
+            totalObjectives++;
+
+            return {
+                ...obj,
+                progress: current
+            };
+        });
+
+        // Calcular média dos progressos dos objetivos
+        questWithProgress.progress = totalObjectives > 0
+            ? Math.floor(totalProgressPct / totalObjectives)
+            : 0;
 
         return questWithProgress;
     }
@@ -211,11 +231,11 @@ export class GMScreen extends BaseScreen {
                     <div class="quest-card-header">
                         <span class="quest-type-icon">${typeIcon}</span>
                         <div class="quest-card-title">
-                            <h4>${quest.name}</h4>
+                            <h4>${quest.title}</h4>
                             <span class="quest-type-label">${typeName}</span>
                         </div>
                     </div>
-                    <p class="quest-card-description">${quest.briefDescription}</p>
+                    <p class="quest-card-description">${quest.description}</p>
                     ${this.currentFilter === 'active' ? `
                         <div class="quest-card-progress">
                             <div class="mini-progress-bar">
@@ -247,8 +267,12 @@ export class GMScreen extends BaseScreen {
 
         // Header
         this.findElement('#quest-type-badge').textContent = `${getQuestTypeIcon(quest.type)} ${getQuestTypeName(quest.type)}`;
-        this.findElement('#quest-detail-name').textContent = quest.name;
-        this.findElement('#quest-giver').textContent = `Dado por: ${quest.giver}`;
+        this.findElement('#quest-detail-name').textContent = quest.title;
+
+        const giverData = getNPCData(quest.giverId);
+        const giverName = giverData ? giverData.name : (quest.giverId || 'Desconhecido');
+        this.findElement('#quest-giver').textContent = `Dado por: ${giverName}`;
+
         this.findElement('#quest-detail-description').textContent = quest.description;
 
         // Objectives
