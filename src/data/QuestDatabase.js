@@ -142,8 +142,7 @@ export const QuestDatabase = {
             xp: 50,
             gold: 20
         }
-    }
-},
+    },
 
     // --- Missão de Puzzle (Runes) ---
     ancient_secrets: {
