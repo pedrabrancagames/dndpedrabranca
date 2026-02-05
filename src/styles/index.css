@@ -1488,8 +1488,8 @@ button {
   font-size: 0.875rem;
 }
 
-/* Hero Panel (Left Side) */
-.hero-panel {
+/* Hero Sidebar (Left Side) */
+.hero-sidebar {
   position: absolute;
   left: var(--space-sm);
   top: 50%;
@@ -1497,72 +1497,126 @@ button {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
+  align-items: center;
+}
+
+.hero-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
 .hero-portrait {
-  width: 60px;
-  height: 60px;
-  background: rgba(0, 0, 0, 0.6);
+  width: 70px;
+  background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(10px);
   border-radius: var(--radius-md);
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
+  padding: var(--space-xs);
+  gap: var(--space-xs);
   border: 2px solid transparent;
   transition: all var(--transition-fast);
 }
 
 .hero-portrait.active {
   border-color: var(--color-accent);
-  transform: scale(1.1);
+  width: 90px;
+  background: rgba(0, 0, 0, 0.85);
 }
 
-.hero-portrait .hp-text {
-  font-size: 0.625rem;
+.hero-portrait .hero-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.hero-portrait .hero-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-portrait .hero-name {
+  font-size: 0.5rem;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* PA Indicator */
-.pa-indicator {
-  position: absolute;
-  bottom: 140px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(10px);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-full);
+.hero-portrait .hero-hp-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  margin: 2px 0;
+}
+
+.hero-portrait .hp-fill {
+  height: 100%;
+  background: var(--color-hp);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.hero-portrait .hero-hp-text {
+  font-size: 0.45rem;
+  opacity: 0.8;
+}
+
+/* PA Indicator inside hero card */
+.hero-pa-indicator {
+  font-size: 0.5rem;
+  margin-top: 2px;
   display: flex;
-  gap: var(--space-sm);
   align-items: center;
+  gap: 4px;
 }
 
-.pa-label {
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-
-.pa-dots {
+.hero-pa-indicator .pa-dots {
   color: var(--color-pa);
-  letter-spacing: 2px;
+  font-size: 0.6rem;
+  letter-spacing: 1px;
 }
 
-/* Card Carousel - Fan Layout */
+/* Pass Turn Button in sidebar */
+.hero-sidebar .pass-turn-btn {
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-primary);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.hero-sidebar .pass-turn-btn:active {
+  transform: scale(0.95);
+  background: var(--color-primary-dark);
+}
+
+/* Card Carousel - Horizontal Scroll */
 .card-carousel {
   position: absolute;
   bottom: 0;
-  left: 0;
+  left: 100px;
+  /* Space for hero sidebar */
   right: 0;
-  height: 160px;
+  height: 140px;
   display: flex;
-  justify-content: center;
+  gap: -10px;
+  /* Slight overlap */
   align-items: flex-end;
-  padding: var(--space-md);
-  padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom));
-  overflow: visible;
-  perspective: 1000px;
+  padding: var(--space-sm) var(--space-md);
+  padding-bottom: calc(var(--space-md) + env(safe-area-inset-bottom));
+  overflow-x: auto;
+  overflow-y: visible;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
 
 .card-carousel::-webkit-scrollbar {
@@ -1571,47 +1625,53 @@ button {
 
 /* Base Combat Card */
 .combat-card {
-  position: absolute;
-  width: 80px;
-  height: 110px;
+  flex-shrink: 0;
+  width: 70px;
+  height: 100px;
   background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-bg) 100%);
   border-radius: var(--radius-md);
-  padding: var(--space-sm);
+  padding: var(--space-xs);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   border: 2px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: pointer;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  scroll-snap-align: center;
+  position: relative;
+  margin-left: -8px;
+  /* Overlap effect */
 }
 
-/* Fan Card Positioning */
-.combat-card.fan-card {
+.combat-card:first-child {
+  margin-left: 0;
+}
+
+/* Scroll Card with subtle rotation */
+.combat-card.scroll-card {
+  transform: rotate(var(--card-rotation, 0deg));
   transform-origin: center bottom;
-  transform:
-    translateX(var(--fan-offset-x)) translateY(var(--fan-offset-y)) rotate(var(--fan-rotation));
-  z-index: var(--fan-z-index);
 }
 
 /* Hover Effect - Card lifts up */
-.combat-card.fan-card:hover {
-  transform:
-    translateX(var(--fan-offset-x)) translateY(calc(var(--fan-offset-y) - 25px)) rotate(var(--fan-rotation)) scale(1.05);
+.combat-card.scroll-card:hover {
+  transform: rotate(var(--card-rotation, 0deg)) translateY(-15px) scale(1.08);
   z-index: 50;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
-/* Selected Card - Center, no rotation, bigger */
-.combat-card.fan-card.selected {
-  transform:
-    translateX(0) translateY(-50px) rotate(0deg) scale(1.3);
+/* Selected Card - No rotation, bigger, centered */
+.combat-card.scroll-card.selected {
+  transform: rotate(0deg) translateY(-30px) scale(1.25);
   z-index: 100 !important;
   border-color: var(--color-accent);
   box-shadow:
-    0 0 30px rgba(255, 215, 0, 0.5),
-    0 15px 40px rgba(0, 0, 0, 0.6);
+    0 0 25px rgba(255, 215, 0, 0.5),
+    0 15px 35px rgba(0, 0, 0, 0.6);
+  margin-left: 5px;
+  margin-right: 5px;
 }
 
 .combat-card.disabled {

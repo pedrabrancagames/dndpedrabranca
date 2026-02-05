@@ -11,7 +11,6 @@ export class CombatHUD {
         // Elementos DOM
         this.heroPanel = document.getElementById('hero-panel');
         this.cardCarousel = document.getElementById('card-carousel');
-        this.paIndicator = document.getElementById('pa-dots');
         this.turnIndicator = document.getElementById('turn-indicator');
 
         this.currentHeroIndex = 0;
@@ -43,30 +42,49 @@ export class CombatHUD {
     }
 
     /**
-     * Renderiza o painel de heróis
+     * Renderiza o painel de heróis com PA no herói ativo
      */
     renderHeroPanel() {
         if (!this.heroPanel) return;
 
         const heroes = this.gameManager.gameData.heroes || [];
+        const currentPA = heroes[this.currentHeroIndex]?.pa || 3;
 
-        this.heroPanel.innerHTML = heroes.map((hero, index) => `
-            <div class="hero-portrait ${index === this.currentHeroIndex ? 'active' : ''}" 
-                 data-hero-id="${hero.id}">
-                <div class="hero-icon">${hero.icon}</div>
-                <div class="hero-info">
-                    <div class="hero-name">${hero.name}</div>
-                    <div class="hero-hp-bar">
-                        <div class="hp-fill" style="width: ${(hero.hp / hero.maxHp) * 100}%"></div>
+        this.heroPanel.innerHTML = heroes.map((hero, index) => {
+            const isActive = index === this.currentHeroIndex;
+            const paDisplay = isActive ? this.renderPADots(currentPA) : '';
+
+            return `
+                <div class="hero-portrait ${isActive ? 'active' : ''}" 
+                     data-hero-id="${hero.id}">
+                    <div class="hero-icon">${hero.icon}</div>
+                    <div class="hero-info">
+                        <div class="hero-name">${hero.name}</div>
+                        <div class="hero-hp-bar">
+                            <div class="hp-fill" style="width: ${(hero.hp / hero.maxHp) * 100}%"></div>
+                        </div>
+                        <div class="hero-hp-text">${hero.hp}/${hero.maxHp}</div>
+                        ${paDisplay}
                     </div>
-                    <div class="hero-hp-text">${hero.hp}/${hero.maxHp}</div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
     }
 
     /**
-     * Renderiza as cartas do herói atual em formato de leque (fan)
+     * Renderiza os pontos de ação como indicadores visuais
+     */
+    renderPADots(pa) {
+        const maxPA = 3;
+        let dots = '';
+        for (let i = 0; i < maxPA; i++) {
+            dots += i < pa ? '●' : '○';
+        }
+        return `<div class="hero-pa-indicator">PA: <span class="pa-dots">${dots}</span></div>`;
+    }
+
+    /**
+     * Renderiza as cartas do herói atual em scroll horizontal
      */
     renderCards() {
         if (!this.cardCarousel) return;
@@ -87,42 +105,24 @@ export class CombatHUD {
             return orderA - orderB;
         });
 
+        // Render cards with subtle fan effect (slight rotation and overlap)
         const totalCards = sortedDeck.length;
-        const maxAngle = 40; // Maximum spread angle (degrees)
-        const angleStep = totalCards > 1 ? maxAngle / (totalCards - 1) : 0;
-        const startAngle = -maxAngle / 2;
 
-        // Render cards with fan effect
         this.cardCarousel.innerHTML = sortedDeck.map((card, index) => {
             const cardType = card.sourceType || card.cardType || 'class';
             const typeClass = `card-type-${cardType}`;
 
-            // Calculate rotation angle for fan effect
-            const rotation = startAngle + (angleStep * index);
-
-            // Calculate vertical offset (cards in center are higher)
+            // Subtle rotation for visual appeal (-5 to +5 degrees)
             const centerIndex = (totalCards - 1) / 2;
-            const distanceFromCenter = Math.abs(index - centerIndex);
-            const verticalOffset = distanceFromCenter * 8; // pixels down from center
-
-            // Z-index: cards on the right are on top (like holding cards in hand)
-            const zIndex = index + 1;
-
-            // Horizontal offset for overlap
-            const horizontalOffset = (index - centerIndex) * 30; // pixels from center
+            const rotation = (index - centerIndex) * 2;
 
             const isSelected = this.selectedCard === index;
 
             return `
-                <div class="combat-card fan-card ${typeClass} ${isSelected ? 'selected' : ''}" 
+                <div class="combat-card scroll-card ${typeClass} ${isSelected ? 'selected' : ''}" 
                      data-card-index="${index}" 
                      data-card-cost="${card.cost}"
-                     style="
-                        --fan-rotation: ${rotation}deg;
-                        --fan-offset-x: ${horizontalOffset}px;
-                        --fan-offset-y: ${verticalOffset}px;
-                        --fan-z-index: ${isSelected ? 100 : zIndex};
-                     ">
+                     style="--card-rotation: ${rotation}deg;">
                     <div class="card-cost">${card.cost}</div>
                     <div class="card-icon">${card.icon || '⚔️'}</div>
                     <div class="card-name">${card.name}</div>
@@ -132,24 +132,26 @@ export class CombatHUD {
             `;
         }).join('');
 
-        // Add click and hover events
+        // Add click events
         this.cardCarousel.querySelectorAll('.combat-card').forEach(cardEl => {
             cardEl.addEventListener('click', (e) => this.onCardClick(e));
         });
     }
 
     /**
-     * Atualiza o indicador de PA
+     * Atualiza o indicador de PA no herói ativo
      */
     updatePA(pa) {
-        if (!this.paIndicator) return;
-
-        const maxPA = 3;
-        let dots = '';
-        for (let i = 0; i < maxPA; i++) {
-            dots += i < pa ? '●' : '○';
+        // Update PA in the active hero's panel
+        const paIndicator = this.heroPanel?.querySelector('.hero-portrait.active .pa-dots');
+        if (paIndicator) {
+            const maxPA = 3;
+            let dots = '';
+            for (let i = 0; i < maxPA; i++) {
+                dots += i < pa ? '●' : '○';
+            }
+            paIndicator.textContent = dots;
         }
-        this.paIndicator.textContent = dots;
     }
 
     /**
