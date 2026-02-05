@@ -26,14 +26,27 @@ export class CardSystem {
     executeCard(card, source, target) {
         let resultLog = `${source.name} usou ${card.name}`;
 
+        // If targetSelf, use source as target
+        const effectTarget = card.targetSelf ? source : target;
+
         // Aplicar dano
         if (card.damage) {
-            const finalDamage = this.calculateDamage(card.damage, source, target);
-            this.combatManager.applyDamage(target, finalDamage);
-            resultLog += ` e causou ${finalDamage} de dano!`;
+            let totalDamage = this.calculateDamage(card.damage, source, target);
+
+            // Add fire damage if present
+            if (card.fireDamage) {
+                totalDamage += card.fireDamage;
+            }
+            // Add holy damage if present
+            if (card.holyDamage) {
+                totalDamage += card.holyDamage;
+            }
+
+            this.combatManager.applyDamage(target, totalDamage);
+            resultLog += ` e causou ${totalDamage} de dano!`;
 
             eventBus.emit('showMessage', {
-                text: `-${finalDamage} HP`,
+                text: `-${totalDamage} HP`,
                 type: 'error'
             });
         }
@@ -41,17 +54,28 @@ export class CardSystem {
         // Aplicar cura
         if (card.heal) {
             const healAmount = card.heal;
-            target.hp = Math.min(target.maxHp, target.hp + healAmount);
+            effectTarget.hp = Math.min(effectTarget.maxHp, effectTarget.hp + healAmount);
             resultLog += ` e curou ${healAmount} HP!`;
 
             eventBus.emit('damageTaken', {
-                targetId: target.id,
+                targetId: effectTarget.id,
                 amount: -healAmount,
-                currentHp: target.hp
+                currentHp: effectTarget.hp
             });
 
             eventBus.emit('showMessage', {
                 text: `+${healAmount} HP`,
+                type: 'success'
+            });
+        }
+
+        // Restaurar PA
+        if (card.restorePA) {
+            source.pa = Math.min(source.maxPa || 3, source.pa + card.restorePA);
+            resultLog += ` e restaurou ${card.restorePA} PA!`;
+
+            eventBus.emit('showMessage', {
+                text: `+${card.restorePA} PA`,
                 type: 'success'
             });
         }
@@ -88,12 +112,50 @@ export class CardSystem {
             resultLog += ` e removeu todos os debuffs!`;
         }
 
+        // Handle consumable cards - remove from deck and inventory
+        if (card.consumable) {
+            this.handleConsumableCard(card, source);
+        }
+
         console.log(resultLog);
 
         return {
             success: true,
             log: resultLog
         };
+    }
+
+    /**
+     * Gerencia cartas consumíveis - remove do deck e do inventário
+     */
+    handleConsumableCard(card, hero) {
+        // Remove card from hero's deck
+        const cardIndex = hero.deck.findIndex(c => c.id === card.id);
+        if (cardIndex !== -1) {
+            hero.deck.splice(cardIndex, 1);
+            console.log(`Removed consumable card ${card.name} from deck`);
+        }
+
+        // Remove item from inventory
+        if (card.sourceItemId) {
+            const gameData = this.combatManager.gameManager.gameData;
+            const inventory = gameData.inventory || [];
+            const invIndex = inventory.findIndex(i => i.itemId === card.sourceItemId);
+
+            if (invIndex !== -1) {
+                if (inventory[invIndex].quantity > 1) {
+                    inventory[invIndex].quantity--;
+                } else {
+                    inventory.splice(invIndex, 1);
+                }
+                console.log(`Removed ${card.sourceItemId} from inventory`);
+            }
+        }
+
+        eventBus.emit('showMessage', {
+            text: `${card.name} consumido!`,
+            type: 'info'
+        });
     }
 
     /**

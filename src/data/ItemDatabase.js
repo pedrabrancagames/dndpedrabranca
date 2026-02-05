@@ -42,8 +42,17 @@ export const ItemDatabase = {
         rarity: CardRarity.COMMON,
         description: 'Uma espada simples, mas confiável.',
         stats: { atk: 5 },
-        equipSlot: 'mainHand',
-        price: 50
+        equipSlot: 'weapon',
+        price: 50,
+        generatesCard: {
+            id: 'sword_basic_strike',
+            name: 'Golpe de Espada',
+            icon: '🗡️',
+            cost: 1,
+            damage: 18,
+            description: 'Ataque básico com espada de ferro',
+            cardType: 'equipment'
+        }
     },
     [ItemIDs.SWORD_FLAME]: {
         id: ItemIDs.SWORD_FLAME,
@@ -53,8 +62,18 @@ export const ItemDatabase = {
         rarity: CardRarity.RARE,
         description: 'Uma espada encantada com fogo eterno. Causa dano adicional de fogo.',
         stats: { atk: 12, fireDamage: 5 },
-        equipSlot: 'mainHand',
-        price: 350
+        equipSlot: 'weapon',
+        price: 350,
+        generatesCard: {
+            id: 'sword_flame_strike',
+            name: 'Corte Flamejante',
+            icon: '🔥',
+            cost: 2,
+            damage: 22,
+            fireDamage: 10,
+            description: 'Ataque de fogo que queima o inimigo',
+            cardType: 'equipment'
+        }
     },
     [ItemIDs.STAFF_ARCANE]: {
         id: ItemIDs.STAFF_ARCANE,
@@ -64,9 +83,18 @@ export const ItemDatabase = {
         rarity: CardRarity.UNCOMMON,
         description: 'Um cajado imbuído de energia arcana. Aumenta poder mágico.',
         stats: { mag: 10 },
-        equipSlot: 'mainHand',
+        equipSlot: 'weapon',
         classRestriction: [HeroIDs.MAGE, HeroIDs.CLERIC],
-        price: 200
+        price: 200,
+        generatesCard: {
+            id: 'staff_arcane_blast',
+            name: 'Explosão Arcana',
+            icon: '🪄',
+            cost: 2,
+            damage: 28,
+            description: 'Dispara energia arcana concentrada',
+            cardType: 'equipment'
+        }
     },
     [ItemIDs.DAGGER_SHADOW]: {
         id: ItemIDs.DAGGER_SHADOW,
@@ -76,9 +104,19 @@ export const ItemDatabase = {
         rarity: CardRarity.EPIC,
         description: 'Uma adaga que parece absorver a luz. Aumenta chance de crítico.',
         stats: { atk: 8, crit: 15 },
-        equipSlot: 'mainHand',
+        equipSlot: 'weapon',
         classRestriction: [HeroIDs.ROGUE],
-        price: 500
+        price: 500,
+        generatesCard: {
+            id: 'dagger_shadow_strike',
+            name: 'Punhalada Sombria',
+            icon: '👤',
+            cost: 2,
+            damage: 35,
+            critBonus: 30,
+            description: 'Golpe das sombras com alta chance de crítico',
+            cardType: 'equipment'
+        }
     },
     [ItemIDs.HAMMER_HOLY]: {
         id: ItemIDs.HAMMER_HOLY,
@@ -88,9 +126,19 @@ export const ItemDatabase = {
         rarity: CardRarity.LEGENDARY,
         description: 'Forjado pelos deuses, emana luz divina. Dano aumentado contra mortos-vivos.',
         stats: { atk: 20, holyDamage: 15 },
-        equipSlot: 'mainHand',
+        equipSlot: 'weapon',
         effects: { bonusVsUndead: 2.0 },
-        price: 1500
+        price: 1500,
+        generatesCard: {
+            id: 'hammer_holy_smite',
+            name: 'Castigo Divino',
+            icon: '🔨',
+            cost: 2,
+            damage: 40,
+            holyDamage: 20,
+            description: 'Golpe sagrado devastador (2x vs mortos-vivos)',
+            cardType: 'equipment'
+        }
     },
 
     // ========== ARMADURAS ==========
@@ -102,8 +150,17 @@ export const ItemDatabase = {
         rarity: CardRarity.COMMON,
         description: 'Proteção básica feita de couro curtido.',
         stats: { def: 5 },
-        equipSlot: 'torso',
-        price: 40
+        equipSlot: 'armor',
+        price: 40,
+        generatesCard: {
+            id: 'armor_leather_guard',
+            name: 'Postura Defensiva',
+            icon: '🧥',
+            cost: 1,
+            defense: 8,
+            description: 'Assume postura defensiva (+8 DEF)',
+            cardType: 'equipment'
+        }
     },
     [ItemIDs.ARMOR_CHAIN]: {
         id: ItemIDs.ARMOR_CHAIN,
@@ -113,9 +170,18 @@ export const ItemDatabase = {
         rarity: CardRarity.UNCOMMON,
         description: 'Anéis de metal entrelaçados oferecem boa proteção.',
         stats: { def: 10 },
-        equipSlot: 'torso',
+        equipSlot: 'armor',
         classRestriction: [HeroIDs.WARRIOR, HeroIDs.CLERIC],
-        price: 150
+        price: 150,
+        generatesCard: {
+            id: 'armor_chain_block',
+            name: 'Bloquear',
+            icon: '🛡️',
+            cost: 1,
+            defense: 15,
+            description: 'Bloqueia ataques (+15 DEF)',
+            cardType: 'equipment'
+        }
     },
     [ItemIDs.ROBE_MAGE]: {
         id: ItemIDs.ROBE_MAGE,
@@ -125,9 +191,19 @@ export const ItemDatabase = {
         rarity: CardRarity.RARE,
         description: 'Tecido encantado que amplifica magias.',
         stats: { def: 3, mag: 8 },
-        equipSlot: 'torso',
+        equipSlot: 'armor',
         classRestriction: [HeroIDs.MAGE],
-        price: 300
+        price: 300,
+        generatesCard: {
+            id: 'robe_mage_barrier',
+            name: 'Barreira Mágica',
+            icon: '🔮',
+            cost: 1,
+            defense: 12,
+            buff: { mag: 5 },
+            description: '+12 DEF e +5 MAG temporário',
+            cardType: 'equipment'
+        }
     },
     [ItemIDs.ARMOR_PLATE]: {
         id: ItemIDs.ARMOR_PLATE,
@@ -137,9 +213,19 @@ export const ItemDatabase = {
         rarity: CardRarity.EPIC,
         description: 'Proteção máxima para os mais bravos guerreiros.',
         stats: { def: 20, maxHp: 20 },
-        equipSlot: 'torso',
+        equipSlot: 'armor',
         classRestriction: [HeroIDs.WARRIOR],
-        price: 600
+        price: 600,
+        generatesCard: {
+            id: 'armor_plate_fortress',
+            name: 'Fortaleza de Aço',
+            icon: '🏰',
+            cost: 2,
+            defense: 25,
+            taunt: true,
+            description: '+25 DEF e força inimigos a atacar',
+            cardType: 'equipment'
+        }
     },
 
     // ========== CONSUMÍVEIS ==========
@@ -153,7 +239,19 @@ export const ItemDatabase = {
         effects: { heal: 30 },
         stackable: true,
         maxStack: 10,
-        price: 25
+        price: 25,
+        generatesCard: {
+            id: 'potion_health_small_use',
+            name: 'Beber Poção Menor',
+            icon: '🧪',
+            cost: 1,
+            heal: 30,
+            targetSelf: true,
+            consumable: true,
+            sourceItemId: ItemIDs.POTION_HEALTH_SMALL,
+            description: 'Cura 30 HP (consome poção)',
+            cardType: 'consumable'
+        }
     },
     [ItemIDs.POTION_HEALTH_MEDIUM]: {
         id: ItemIDs.POTION_HEALTH_MEDIUM,
@@ -165,7 +263,19 @@ export const ItemDatabase = {
         effects: { heal: 60 },
         stackable: true,
         maxStack: 10,
-        price: 60
+        price: 60,
+        generatesCard: {
+            id: 'potion_health_medium_use',
+            name: 'Beber Poção',
+            icon: '🧪',
+            cost: 1,
+            heal: 60,
+            targetSelf: true,
+            consumable: true,
+            sourceItemId: ItemIDs.POTION_HEALTH_MEDIUM,
+            description: 'Cura 60 HP (consome poção)',
+            cardType: 'consumable'
+        }
     },
     [ItemIDs.POTION_MANA]: {
         id: ItemIDs.POTION_MANA,
@@ -177,7 +287,19 @@ export const ItemDatabase = {
         effects: { restorePA: 2 },
         stackable: true,
         maxStack: 5,
-        price: 75
+        price: 75,
+        generatesCard: {
+            id: 'potion_mana_use',
+            name: 'Beber Poção de Mana',
+            icon: '💧',
+            cost: 0,
+            restorePA: 2,
+            targetSelf: true,
+            consumable: true,
+            sourceItemId: ItemIDs.POTION_MANA,
+            description: 'Restaura 2 PA (consome poção)',
+            cardType: 'consumable'
+        }
     },
     [ItemIDs.SCROLL_FIREBALL]: {
         id: ItemIDs.SCROLL_FIREBALL,
@@ -189,7 +311,19 @@ export const ItemDatabase = {
         effects: { castSpell: 'fireball', damage: 50, aoe: true },
         stackable: true,
         maxStack: 3,
-        price: 200
+        price: 200,
+        generatesCard: {
+            id: 'scroll_fireball_use',
+            name: 'Ler Pergaminho',
+            icon: '📜',
+            cost: 1,
+            damage: 50,
+            aoe: true,
+            consumable: true,
+            sourceItemId: ItemIDs.SCROLL_FIREBALL,
+            description: 'Bola de Fogo em todos (consome)',
+            cardType: 'consumable'
+        }
     },
     [ItemIDs.ELIXIR_POWER]: {
         id: ItemIDs.ELIXIR_POWER,
@@ -201,7 +335,20 @@ export const ItemDatabase = {
         effects: { buff: { atk: 10 }, duration: 3 },
         stackable: true,
         maxStack: 3,
-        price: 150
+        price: 150,
+        generatesCard: {
+            id: 'elixir_power_use',
+            name: 'Beber Elixir',
+            icon: '⚗️',
+            cost: 1,
+            buff: { atk: 10 },
+            duration: 3,
+            targetSelf: true,
+            consumable: true,
+            sourceItemId: ItemIDs.ELIXIR_POWER,
+            description: '+10 ATK por 3 turnos (consome)',
+            cardType: 'consumable'
+        }
     },
 
     // ========== ITENS DE QUEST ==========
@@ -246,7 +393,16 @@ export const ItemDatabase = {
         description: 'Um anel encantado que oferece proteção mágica.',
         stats: { def: 3 },
         equipSlot: 'accessory',
-        price: 100
+        price: 100,
+        generatesCard: {
+            id: 'ring_protection_activate',
+            name: 'Escudo do Anel',
+            icon: '💍',
+            cost: 1,
+            defense: 10,
+            description: 'Ativa proteção mágica (+10 DEF)',
+            cardType: 'equipment'
+        }
     },
     [ItemIDs.AMULET_LIFE]: {
         id: ItemIDs.AMULET_LIFE,
@@ -257,7 +413,17 @@ export const ItemDatabase = {
         description: 'Aumenta a vitalidade do portador.',
         stats: { maxHp: 20 },
         equipSlot: 'accessory',
-        price: 250
+        price: 250,
+        generatesCard: {
+            id: 'amulet_life_pulse',
+            name: 'Pulso Vital',
+            icon: '💚',
+            cost: 1,
+            heal: 25,
+            targetSelf: true,
+            description: 'Cura 25 HP usando energia vital',
+            cardType: 'equipment'
+        }
     },
     [ItemIDs.CLOAK_SHADOWS]: {
         id: ItemIDs.CLOAK_SHADOWS,
@@ -270,7 +436,17 @@ export const ItemDatabase = {
         equipSlot: 'accessory',
         effects: { stealthBonus: 20 },
         classRestriction: [HeroIDs.ROGUE],
-        price: 400
+        price: 400,
+        generatesCard: {
+            id: 'cloak_shadows_vanish',
+            name: 'Desaparecer',
+            icon: '🦇',
+            cost: 2,
+            stealth: true,
+            duration: 2,
+            description: 'Fica invisível por 2 turnos',
+            cardType: 'equipment'
+        }
     }
 };
 

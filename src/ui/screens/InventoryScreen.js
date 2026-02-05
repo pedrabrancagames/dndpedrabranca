@@ -371,8 +371,28 @@ export class InventoryScreen extends BaseScreen {
             hero.equipment = {};
         }
 
-        // Equip the item
+        // Initialize deck if needed
+        if (!hero.deck) {
+            hero.deck = [];
+        }
+
+        // Get previous item in this slot (to remove its card)
+        const previousItemId = hero.equipment[this.selectedItem.equipSlot];
+        if (previousItemId) {
+            const previousItem = getItemData(previousItemId);
+            if (previousItem && previousItem.generatesCard) {
+                // Remove the card from deck
+                this.removeCardFromDeck(hero, previousItem.generatesCard.id);
+            }
+        }
+
+        // Equip the new item
         hero.equipment[this.selectedItem.equipSlot] = this.selectedItem.id;
+
+        // Add the new item's card to deck (if it generates one)
+        if (this.selectedItem.generatesCard) {
+            this.addCardToDeck(hero, this.selectedItem.generatesCard);
+        }
 
         eventBus.emit('showMessage', {
             text: `${this.selectedItem.name} equipado em ${hero.name}!`,
@@ -381,6 +401,38 @@ export class InventoryScreen extends BaseScreen {
 
         this.closeItemDetails();
         this.gameManager.saveGame();
+    }
+
+    /**
+     * Adiciona uma carta ao deck do herói (evita duplicatas)
+     */
+    addCardToDeck(hero, cardData) {
+        // Check if card already exists (avoid duplicates)
+        const exists = hero.deck.some(card => card.id === cardData.id);
+        if (exists) {
+            console.log(`Card ${cardData.id} already in deck, skipping`);
+            return;
+        }
+
+        // Add card to deck
+        hero.deck.push({
+            ...cardData,
+            level: 0,
+            sourceType: cardData.cardType || 'equipment'
+        });
+
+        console.log(`Added card ${cardData.name} to ${hero.name}'s deck`);
+    }
+
+    /**
+     * Remove uma carta do deck do herói pelo ID
+     */
+    removeCardFromDeck(hero, cardId) {
+        const index = hero.deck.findIndex(card => card.id === cardId);
+        if (index !== -1) {
+            const removed = hero.deck.splice(index, 1);
+            console.log(`Removed card ${removed[0].name} from ${hero.name}'s deck`);
+        }
     }
 
     useItem() {

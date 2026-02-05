@@ -18,6 +18,7 @@ import { DialogueSystem } from '../systems/DialogueSystem.js';
 import { ShopSystem } from '../systems/ShopSystem.js';
 import { missionManager } from '../systems/MissionManager.js'; // Singleton
 import { ItemIDs, HeroIDs, EventNames, NPCIDs, ToastTypes } from '../data/GameConstants.js';
+import { getItemData } from '../data/ItemDatabase.js';
 
 export class GameManager {
     constructor() {
@@ -57,7 +58,11 @@ export class GameManager {
             await this.saveManager.init();
 
             const savedData = await this.saveManager.load();
-            if (savedData) this.gameData = { ...this.gameData, ...savedData };
+            if (savedData) {
+                this.gameData = { ...this.gameData, ...savedData };
+                // Sync equipment cards after loading saved data
+                this.syncEquipmentCards();
+            }
             else this.initNewGame();
 
             // Iniciar auto-save
@@ -111,6 +116,9 @@ export class GameManager {
                 markerPositions: {}
             }
         };
+
+        // Sync equipment and consumable cards to hero decks
+        this.syncEquipmentCards();
     }
 
     createDefaultHeroes() {
@@ -118,41 +126,45 @@ export class GameManager {
             {
                 id: HeroIDs.WARRIOR, name: 'Guerreiro', class: HeroIDs.WARRIOR, icon: '⚔️',
                 hp: 120, maxHp: 120, pa: 3, maxPa: 3, atk: 25, def: 15, level: 1, xp: 0,
+                equipment: {},
                 deck: [
-                    { name: 'Golpe', icon: '⚔️', cost: 1, damage: 15, description: 'Ataque básico' },
-                    { name: 'Golpe Brutal', icon: '💥', cost: 2, damage: 30, description: '+30 dano' },
-                    { name: 'Escudo', icon: '🛡️', cost: 1, defense: 10, description: '+10 defesa' },
-                    { name: 'Investida', icon: '🏃', cost: 2, damage: 25, description: 'Avança e ataca' }
+                    { id: 'warrior_golpe', name: 'Golpe', icon: '⚔️', cost: 1, damage: 15, description: 'Ataque básico', sourceType: 'class' },
+                    { id: 'warrior_brutal', name: 'Golpe Brutal', icon: '💥', cost: 2, damage: 30, description: '+30 dano', sourceType: 'class' },
+                    { id: 'warrior_escudo', name: 'Escudo', icon: '🛡️', cost: 1, defense: 10, description: '+10 defesa', sourceType: 'class' },
+                    { id: 'warrior_investida', name: 'Investida', icon: '🏃', cost: 2, damage: 25, description: 'Avança e ataca', sourceType: 'class' }
                 ]
             },
             {
                 id: HeroIDs.MAGE, name: 'Mago', class: HeroIDs.MAGE, icon: '🔮',
                 hp: 60, maxHp: 60, pa: 3, maxPa: 3, atk: 10, mag: 30, def: 5, level: 1, xp: 0,
+                equipment: {},
                 deck: [
-                    { name: 'Míssil Arcano', icon: '✨', cost: 1, damage: 20, description: 'Projétil mágico' },
-                    { name: 'Bola de Fogo', icon: '🔥', cost: 2, damage: 40, aoe: true, description: 'Ataque em área' },
-                    { name: 'Raio', icon: '⚡', cost: 2, damage: 35, description: 'Ataque elétrico' },
-                    { name: 'Escudo Arcano', icon: '🔮', cost: 1, defense: 15, description: 'Barreira mágica' }
+                    { id: 'mage_missil', name: 'Míssil Arcano', icon: '✨', cost: 1, damage: 20, description: 'Projétil mágico', sourceType: 'class' },
+                    { id: 'mage_fireball', name: 'Bola de Fogo', icon: '🔥', cost: 2, damage: 40, aoe: true, description: 'Ataque em área', sourceType: 'class' },
+                    { id: 'mage_raio', name: 'Raio', icon: '⚡', cost: 2, damage: 35, description: 'Ataque elétrico', sourceType: 'class' },
+                    { id: 'mage_escudo', name: 'Escudo Arcano', icon: '🔮', cost: 1, defense: 15, description: 'Barreira mágica', sourceType: 'class' }
                 ]
             },
             {
                 id: HeroIDs.ROGUE, name: 'Ladino', class: HeroIDs.ROGUE, icon: '🗡️',
                 hp: 80, maxHp: 80, pa: 3, maxPa: 3, atk: 20, def: 8, crit: 15, level: 1, xp: 0,
+                equipment: {},
                 deck: [
-                    { name: 'Punhalada', icon: '🗡️', cost: 1, damage: 18, description: 'Ataque rápido' },
-                    { name: 'Golpe Furtivo', icon: '👤', cost: 2, damage: 45, description: 'Crítico garantido' },
-                    { name: 'Veneno', icon: '☠️', cost: 1, dot: 5, duration: 3, description: '5 dano/turno' },
-                    { name: 'Evasão', icon: '💨', cost: 1, dodge: true, description: 'Esquiva próximo ataque' }
+                    { id: 'rogue_punhalada', name: 'Punhalada', icon: '🗡️', cost: 1, damage: 18, description: 'Ataque rápido', sourceType: 'class' },
+                    { id: 'rogue_furtivo', name: 'Golpe Furtivo', icon: '👤', cost: 2, damage: 45, description: 'Crítico garantido', sourceType: 'class' },
+                    { id: 'rogue_veneno', name: 'Veneno', icon: '☠️', cost: 1, dot: 5, duration: 3, description: '5 dano/turno', sourceType: 'class' },
+                    { id: 'rogue_evasao', name: 'Evasão', icon: '💨', cost: 1, dodge: true, description: 'Esquiva próximo ataque', sourceType: 'class' }
                 ]
             },
             {
                 id: HeroIDs.CLERIC, name: 'Clérigo', class: HeroIDs.CLERIC, icon: '✨',
                 hp: 90, maxHp: 90, pa: 3, maxPa: 3, atk: 15, mag: 25, def: 10, level: 1, xp: 0,
+                equipment: {},
                 deck: [
-                    { name: 'Cura Menor', icon: '💚', cost: 1, heal: 20, description: 'Cura 20 HP' },
-                    { name: 'Luz Sagrada', icon: '☀️', cost: 2, damage: 25, description: 'Dano sagrado' },
-                    { name: 'Bênção', icon: '🙏', cost: 1, buff: { atk: 5 }, description: '+5 ataque' },
-                    { name: 'Purificar', icon: '💫', cost: 1, cleanse: true, description: 'Remove debuffs' }
+                    { id: 'cleric_cura', name: 'Cura Menor', icon: '💚', cost: 1, heal: 20, description: 'Cura 20 HP', sourceType: 'class' },
+                    { id: 'cleric_luz', name: 'Luz Sagrada', icon: '☀️', cost: 2, damage: 25, description: 'Dano sagrado', sourceType: 'class' },
+                    { id: 'cleric_bencao', name: 'Bênção', icon: '🙏', cost: 1, buff: { atk: 5 }, description: '+5 ataque', sourceType: 'class' },
+                    { id: 'cleric_purificar', name: 'Purificar', icon: '💫', cost: 1, cleanse: true, description: 'Remove debuffs', sourceType: 'class' }
                 ]
             }
         ];
@@ -306,6 +318,80 @@ export class GameManager {
     }
 
     async saveGame() { await this.saveManager.save(this.gameData); }
+
+    /**
+     * Synchronize equipment cards in hero decks after loading saved data.
+     * Removes any stale equipment/consumable cards and re-adds based on current equipment.
+     */
+    syncEquipmentCards() {
+        const heroes = this.gameData.heroes || [];
+
+        for (const hero of heroes) {
+            if (!hero.deck) hero.deck = [];
+
+            // Remove old equipment and consumable cards (they will be re-added)
+            hero.deck = hero.deck.filter(card => {
+                const sourceType = card.sourceType || card.cardType;
+                return sourceType !== 'equipment' && sourceType !== 'consumable';
+            });
+
+            // Re-add cards from equipped items
+            if (hero.equipment) {
+                for (const [slot, itemId] of Object.entries(hero.equipment)) {
+                    if (!itemId) continue;
+
+                    const item = getItemData(itemId);
+                    if (item && item.generatesCard) {
+                        // Check if card already exists
+                        const exists = hero.deck.some(c => c.id === item.generatesCard.id);
+                        if (!exists) {
+                            hero.deck.push({
+                                ...item.generatesCard,
+                                level: 0,
+                                sourceType: item.generatesCard.cardType || 'equipment'
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        // Also sync consumable cards from inventory
+        this.syncConsumableCards();
+
+        console.log('🔄 Equipment cards synchronized with hero decks');
+    }
+
+    /**
+     * Add consumable item cards to all heroes' decks (shared access)
+     */
+    syncConsumableCards() {
+        const inventory = this.gameData.inventory || [];
+        const heroes = this.gameData.heroes || [];
+
+        // For now, add consumable cards to the first hero only
+        // (could be expanded to let player choose or share)
+        const primaryHero = heroes[0];
+        if (!primaryHero) return;
+
+        for (const invItem of inventory) {
+            const item = getItemData(invItem.itemId);
+            if (item && item.generatesCard && item.generatesCard.consumable) {
+                // Add one card per item in inventory (for each quantity)
+                const existingCount = primaryHero.deck.filter(c => c.id === item.generatesCard.id).length;
+                const needed = invItem.quantity - existingCount;
+
+                for (let i = 0; i < needed; i++) {
+                    primaryHero.deck.push({
+                        ...item.generatesCard,
+                        level: 0,
+                        sourceType: 'consumable'
+                    });
+                }
+            }
+        }
+    }
+
     updateLoadingProgress(percent) { const el = document.getElementById('loading-progress'); if (el) el.style.width = `${percent}%`; }
     updateLoadingText(text) { const el = document.getElementById('loading-text'); if (el) el.textContent = text; }
     delay(ms) { return new Promise(r => setTimeout(r, ms)); }

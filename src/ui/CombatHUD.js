@@ -74,23 +74,35 @@ export class CombatHUD {
         const heroes = this.gameManager.gameData.heroes || [];
         const currentHero = heroes[this.currentHeroIndex];
 
-        if (!currentHero || !currentHero.deck) {
+        if (!currentHero || !currentHero.deck || currentHero.deck.length === 0) {
             this.cardCarousel.innerHTML = '<div class="no-cards">Sem cartas</div>';
             return;
         }
 
-        // Pegar as primeiras 4 cartas do deck (mão)
-        const hand = currentHero.deck.slice(0, 4);
+        // Sort cards by type: class > equipment > consumable
+        const sortedDeck = [...currentHero.deck].sort((a, b) => {
+            const typeOrder = { 'class': 0, 'equipment': 1, 'consumable': 2 };
+            const orderA = typeOrder[a.sourceType || a.cardType || 'class'] ?? 0;
+            const orderB = typeOrder[b.sourceType || b.cardType || 'class'] ?? 0;
+            return orderA - orderB;
+        });
 
-        this.cardCarousel.innerHTML = hand.map((card, index) => `
-            <div class="combat-card ${this.selectedCard === index ? 'selected' : ''}" 
-                 data-card-index="${index}" data-card-cost="${card.cost}">
-                <div class="card-cost">${card.cost}</div>
-                <div class="card-icon">${card.icon || '⚔️'}</div>
-                <div class="card-name">${card.name}</div>
-                <div class="card-effect">${card.description || ''}</div>
-            </div>
-        `).join('');
+        // Render all cards with scroll
+        this.cardCarousel.innerHTML = sortedDeck.map((card, index) => {
+            const cardType = card.sourceType || card.cardType || 'class';
+            const typeClass = `card-type-${cardType}`;
+
+            return `
+                <div class="combat-card ${typeClass} ${this.selectedCard === index ? 'selected' : ''}" 
+                     data-card-index="${index}" data-card-cost="${card.cost}">
+                    <div class="card-cost">${card.cost}</div>
+                    <div class="card-icon">${card.icon || '⚔️'}</div>
+                    <div class="card-name">${card.name}</div>
+                    <div class="card-effect">${card.description || ''}</div>
+                    ${card.consumable ? '<div class="card-consumable-badge">1x</div>' : ''}
+                </div>
+            `;
+        }).join('');
 
         // Adicionar eventos de clique
         this.cardCarousel.querySelectorAll('.combat-card').forEach(cardEl => {
