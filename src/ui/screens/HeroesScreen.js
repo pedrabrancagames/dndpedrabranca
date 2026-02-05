@@ -1,6 +1,7 @@
 import { BaseScreen } from './BaseScreen.js';
 import { GameState } from '../../core/StateManager.js';
 import { CardDatabase, CardRarity, getCardData, getUpgradeCost } from '../../data/CardDatabase.js';
+import { getItemData } from '../../data/ItemDatabase.js';
 import { eventBus } from '../../core/EventEmitter.js';
 
 export class HeroesScreen extends BaseScreen {
@@ -132,6 +133,12 @@ export class HeroesScreen extends BaseScreen {
       deckGrid.innerHTML = this.renderDeck(hero);
     }
 
+    // Equipment
+    const equipmentGrid = this.findElement('#equipment-grid');
+    if (equipmentGrid) {
+      equipmentGrid.innerHTML = this.renderEquipment(hero);
+    }
+
     // Show modal
     if (modal) modal.classList.remove('hidden');
   }
@@ -176,6 +183,37 @@ export class HeroesScreen extends BaseScreen {
                     ${canUpgrade ? '<div class="upgrade-indicator">⬆️</div>' : '<div class="max-indicator">MAX</div>'}
                 </div>
             `;
+    }).join('');
+  }
+
+  renderEquipment(hero) {
+    const slots = [
+      { key: 'weapon', label: 'Arma', emptyIcon: '⚔️' },
+      { key: 'armor', label: 'Armadura', emptyIcon: '🛡️' },
+      { key: 'accessory', label: 'Acessório', emptyIcon: '📿' }
+    ];
+
+    const equipment = hero.equipment || {};
+
+    return slots.map(slot => {
+      const itemId = equipment[slot.key];
+      const item = itemId ? getItemData(itemId) : null;
+
+      if (item) {
+        return `
+          <div class="equipment-slot equipped">
+            <div class="equipment-slot-icon">${item.icon}</div>
+            <div class="equipment-slot-name">${item.name}</div>
+          </div>
+        `;
+      } else {
+        return `
+          <div class="equipment-slot">
+            <div class="equipment-slot-icon" style="opacity: 0.3">${slot.emptyIcon}</div>
+            <div class="equipment-slot-label">${slot.label}</div>
+          </div>
+        `;
+      }
     }).join('');
   }
 

@@ -111,6 +111,14 @@
           <!-- Stats do herói -->
           <div class="hero-stats-grid" id="hero-stats-grid"></div>
 
+          <!-- Equipamentos do herói -->
+          <div class="equipment-section">
+            <h4 class="equipment-title">⚔️ Equipamentos</h4>
+            <div class="equipment-grid" id="equipment-grid">
+              <!-- Equipamentos serão injetados via JS -->
+            </div>
+          </div>
+
           <!-- Deck de cartas -->
           <div class="deck-section">
             <h4 class="deck-title">📜 Deck de Cartas</h4>
@@ -159,6 +167,12 @@
         <div class="gold-display" id="gold-display">💰 0</div>
       </header>
 
+      <!-- Título indicando que são itens do jogador -->
+      <div class="inventory-section-title">
+        <span class="section-icon">🎒</span>
+        <span class="section-label">Seus Itens</span>
+      </div>
+
       <!-- Filtros de categoria -->
       <div class="inventory-filters" id="inventory-filters">
         <button class="filter-tab active" data-filter="all">Todos</button>
@@ -193,7 +207,7 @@
           </div>
           <p class="item-detail-description" id="item-detail-description"></p>
           <div class="item-detail-stats" id="item-detail-stats"></div>
-          
+
           <!-- Seletor de Herói para Equipar -->
           <div class="hero-selector hidden" id="hero-selector">
             <h4 class="hero-selector-title">👤 Equipar em:</h4>
