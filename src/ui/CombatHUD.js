@@ -66,7 +66,7 @@ export class CombatHUD {
     }
 
     /**
-     * Renderiza as cartas do herói atual
+     * Renderiza as cartas do herói atual em formato de leque (fan)
      */
     renderCards() {
         if (!this.cardCarousel) return;
@@ -87,14 +87,42 @@ export class CombatHUD {
             return orderA - orderB;
         });
 
-        // Render all cards with scroll
+        const totalCards = sortedDeck.length;
+        const maxAngle = 40; // Maximum spread angle (degrees)
+        const angleStep = totalCards > 1 ? maxAngle / (totalCards - 1) : 0;
+        const startAngle = -maxAngle / 2;
+
+        // Render cards with fan effect
         this.cardCarousel.innerHTML = sortedDeck.map((card, index) => {
             const cardType = card.sourceType || card.cardType || 'class';
             const typeClass = `card-type-${cardType}`;
 
+            // Calculate rotation angle for fan effect
+            const rotation = startAngle + (angleStep * index);
+
+            // Calculate vertical offset (cards in center are higher)
+            const centerIndex = (totalCards - 1) / 2;
+            const distanceFromCenter = Math.abs(index - centerIndex);
+            const verticalOffset = distanceFromCenter * 8; // pixels down from center
+
+            // Z-index: cards on the right are on top (like holding cards in hand)
+            const zIndex = index + 1;
+
+            // Horizontal offset for overlap
+            const horizontalOffset = (index - centerIndex) * 30; // pixels from center
+
+            const isSelected = this.selectedCard === index;
+
             return `
-                <div class="combat-card ${typeClass} ${this.selectedCard === index ? 'selected' : ''}" 
-                     data-card-index="${index}" data-card-cost="${card.cost}">
+                <div class="combat-card fan-card ${typeClass} ${isSelected ? 'selected' : ''}" 
+                     data-card-index="${index}" 
+                     data-card-cost="${card.cost}"
+                     style="
+                        --fan-rotation: ${rotation}deg;
+                        --fan-offset-x: ${horizontalOffset}px;
+                        --fan-offset-y: ${verticalOffset}px;
+                        --fan-z-index: ${isSelected ? 100 : zIndex};
+                     ">
                     <div class="card-cost">${card.cost}</div>
                     <div class="card-icon">${card.icon || '⚔️'}</div>
                     <div class="card-name">${card.name}</div>
@@ -104,7 +132,7 @@ export class CombatHUD {
             `;
         }).join('');
 
-        // Adicionar eventos de clique
+        // Add click and hover events
         this.cardCarousel.querySelectorAll('.combat-card').forEach(cardEl => {
             cardEl.addEventListener('click', (e) => this.onCardClick(e));
         });
