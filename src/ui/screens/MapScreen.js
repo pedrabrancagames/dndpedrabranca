@@ -152,6 +152,17 @@ export class MapScreen extends BaseScreen {
             }
         });
 
+        // Adicionar marcador da loja (Balthazar)
+        // Posição fixa em relação ao jogador
+        const shopAngle = Math.PI * 0.25; // 45 graus
+        const shopDistance = 0.0006; // ~60m
+        mapManager.addShopMarker({
+            npcId: 'merchant_npc',
+            name: 'Loja de Balthazar',
+            lat: playerPos.lat + Math.cos(shopAngle) * shopDistance,
+            lng: playerPos.lng + Math.sin(shopAngle) * shopDistance
+        });
+
         console.log("Markers atualizados via MissionManager");
     }
 

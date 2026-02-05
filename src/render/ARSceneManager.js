@@ -267,13 +267,6 @@ export class ARSceneManager extends SceneManager {
             if (!this.arenaPlaced) {
                 console.log('Arena not ready. Queuing NPC spawn:', npcId);
                 this.pendingNPC = { id: npcId, context: context };
-
-                // Mostrar dica para o usuário
-                const hint = document.getElementById('reticle-hint');
-                if (hint) {
-                    hint.textContent = 'Toque em uma superfície para chamar o NPC';
-                    hint.style.display = 'block';
-                }
                 return;
             }
 
@@ -334,13 +327,7 @@ export class ARSceneManager extends SceneManager {
 
             if (!this.arenaPlaced) {
                 console.log('Arena not ready. Queuing Collection Item spawn:', itemId);
-                this.pendingNPC = { id: itemId, context: context, isCollection: true, modelPath: path }; // Reusing pendingNPC for convenience or create pendingObject
-
-                const hint = document.getElementById('reticle-hint');
-                if (hint) {
-                    hint.textContent = 'Toque em uma superfície para colocar o item';
-                    hint.style.display = 'block';
-                }
+                this.pendingNPC = { id: itemId, context: context, isCollection: true, modelPath: path };
                 return;
             }
 
@@ -388,13 +375,7 @@ export class ARSceneManager extends SceneManager {
 
         if (!this.arenaPlaced) {
             console.log('Arena not ready. Queuing Puzzle spawn');
-            this.pendingNPC = { id: 'puzzle', context: context, isPuzzle: true, puzzleData: puzzleData }; // Reusing pendingNPC struct
-
-            const hint = document.getElementById('reticle-hint');
-            if (hint) {
-                hint.textContent = 'Toque em uma superfície para iniciar o puzzle';
-                hint.style.display = 'block';
-            }
+            this.pendingNPC = { id: 'puzzle', context: context, isPuzzle: true, puzzleData: puzzleData };
             return;
         }
 

@@ -171,6 +171,34 @@ export class MapManager {
     }
 
     /**
+     * Adiciona um marcador de loja ao mapa
+     * Ao clicar, abre direto a loja sem entrar em modo AR
+     */
+    addShopMarker(shop) {
+        if (!this.map) return;
+
+        const icon = L.divIcon({
+            className: 'mission-marker shop',
+            html: `<span>🏪</span>`,
+            iconSize: [40, 40],
+            iconAnchor: [20, 20]
+        });
+
+        const marker = L.marker([shop.lat, shop.lng], { icon })
+            .addTo(this.markersLayer)
+            .bindPopup(`<b>${shop.name}</b><br>Clique para abrir a loja`);
+
+        marker.missionId = `shop_${shop.npcId}`;
+
+        marker.on('click', () => {
+            // Abrir loja diretamente sem AR
+            eventBus.emit('openShop', { npcId: shop.npcId });
+        });
+
+        return marker;
+    }
+
+    /**
      * Gerencia o clique no marcador baseado no tipo
      */
     handleMarkerClick(mission) {
