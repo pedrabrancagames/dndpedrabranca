@@ -296,8 +296,8 @@ export class InventoryScreen extends BaseScreen {
             const equipClass = canEquip ? 'can-equip' : 'cannot-equip';
             const statusClass = canEquip ? 'valid' : 'invalid';
             const statusText = canEquip ? '✓ Pode usar' : '✗ Inválido';
-            const icon = classIcons[hero.classId] || '👤';
-            const className = classNames[hero.classId] || hero.classId;
+            const icon = classIcons[hero.class] || '👤';
+            const className = classNames[hero.class] || hero.class;
 
             html += `
                 <div class="hero-selector-item ${equipClass}" 
