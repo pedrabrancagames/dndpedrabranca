@@ -21,7 +21,7 @@ export const NPCDatabase = {
         name: 'Prefeito Magnus',
         role: NPCRole.QUEST_GIVER,
         model: '/models/npc/mayor.glb',
-        scale: 1.0, // Ajuste de escala se necessário
+        scale: 1.7, // Ajuste de escala se necessário
         animations: {
             idle: 'Idle',
             talk: 'Talk',
@@ -36,7 +36,7 @@ export const NPCDatabase = {
         name: 'Balthazar',
         role: NPCRole.MERCHANT,
         model: '/models/npc/merchant_npc.glb', // Updated path
-        scale: 1.0,
+        scale: 1.7,
         animations: {
             idle: 'Idle',
             talk: 'Talk',
@@ -53,7 +53,7 @@ export const NPCDatabase = {
         name: 'Capitão Valerius',
         role: NPCRole.QUEST_GIVER,
         model: '/models/npc/guard_captain.glb',
-        scale: 1.1,
+        scale: 1.87,
         animations: {
             idle: 'Idle', // Adjusted expected animation names
             talk: 'Talk'
@@ -67,7 +67,7 @@ export const NPCDatabase = {
         name: 'Sábia Elara',
         role: NPCRole.HEALER,
         model: '/models/npc/healer.glb',
-        scale: 1.0,
+        scale: 1.7,
         dialogueId: 'healer_intro',
         description: 'Curandeira local.'
     },
@@ -77,7 +77,7 @@ export const NPCDatabase = {
         name: 'Guarda',
         role: NPCRole.GUARD,
         model: '/models/npc/city_guard.glb',
-        scale: 1.1,
+        scale: 1.87,
         description: 'Um guarda vigilante.'
     },
 
@@ -86,7 +86,7 @@ export const NPCDatabase = {
         name: 'Aldeão',
         role: NPCRole.CIVILIAN,
         model: '/models/npc/villager_m.glb',
-        scale: 1.0,
+        scale: 1.7,
         description: 'Habitante local.'
     },
 
@@ -95,7 +95,7 @@ export const NPCDatabase = {
         name: 'Aldeã',
         role: NPCRole.CIVILIAN,
         model: '/models/npc/villager_f.glb',
-        scale: 1.0,
+        scale: 1.7,
         description: 'Habitante local.'
     },
 
@@ -104,7 +104,7 @@ export const NPCDatabase = {
         name: 'Mensageiro',
         role: NPCRole.CIVILIAN,
         model: '/models/npc/messenger.glb',
-        scale: 1.0,
+        scale: 1.7,
         description: 'Entregador de notícias.'
     },
 
@@ -113,7 +113,7 @@ export const NPCDatabase = {
         name: 'Sarah',
         role: NPCRole.MERCHANT,
         model: '/models/npc/merchant_wife.glb',
-        scale: 1.0,
+        scale: 1.7,
         description: 'Esposa do mercador.'
     }
 };
