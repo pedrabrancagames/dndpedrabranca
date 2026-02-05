@@ -19,6 +19,7 @@ export class InventoryScreen extends BaseScreen {
         this.currentFilter = 'all';
         this.selectedItem = null;
         this.selectedIndex = null;
+        this.selectedHeroIndex = null;
         this.maxSlots = 20;
     }
 
@@ -189,6 +190,9 @@ export class InventoryScreen extends BaseScreen {
             discardBtn.classList.toggle('hidden', itemData.category === ItemCategory.QUEST);
         }
 
+        // Render hero selector if item is equippable
+        this.renderHeroSelector(itemData);
+
         // Show modal
         if (modal) modal.classList.remove('hidden');
     }
@@ -246,14 +250,113 @@ export class InventoryScreen extends BaseScreen {
         if (modal) modal.classList.add('hidden');
         this.selectedItem = null;
         this.selectedIndex = null;
+        this.selectedHeroIndex = null;
+    }
+
+    renderHeroSelector(itemData) {
+        const selectorContainer = this.findElement('#hero-selector');
+        const selectorList = this.findElement('#hero-selector-list');
+
+        if (!selectorContainer || !selectorList) return;
+
+        // Only show selector for equippable items
+        if (!itemData.equipSlot) {
+            selectorContainer.classList.add('hidden');
+            return;
+        }
+
+        selectorContainer.classList.remove('hidden');
+        const heroes = this.gameManager.gameData.heroes || [];
+        const classNames = {
+            warrior: 'Guerreiro',
+            mage: 'Mago',
+            rogue: 'Ladino',
+            cleric: 'Clérigo'
+        };
+        const classIcons = {
+            warrior: '⚔️',
+            mage: '🧙',
+            rogue: '🗡️',
+            cleric: '✝️'
+        };
+
+        // Reset selection
+        this.selectedHeroIndex = null;
+
+        // Auto-select first valid hero
+        let firstValidIndex = null;
+
+        let html = '';
+        heroes.forEach((hero, index) => {
+            const canEquip = canEquipItem(itemData, hero);
+            if (canEquip && firstValidIndex === null) {
+                firstValidIndex = index;
+            }
+
+            const equipClass = canEquip ? 'can-equip' : 'cannot-equip';
+            const statusClass = canEquip ? 'valid' : 'invalid';
+            const statusText = canEquip ? '✓ Pode usar' : '✗ Inválido';
+            const icon = classIcons[hero.classId] || '👤';
+            const className = classNames[hero.classId] || hero.classId;
+
+            html += `
+                <div class="hero-selector-item ${equipClass}" 
+                     data-hero-index="${index}"
+                     data-can-equip="${canEquip}">
+                    <div class="hero-selector-icon">${icon}</div>
+                    <div class="hero-selector-info">
+                        <div class="hero-selector-name">${hero.name}</div>
+                        <div class="hero-selector-class">${className}</div>
+                    </div>
+                    <span class="hero-selector-status ${statusClass}">${statusText}</span>
+                </div>
+            `;
+        });
+
+        selectorList.innerHTML = html;
+
+        // Auto-select first valid hero
+        if (firstValidIndex !== null) {
+            this.selectHero(firstValidIndex);
+        }
+
+        // Add click handlers
+        selectorList.querySelectorAll('.hero-selector-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (item.dataset.canEquip === 'true') {
+                    this.selectHero(parseInt(item.dataset.heroIndex));
+                }
+            });
+        });
+    }
+
+    selectHero(index) {
+        this.selectedHeroIndex = index;
+
+        // Update visual selection
+        const items = this.findElement('#hero-selector-list')?.querySelectorAll('.hero-selector-item');
+        if (items) {
+            items.forEach((item, i) => {
+                item.classList.toggle('selected', i === index);
+            });
+        }
     }
 
     equipItem() {
         if (!this.selectedItem || !this.selectedItem.equipSlot) return;
 
-        // Get current active hero (first one for now)
+        // Check if a hero is selected
+        if (this.selectedHeroIndex === null) {
+            eventBus.emit('showMessage', {
+                text: 'Selecione um herói para equipar!',
+                type: 'error'
+            });
+            return;
+        }
+
+        // Get selected hero
         const heroes = this.gameManager.gameData.heroes;
-        const hero = heroes[0];
+        const hero = heroes[this.selectedHeroIndex];
 
         if (!canEquipItem(this.selectedItem, hero)) {
             eventBus.emit('showMessage', {
