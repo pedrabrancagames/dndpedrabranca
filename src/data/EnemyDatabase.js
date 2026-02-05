@@ -30,6 +30,7 @@ export const EnemyDatabase = {
         name: 'Goblin',
         type: EnemyType.HUMANOID,
         model: '/models/enemies/goblin.glb',
+        scale: 0.75,
         stats: {
             hp: 30,
             atk: 10,
@@ -51,6 +52,7 @@ export const EnemyDatabase = {
         name: 'Goblin Arqueiro',
         type: EnemyType.HUMANOID,
         model: '/models/enemies/goblin.glb', // Mesmo modelo por enquanto
+        scale: 0.75,
         stats: {
             hp: 25,
             atk: 12,
@@ -72,6 +74,7 @@ export const EnemyDatabase = {
         name: 'Goblin Xamã',
         type: EnemyType.HUMANOID,
         model: '/models/enemies/goblin.glb',
+        scale: 0.75,
         stats: {
             hp: 20,
             atk: 8,
@@ -95,6 +98,7 @@ export const EnemyDatabase = {
         name: 'Esqueleto',
         type: EnemyType.UNDEAD,
         model: '/models/enemies/skeleton.glb',
+        scale: 1.0,
         stats: {
             hp: 35,
             atk: 12,
@@ -118,6 +122,7 @@ export const EnemyDatabase = {
         name: 'Zumbi',
         type: EnemyType.UNDEAD,
         model: '/models/enemies/zombie.glb',
+        scale: 1.0,
         stats: {
             hp: 50,
             atk: 15,
@@ -141,6 +146,7 @@ export const EnemyDatabase = {
         name: 'Fantasma',
         type: EnemyType.UNDEAD,
         model: '/models/enemies/ghost.glb',
+        scale: 1.0,
         stats: {
             hp: 25,
             atk: 10,
@@ -166,6 +172,7 @@ export const EnemyDatabase = {
         name: 'Lobo',
         type: EnemyType.BEAST,
         model: '/models/enemies/wolf.glb',
+        scale: 0.9,
         stats: {
             hp: 28,
             atk: 14,
@@ -187,6 +194,7 @@ export const EnemyDatabase = {
         name: 'Lobo Atroz',
         type: EnemyType.BEAST,
         model: '/models/enemies/wolf.glb',
+        scale: 1.3,
         stats: {
             hp: 55,
             atk: 20,
@@ -208,6 +216,7 @@ export const EnemyDatabase = {
         name: 'Aranha Gigante',
         type: EnemyType.BEAST,
         model: '/models/enemies/spider.glb',
+        scale: 0.8,
         stats: {
             hp: 30,
             atk: 12,
@@ -230,6 +239,7 @@ export const EnemyDatabase = {
         name: 'Diabrete',
         type: EnemyType.DEMON,
         model: '/models/enemies/imp.glb',
+        scale: 0.6,
         stats: {
             hp: 25,
             atk: 10,
@@ -254,6 +264,7 @@ export const EnemyDatabase = {
         name: 'Soldado Demoníaco',
         type: EnemyType.DEMON,
         model: '/models/enemies/demon.glb',
+        scale: 1.4,
         stats: {
             hp: 80,
             atk: 25,
@@ -278,6 +289,7 @@ export const EnemyDatabase = {
         name: 'Rei Goblin',
         type: EnemyType.HUMANOID,
         model: '/models/enemies/goblin_king.glb',
+        scale: 1.1,
         isBoss: true,
         stats: {
             hp: 150,
@@ -301,6 +313,7 @@ export const EnemyDatabase = {
         name: 'Lich',
         type: EnemyType.UNDEAD,
         model: '/models/enemies/lich.glb',
+        scale: 1.2,
         isBoss: true,
         stats: {
             hp: 120,
@@ -339,7 +352,8 @@ export function getEnemyData(enemyId) {
         atk: enemy.stats.atk,
         def: enemy.stats.def,
         speed: enemy.stats.speed,
-        mag: enemy.stats.mag || 0
+        mag: enemy.stats.mag || 0,
+        scale: enemy.scale || 1.0
     };
 }
 

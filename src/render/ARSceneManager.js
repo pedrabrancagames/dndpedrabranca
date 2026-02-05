@@ -225,8 +225,8 @@ export class ARSceneManager extends SceneManager {
                 }, 500);
 
                 // Animar entrada com delay escalonado
-                // Escala base aumentada de 0.5 para 1.5 (3x) conforme feedback
-                const baseScale = enemy.scale || 1.5;
+                // Escala base normalizada para 1.0, usando o valor do DB
+                const baseScale = enemy.scale || 1.0;
 
                 AnimationUtils.animateSpawn(model, {
                     targetScale: baseScale,
@@ -278,7 +278,7 @@ export class ARSceneManager extends SceneManager {
             model.position.set(worldX, this.arenaPosition.y, worldZ);
 
             // Escala conforme DB
-            const scale = npcData.scale || 3.0;
+            const scale = npcData.scale || 1.0;
             model.scale.set(0, 0, 0); // Começa invisível para animação
 
             // Metadados para interação
