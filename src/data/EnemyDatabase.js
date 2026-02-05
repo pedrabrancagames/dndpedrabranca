@@ -30,7 +30,7 @@ export const EnemyDatabase = {
         name: 'Goblin',
         type: EnemyType.HUMANOID,
         model: '/models/enemies/goblin.glb',
-        scale: 0.75,
+        scale: 1.275,
         stats: {
             hp: 30,
             atk: 10,
@@ -74,7 +74,7 @@ export const EnemyDatabase = {
         name: 'Goblin Xamã',
         type: EnemyType.HUMANOID,
         model: '/models/enemies/goblin.glb',
-        scale: 0.75,
+        scale: 1.275,
         stats: {
             hp: 20,
             atk: 8,
