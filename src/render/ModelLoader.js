@@ -92,14 +92,24 @@ export class ModelLoader {
      */
     static getEnemyModelPath(enemyType) {
         const modelMap = {
+            // Goblins
             'goblin': '/models/enemies/goblin.glb',
             'goblin_archer': '/models/enemies/goblin.glb',
-            'orc': '/models/enemies/orc.glb',
+            'goblin_shaman': '/models/enemies/goblin.glb',
+            'goblin_king': '/models/enemies/goblin_king.glb',
+            // Undead
             'skeleton': '/models/enemies/skeleton.glb',
             'zombie': '/models/enemies/zombie.glb',
+            'ghost': '/models/enemies/ghost.glb',
+            'lich': '/models/enemies/lich.glb',
+            // Beasts
             'wolf': '/models/enemies/wolf.glb',
-            'spider': '/models/enemies/giant_spider.glb',
-            'dragon': '/models/enemies/young_red_dragon.glb',
+            'dire_wolf': '/models/enemies/wolf.glb',
+            'spider': '/models/enemies/spider.glb',
+            // Demons
+            'imp': '/models/enemies/imp.glb',
+            'demon_soldier': '/models/enemies/demon.glb',
+            // Default fallback
             'default': '/models/enemies/goblin.glb'
         };
 

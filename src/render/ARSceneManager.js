@@ -187,7 +187,7 @@ export class ARSceneManager extends SceneManager {
 
         for (let i = 0; i < enemies.length; i++) {
             const enemy = enemies[i];
-            const modelPath = ModelLoader.getEnemyModelPath(enemy.type || EnemyTypes.GOBLIN);
+            const modelPath = ModelLoader.getEnemyModelPath(enemy.enemyType || enemy.type || EnemyTypes.GOBLIN);
 
             try {
                 const model = await this.modelLoader.load(modelPath);

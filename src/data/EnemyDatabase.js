@@ -367,6 +367,7 @@ export function createEnemyInstance(enemyId, instanceId) {
     return {
         ...data,
         id: instanceId || `${enemyId}_${Date.now()}`,
+        enemyType: enemyId, // Preserva o ID original para carregamento de modelo
         model: null // Será preenchido pelo ARSceneManager
     };
 }
