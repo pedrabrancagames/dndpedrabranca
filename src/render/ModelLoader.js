@@ -92,23 +92,76 @@ export class ModelLoader {
      */
     static getEnemyModelPath(enemyType) {
         const modelMap = {
-            // Goblins
+            // Goblins e Goblinoides
             'goblin': '/models/enemies/goblin.glb',
             'goblin_archer': '/models/enemies/goblin.glb',
             'goblin_shaman': '/models/enemies/goblin.glb',
-            'goblin_king': '/models/enemies/goblin_king.glb',
-            // Undead
+            'goblin_king': '/models/enemies/goblin.glb',
+            'hobgoblin': '/models/enemies/hobgoblin.glb',
+            'bugbear': '/models/enemies/bugbear.glb',
+            // Humanoides
+            'kobold': '/models/enemies/kobold.glb',
+            'bandit': '/models/enemies/bandit.glb',
+            'gnoll': '/models/enemies/gnoll.glb',
+            'orc': '/models/enemies/orc.glb',
+            'drow': '/models/enemies/drow.glb',
+            // Mortos-vivos
             'skeleton': '/models/enemies/skeleton.glb',
             'zombie': '/models/enemies/zombie.glb',
-            'ghost': '/models/enemies/ghost.glb',
+            'ghoul': '/models/enemies/ghoul.glb',
+            'wight': '/models/enemies/wight.glb',
+            'specter': '/models/enemies/specter.glb',
+            'shadow': '/models/enemies/shadow.glb',
+            'mummy': '/models/enemies/mummy.glb',
+            'vampire_spawn': '/models/enemies/vampire_spawn.glb',
+            'ghost': '/models/enemies/specter.glb',
             'lich': '/models/enemies/lich.glb',
-            // Beasts
+            // Bestas
             'wolf': '/models/enemies/wolf.glb',
             'dire_wolf': '/models/enemies/wolf.glb',
-            'spider': '/models/enemies/spider.glb',
-            // Demons
+            'werewolf': '/models/enemies/werewolf.glb',
+            'giant_spider': '/models/enemies/giant_spider.glb',
+            'spider': '/models/enemies/giant_spider.glb',
+            'giant_rat': '/models/enemies/giant_rat.glb',
+            'giant_bat': '/models/enemies/giant_bat.glb',
+            'giant_snake': '/models/enemies/giant_snake.glb',
+            'brown_bear': '/models/enemies/brown_bear.glb',
+            'owlbear': '/models/enemies/owlbear.glb',
+            // Demônios
             'imp': '/models/enemies/imp.glb',
-            'demon_soldier': '/models/enemies/demon.glb',
+            'quasit': '/models/enemies/quasit.glb',
+            'dretch': '/models/enemies/dretch.glb',
+            'balor': '/models/enemies/balor.glb',
+            'demon_soldier': '/models/enemies/dretch.glb',
+            // Elementais
+            'fire_elemental': '/models/enemies/fire_elemental.glb',
+            'water_elemental': '/models/enemies/water_elemental.glb',
+            'earth_elemental': '/models/enemies/earth_elemental.glb',
+            'air_elemental': '/models/enemies/air_elemental.glb',
+            // Constructos
+            'animated_armor': '/models/enemies/animated_armor.glb',
+            'stone_golem': '/models/enemies/stone_golem.glb',
+            'iron_golem': '/models/enemies/iron_golem.glb',
+            // Gigantes
+            'ogre': '/models/enemies/ogre.glb',
+            'troll': '/models/enemies/troll.glb',
+            'hill_giant': '/models/enemies/hill_giant.glb',
+            'frost_giant': '/models/enemies/frost_giant.glb',
+            'fire_giant': '/models/enemies/fire_giant.glb',
+            'storm_giant': '/models/enemies/storm_giant.glb',
+            // Aberrações
+            'beholder': '/models/enemies/beholder.glb',
+            'gazer': '/models/enemies/gazer.glb',
+            'mind_flayer': '/models/enemies/mind_flayer.glb',
+            'aboleth': '/models/enemies/Aboleth.glb',
+            // Gosmas
+            'gelatinous_cube': '/models/enemies/gelatinous_cube.glb',
+            // Monstrosidades
+            'mimic': '/models/enemies/mimic.glb',
+            // Dragões
+            'young_red_dragon': '/models/enemies/young_red_dragon.glb',
+            'young_black_dragon': '/models/enemies/young_black_dragon.glb',
+            'young_white_dragon': '/models/enemies/young_white_dragon.glb',
             // Default fallback
             'default': '/models/enemies/goblin.glb'
         };
