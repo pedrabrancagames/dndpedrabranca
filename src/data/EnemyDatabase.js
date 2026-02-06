@@ -422,3 +422,16 @@ export function getEnemiesForChapter(chapter) {
 
     return chapterEnemies[chapter] || chapterEnemies[1];
 }
+
+/**
+ * Retorna N inimigos aleatórios (diferentes entre si, exclui bosses)
+ * @param {number} count - Quantidade de inimigos
+ */
+export function getRandomEnemies(count = 2) {
+    const allEnemyIds = Object.keys(EnemyDatabase)
+        .filter(id => !EnemyDatabase[id].isBoss);
+
+    // Embaralhar e pegar N primeiros
+    const shuffled = allEnemyIds.sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, Math.min(count, shuffled.length));
+}

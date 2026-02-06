@@ -163,6 +163,22 @@ export class MapScreen extends BaseScreen {
             lng: playerPos.lng + Math.sin(shopAngle) * shopDistance
         });
 
+        // DEBUG: Marcador de teste de inimigos aleatórios
+        const testAngle = Math.PI * 1.25; // 225 graus (oposto à loja)
+        const testDistance = 0.0004; // ~40m do jogador
+        mapManager.addMissionMarker({
+            id: 'test_enemy_combat',
+            type: 'combat',
+            icon: '🧪',
+            title: 'Teste de Inimigos',
+            description: '2 inimigos aleatórios',
+            lat: playerPos.lat + Math.cos(testAngle) * testDistance,
+            lng: playerPos.lng + Math.sin(testAngle) * testDistance,
+            objectiveType: 'kill',
+            target: 'random_enemies',
+            isTestCombat: true
+        });
+
         console.log("Markers atualizados via MissionManager");
     }
 

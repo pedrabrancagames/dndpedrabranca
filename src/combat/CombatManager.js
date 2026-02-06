@@ -8,7 +8,7 @@ import { StatusEffects } from './StatusEffects.js';
 import { EnemyAI } from './EnemyAI.js';
 import { eventBus } from '../core/EventEmitter.js';
 import { GameState } from '../core/StateManager.js';
-import { createEnemyInstance, EnemyBehavior } from '../data/EnemyDatabase.js';
+import { createEnemyInstance, EnemyBehavior, getRandomEnemies } from '../data/EnemyDatabase.js';
 
 export class CombatManager {
     constructor(gameManager) {
@@ -254,6 +254,13 @@ export class CombatManager {
                 createEnemyInstance('skeleton', 'skel_1'),
                 createEnemyInstance('skeleton', 'skel_2')
             ];
+        }
+
+        // DEBUG: Marcador de teste com inimigos aleatórios
+        if (targetLower === 'random_enemies') {
+            const randomIds = getRandomEnemies(2);
+            console.log('Spawning random enemies:', randomIds);
+            return randomIds.map((id, i) => createEnemyInstance(id, `random_${i + 1}`));
         }
 
         // Fallback genérico
