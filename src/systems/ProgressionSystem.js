@@ -270,7 +270,7 @@ export class ProgressionSystem {
         for (let i = 0; i < currentIndex; i++) {
             const prevObj = objectives[i];
             const prevProgress = quests.progress[questId][prevObj.id] || 0;
-            if (prevProgress < prevObj.required) {
+            if (prevProgress < prevObj.amount) {
                 return false; // Bloqueado: objetivo anterior pendente
             }
         }
