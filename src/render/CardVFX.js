@@ -80,39 +80,31 @@ export class CardVFXSystem {
 
         console.log('[VFX] Card played:', card.id, card.name, card);
 
-        // Mapear carta para efeito
+        // Mapear carta para efeito - IDs baseados no GameManager.js
         const effectMap = {
             // Guerreiro
-            'golpe': () => this.playSlashEffect(target, { color: '#e5e7eb' }),
-            'golpe_brutal': () => this.playDoubleSlashEffect(target),
-            'escudo': () => this.playShieldEffect(source),
-            'investida': () => this.playChargeEffect(source, target),
-            'provocar': () => this.playTauntEffect(source),
-            'furia': () => this.playFireAuraEffect(source),
+            'warrior_golpe': () => this.playSlashEffect(target, { color: '#e5e7eb' }),
+            'warrior_brutal': () => this.playDoubleSlashEffect(target),
+            'warrior_escudo': () => this.playShieldEffect(source),
+            'warrior_investida': () => this.playChargeEffect(source, target),
 
             // Mago
-            'missil_arcano': () => this.playProjectileEffect(source, target, { color: '#a855f7' }),
-            'bola_de_fogo': () => this.playFireballEffect(source, target),
-            'raio': () => this.playLightningEffect(target),
-            'escudo_arcano': () => this.playArcaneShieldEffect(source),
-            'cone_de_gelo': () => this.playIceEffect(target),
-            'meteoro': () => this.playMeteorEffect(target),
+            'mage_missil': () => this.playProjectileEffect(source, target, { color: '#a855f7' }),
+            'mage_fireball': () => this.playFireballEffect(source, target),
+            'mage_raio': () => this.playLightningEffect(target),
+            'mage_escudo': () => this.playArcaneShieldEffect(source),
 
             // Ladino
-            'punhalada': () => this.playSlashEffect(target, { color: '#94a3b8', duration: 150 }),
-            'golpe_furtivo': () => this.playSneakAttackEffect(target),
-            'veneno': () => this.playPoisonEffect(target),
-            'evasao': () => this.playDodgeEffect(source),
-            'sombras': () => this.playStealthEffect(source),
-            'execucao': () => this.playExecuteEffect(target),
+            'rogue_punhalada': () => this.playSlashEffect(target, { color: '#94a3b8', duration: 150 }),
+            'rogue_furtivo': () => this.playSneakAttackEffect(target),
+            'rogue_veneno': () => this.playPoisonEffect(target),
+            'rogue_evasao': () => this.playDodgeEffect(source),
 
             // Clérigo
-            'cura_menor': () => this.playHealEffect(source),
-            'cura_em_grupo': () => this.playGroupHealEffect(source),
-            'luz_sagrada': () => this.playHolyLightEffect(target),
-            'bencao': () => this.playBlessEffect(source),
-            'purificar': () => this.playPurifyEffect(source),
-            'ressurreicao': () => this.playResurrectEffect(source)
+            'cleric_cura': () => this.playHealEffect(source),
+            'cleric_luz': () => this.playHolyLightEffect(target),
+            'cleric_bencao': () => this.playBlessEffect(source),
+            'cleric_purificar': () => this.playPurifyEffect(source)
         };
 
         const effect = effectMap[card.id];
