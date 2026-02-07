@@ -45,10 +45,19 @@ export class CardVFXSystem {
         // Criar container overlay para efeitos
         this.container = document.getElementById('vfx-overlay');
         if (!this.container) {
+            console.warn('[VFX] Container #vfx-overlay not found, creating dynamically');
             this.container = document.createElement('div');
             this.container.id = 'vfx-overlay';
             document.body.appendChild(this.container);
         }
+
+        console.log('[VFX] System initialized. Container:', this.container);
+        console.log('[VFX] Container styles:', {
+            display: getComputedStyle(this.container).display,
+            visibility: getComputedStyle(this.container).visibility,
+            zIndex: getComputedStyle(this.container).zIndex,
+            position: getComputedStyle(this.container).position
+        });
 
         // Pools de elementos
         this.particlePool = new VFXPool(() => this.createParticle(), 50);
