@@ -53,11 +53,13 @@ export class CardVFXSystem {
         }
 
         // Pools de elementos
-        this.particlePool = new VFXPool(() => this.createParticle(), 50);
-        this.slashPool = new VFXPool(() => this.createSlashElement(), 10);
+        this.particlePool = new VFXPool(() => this.createParticle(), 80); // Aumentado para 80
+        this.slashPool = new VFXPool(() => this.createSlashElement(), 15);
 
         // Registrar no eventBus
         eventBus.on('cardPlayed', (data) => this.onCardPlayed(data));
+
+        console.log('[VFX] System initialized via CardVFX.js (VFX 2.0)');
     }
 
     createParticle() {
@@ -74,6 +76,167 @@ export class CardVFXSystem {
         return slash;
     }
 
+    // ===== UTILITÁRIOS VISUAIS =====
+
+    /**
+     * Treme a tela (na verdade, o container do jogo)
+     * @param {string|number} intensity - 'small', 'medium', 'large' ou duração em ms (legado)
+     */
+    screenShake(intensity = 'medium') {
+        const app = document.getElementById('app');
+        if (!app) return;
+
+        // Suporte a legado (se for número, converte para medium com duração customizada, mas CSS handle duration)
+        // Para simplificar, mapeamos números para intensities
+        if (typeof intensity === 'number') {
+            if (intensity < 200) intensity = 'small';
+            else if (intensity < 400) intensity = 'medium';
+            else intensity = 'large';
+        }
+
+        // Remover classes anteriores
+        app.classList.remove('vfx-shake-small', 'vfx-shake-medium', 'vfx-shake-large');
+
+        // Forçar reflow
+        void app.offsetWidth;
+
+        // Adicionar nova classe
+        app.classList.add(`vfx-shake-${intensity}`);
+
+        // Remover após animação (max 500ms definidos no CSS)
+        setTimeout(() => {
+            app.classList.remove(`vfx-shake-${intensity}`);
+        }, 500);
+    }
+
+    /**
+     * Pisca a tela com cor
+     */
+    flashScreen(color = '#ffffff', duration = 200) {
+        const flash = document.createElement('div');
+        flash.className = 'vfx-flash-white';
+        // Se cor for diferente de branco, aplicamos style
+        if (color !== '#ffffff' && color !== 'white') {
+            flash.style.backgroundColor = color;
+            flash.style.mixBlendMode = 'normal'; // Reset blend mode para cores
+            flash.style.opacity = '0.5';
+        }
+
+        const parent = document.getElementById('app') || document.body;
+        parent.appendChild(flash);
+
+        setTimeout(() => {
+            flash.remove();
+        }, duration);
+    }
+
+    /**
+     * Cria explosão de partículas (Unificado)
+     * Suporta:
+     * 1. spawnParticles(x, y, color, count, type) - Nova
+     * 2. spawnParticles(count, options) - Legado/Existente
+     */
+    spawnParticles(arg1, arg2, arg3, arg4, arg5) {
+        let x, y, color, count, type;
+        let options = {};
+
+        // Detectar assinatura
+        if (typeof arg1 === 'number' && (typeof arg2 === 'object' || arg2 === undefined)) {
+            // Assinatura Legado: (count, options)
+            count = arg1;
+            options = arg2 || {};
+            x = '50%'; // Padrão centro
+            y = '50%';
+            // Se colors for array, pegamos um aleatório ou o primeiro para base
+            color = options.colors ? options.colors[0] : '#ffffff';
+
+            // Mapear opções legadas para tipos novos
+            if (options.direction === 'up') type = 'float';
+            else if (options.style === 'bubble') type = 'float';
+            else type = 'explode';
+        } else {
+            // Assinatura Nova: (x, y, color, count, type)
+            x = arg1;
+            y = arg2;
+            color = arg3;
+            count = arg4 || 20;
+            type = arg5 || 'explode';
+
+            options = {
+                colors: [color],
+                spread: 100,
+                duration: 600
+            };
+        }
+
+        for (let i = 0; i < count; i++) {
+            const p = this.particlePool.acquire();
+
+            // Escolher cor aleatória se houver lista
+            const pColor = options.colors ? options.colors[Math.floor(Math.random() * options.colors.length)] : color;
+
+            // Reset
+            p.style.animation = 'none';
+            p.offsetHeight; // Reflow
+            p.style.animation = '';
+
+            // Configuração
+            p.style.display = 'block';
+            p.style.color = pColor;
+            p.style.backgroundColor = pColor;
+            p.style.boxShadow = `0 0 6px ${pColor}`; // Glow
+
+            p.style.left = typeof x === 'number' ? `${x}px` : x;
+            p.style.top = typeof y === 'number' ? `${y}px` : y;
+
+            // Variação aleatória
+            const spread = options.spread || 120; // Aumentado spread padrão
+            const angle = Math.random() * 360;
+            const dist = 30 + Math.random() * spread;
+            let tx, ty;
+
+            if (options.direction === 'up' || type === 'float') {
+                tx = (Math.random() - 0.5) * spread;
+                ty = -dist - 50;
+                type = 'float'; // Forçar tipo float
+            } else if (options.direction === 'out') {
+                tx = Math.cos(angle * Math.PI / 180) * dist;
+                ty = Math.sin(angle * Math.PI / 180) * dist;
+            } else if (options.direction === 'orbit') {
+                tx = Math.cos(angle * Math.PI / 180) * 80;
+                ty = Math.sin(angle * Math.PI / 180) * 80;
+            } else {
+                // Explode padrão
+                tx = Math.cos(angle * Math.PI / 180) * dist;
+                ty = Math.sin(angle * Math.PI / 180) * dist;
+            }
+
+            const rot = Math.random() * 360;
+
+            p.style.setProperty('--tx', `${tx}px`);
+            p.style.setProperty('--ty', `${ty}px`);
+            p.style.setProperty('--rot', `${rot}deg`);
+
+            // Tipo de animação
+            let animClass = 'vfx-particle-animate';
+            if (type === 'explode') animClass = 'vfx-particle-explode';
+            if (type === 'float') animClass = 'vfx-particle-float';
+
+            p.className = `vfx-particle ${animClass}`;
+
+            // Tamanho aleatório
+            const size = 4 + Math.random() * 6;
+            p.style.width = `${size}px`;
+            p.style.height = `${size}px`;
+            if (options.style === 'bubble') p.style.borderRadius = '50%';
+
+            const duration = options.duration || 600;
+            setTimeout(() => {
+                this.particlePool.release(p);
+            }, duration);
+        }
+    }
+
     /**
      * Handler principal - determina qual efeito executar
      */
@@ -87,24 +250,32 @@ export class CardVFXSystem {
             'warrior_brutal': () => this.playDoubleSlashEffect(target),
             'warrior_escudo': () => this.playShieldEffect(source),
             'warrior_investida': () => this.playChargeEffect(source, target),
+            'warrior_furia': () => this.playFireAuraEffect(source),
+            'warrior_provocar': () => this.playTauntEffect(source),
 
             // Mago
             'mage_missil': () => this.playProjectileEffect(source, target, { color: '#a855f7' }),
             'mage_fireball': () => this.playFireballEffect(source, target),
             'mage_raio': () => this.playLightningEffect(target),
             'mage_escudo': () => this.playArcaneShieldEffect(source),
+            'mage_gelo': () => this.playIceEffect(target),
+            'mage_meteoro': () => this.playMeteorEffect(target),
 
             // Ladino
             'rogue_punhalada': () => this.playSlashEffect(target, { color: '#94a3b8', duration: 150 }),
             'rogue_furtivo': () => this.playSneakAttackEffect(target),
             'rogue_veneno': () => this.playPoisonEffect(target),
             'rogue_evasao': () => this.playDodgeEffect(source),
+            'rogue_stealth': () => this.playStealthEffect(source),
+            'rogue_execucao': () => this.playExecuteEffect(target),
 
             // Clérigo
             'cleric_cura': () => this.playHealEffect(source),
             'cleric_luz': () => this.playHolyLightEffect(target),
             'cleric_bencao': () => this.playBlessEffect(source),
-            'cleric_purificar': () => this.playPurifyEffect(source)
+            'cleric_purificar': () => this.playPurifyEffect(source),
+            'cleric_grupo': () => this.playGroupHealEffect(source),
+            'cleric_ressuscitar': () => this.playResurrectEffect(target)
         };
 
         const effect = effectMap[card.id];
@@ -128,11 +299,19 @@ export class CardVFXSystem {
 
         slash.style.display = 'block';
         slash.style.setProperty('--slash-color', color);
+
+        // Rotação aleatória leve
+        const rot = Math.random() * 20 - 10;
+        slash.style.setProperty('--rot', `${rot}deg`);
+
         slash.className = 'vfx-slash vfx-slash-horizontal';
 
         // Posição central na tela (combate é overlay)
         slash.style.left = '50%';
         slash.style.top = '50%';
+
+        // Partículas na direção do corte (VFX 2.0)
+        this.spawnParticles('50%', '50%', color, 20, 'explode');
 
         setTimeout(() => {
             this.slashPool.release(slash);
@@ -152,11 +331,17 @@ export class CardVFXSystem {
             slash.style.left = '50%';
             slash.style.top = '50%';
 
-            setTimeout(() => this.slashPool.release(slash), 300);
-        }, 100);
+            // Partículas extras para o crítico
+            this.spawnParticles('50%', '50%', '#fbbf24', 40, 'explode');
 
-        // Screen shake
-        this.screenShake(300);
+            setTimeout(() => this.slashPool.release(slash), 350);
+        }, 150);
+
+        // Impacto visual (VFX 2.0)
+        setTimeout(() => {
+            this.screenShake('medium');
+            this.flashScreen();
+        }, 300);
     }
 
     // ===== EFEITOS DE PROJÉTIL =====
@@ -166,20 +351,31 @@ export class CardVFXSystem {
         const projectile = document.createElement('div');
         projectile.className = 'vfx-projectile';
         projectile.style.setProperty('--projectile-color', color);
+        // Fallback estilo se CSS não existir
+        projectile.style.position = 'absolute';
+        projectile.style.width = '12px';
+        projectile.style.height = '12px';
+        projectile.style.borderRadius = '50%';
+        projectile.style.backgroundColor = color;
+        projectile.style.boxShadow = `0 0 10px ${color}`;
+
         this.container.appendChild(projectile);
 
         // Animar do canto inferior ao centro
         projectile.style.left = '20%';
         projectile.style.bottom = '30%';
+        projectile.style.transition = 'all 0.4s ease-in';
 
         requestAnimationFrame(() => {
-            projectile.classList.add('vfx-projectile-animate');
+            projectile.style.left = '50%';
+            projectile.style.bottom = '50%';
         });
 
         setTimeout(() => {
             projectile.remove();
-            // Flash no impacto
+            // Flash no impacto + partículas (VFX 2.0)
             this.flashScreen(color, 100);
+            this.spawnParticles('50%', '50%', color, 25, 'explode');
         }, 400);
     }
 
@@ -187,19 +383,34 @@ export class CardVFXSystem {
         // Projétil de fogo
         const fireball = document.createElement('div');
         fireball.className = 'vfx-fireball';
+        // Estilos inline para garantir
+        fireball.style.position = 'absolute';
+        fireball.style.width = '30px';
+        fireball.style.height = '30px';
+        fireball.style.borderRadius = '50%';
+        fireball.style.backgroundColor = '#f97316';
+        fireball.style.boxShadow = '0 0 20px #ef4444';
+
         this.container.appendChild(fireball);
 
         fireball.style.left = '20%';
         fireball.style.bottom = '30%';
+        fireball.style.transition = 'all 0.3s ease-in';
 
         requestAnimationFrame(() => {
-            fireball.classList.add('vfx-fireball-animate');
+            fireball.style.left = '50%';
+            fireball.style.bottom = '50%';
+            fireball.style.transform = 'scale(2)';
         });
 
         // Explosão após impacto
         setTimeout(() => {
             fireball.remove();
             this.playExplosionEffect({ color1: '#f97316', color2: '#ef4444' });
+
+            // Impacto massivo (VFX 2.0)
+            this.screenShake('large');
+            this.flashScreen('#fff7ed', 200);
         }, 300);
     }
 
@@ -210,19 +421,18 @@ export class CardVFXSystem {
 
         const explosion = document.createElement('div');
         explosion.className = 'vfx-explosion';
-        explosion.style.setProperty('--explosion-color1', color1);
-        explosion.style.setProperty('--explosion-color2', color2);
+        // Podemos adicionar classe CSS específica ou confiar nas partículas
         this.container.appendChild(explosion);
 
-        // Partículas
-        this.spawnParticles(20, {
+        // Partículas massivas
+        this.spawnParticles(40, {
             colors: [color1, color2, '#fbbf24'],
-            spread: 100,
-            duration: 600
+            spread: 150,
+            duration: 800
         });
 
         // Screen shake
-        this.screenShake(500);
+        this.screenShake('large');
 
         setTimeout(() => explosion.remove(), 600);
     }
@@ -231,41 +441,70 @@ export class CardVFXSystem {
         // Sombra crescente
         const shadow = document.createElement('div');
         shadow.className = 'vfx-meteor-shadow';
+        shadow.style.position = 'absolute';
+        shadow.style.left = '50%';
+        shadow.style.top = '60%';
+        shadow.style.width = '10px';
+        shadow.style.height = '5px';
+        shadow.style.backgroundColor = 'rgba(0,0,0,0.5)';
+        shadow.style.borderRadius = '50%';
+        shadow.style.transition = 'all 0.5s ease-in';
+        shadow.style.transform = 'translate(-50%, -50%)';
+
         this.container.appendChild(shadow);
 
         // Meteoro descendo
         const meteor = document.createElement('div');
         meteor.className = 'vfx-meteor';
+        meteor.style.position = 'absolute';
+        meteor.style.left = '50%';
+        meteor.style.top = '-10%';
+        meteor.style.width = '60px';
+        meteor.style.height = '60px';
+        meteor.style.backgroundColor = '#f97316';
+        meteor.style.borderRadius = '50%';
+        meteor.style.boxShadow = '0 0 30px #f97316';
+        meteor.style.transition = 'all 0.5s ease-in';
+        meteor.style.transform = 'translate(-50%, -50%)';
+
         this.container.appendChild(meteor);
 
         // Animação sequencial
         setTimeout(() => {
-            meteor.classList.add('vfx-meteor-fall');
-        }, 100);
+            shadow.style.width = '200px';
+            shadow.style.height = '20px';
+            shadow.style.opacity = '0.8';
+            meteor.style.top = '50%';
+        }, 50);
 
         setTimeout(() => {
             shadow.remove();
             meteor.remove();
-            this.playExplosionEffect({ color1: '#f97316', color2: '#0f172a' });
-            this.spawnParticles(30, {
-                colors: ['#f97316', '#fbbf24', '#ffffff'],
-                spread: 150,
-                duration: 800
+
+            // Explosão ÉPICA
+            this.playExplosionEffect({ color1: '#f97316', color2: '#7c2d12' });
+
+            this.spawnParticles(50, {
+                colors: ['#f97316', '#fbbf24', '#ffffff', '#7c2d12'],
+                spread: 250,
+                duration: 1000
             });
-        }, 500);
+
+            this.screenShake('large');
+            this.flashScreen('#ffffff', 300);
+
+        }, 550);
     }
 
     // ===== EFEITOS DE RAIO =====
 
     playLightningEffect(target) {
-        const lightning = document.createElement('div');
-        lightning.className = 'vfx-lightning';
-        this.container.appendChild(lightning);
-
-        // Flash branco
+        // Flash branco instantâneo
         this.flashScreen('#ffffff', 150);
+        this.screenShake('medium');
 
-        setTimeout(() => lightning.remove(), 300);
+        // Partículas elétricas
+        this.spawnParticles('50%', '50%', '#facc15', 35, 'explode');
     }
 
     // ===== EFEITOS DE GELO =====
@@ -276,10 +515,10 @@ export class CardVFXSystem {
         this.container.appendChild(ice);
 
         // Partículas de gelo
-        this.spawnParticles(15, {
+        this.spawnParticles(25, {
             colors: ['#06b6d4', '#22d3ee', '#ffffff'],
-            spread: 80,
-            duration: 400
+            spread: 120,
+            duration: 500
         });
 
         setTimeout(() => ice.remove(), 400);
@@ -288,134 +527,117 @@ export class CardVFXSystem {
     // ===== EFEITOS DE ESCUDO/AURA =====
 
     playShieldEffect(source) {
-        const shield = document.createElement('div');
-        shield.className = 'vfx-shield';
-        this.container.appendChild(shield);
-
-        setTimeout(() => shield.remove(), 600);
+        // Escudo de partículas flutuantes
+        this.spawnParticles(20, {
+            colors: ['#3b82f6', '#60a5fa', '#ffffff'],
+            spread: 60,
+            duration: 800,
+            direction: 'up',
+            style: 'bubble'
+        });
     }
 
     playArcaneShieldEffect(source) {
-        const shield = document.createElement('div');
-        shield.className = 'vfx-arcane-shield';
-        this.container.appendChild(shield);
-
-        setTimeout(() => shield.remove(), 500);
+        this.spawnParticles(20, {
+            colors: ['#8b5cf6', '#a78bfa', '#ffffff'],
+            spread: 60,
+            duration: 800,
+            direction: 'orbit'
+        });
     }
 
     playFireAuraEffect(source) {
-        const aura = document.createElement('div');
-        aura.className = 'vfx-fire-aura';
-        this.container.appendChild(aura);
-
-        // Fogo persiste por um tempo
-        setTimeout(() => aura.remove(), 1500);
+        // Fogo contínuo (loop curto de partículas)
+        for (let i = 0; i < 3; i++) {
+            setTimeout(() => {
+                this.spawnParticles(10, {
+                    colors: ['#f97316', '#ef4444', '#fbbf24'],
+                    spread: 80,
+                    duration: 600,
+                    direction: 'up'
+                });
+            }, i * 200);
+        }
     }
 
     playTauntEffect(source) {
-        const taunt = document.createElement('div');
-        taunt.className = 'vfx-taunt';
-        this.container.appendChild(taunt);
-
-        setTimeout(() => taunt.remove(), 500);
+        this.screenShake('small');
+        this.spawnParticles(15, {
+            colors: ['#dc2626', '#b91c1c'],
+            spread: 100,
+            duration: 500
+        });
     }
 
     // ===== EFEITOS DE CURA =====
 
     playHealEffect(target) {
-        this.spawnParticles(12, {
+        this.spawnParticles(20, {
             colors: ['#22c55e', '#86efac', '#4ade80'],
-            spread: 60,
-            duration: 500,
-            direction: 'up'
+            spread: 80,
+            duration: 800,
+            direction: 'up',
+            style: 'bubble'
         });
 
         this.flashScreen('#22c55e', 200);
     }
 
     playGroupHealEffect(source) {
-        const circle = document.createElement('div');
-        circle.className = 'vfx-heal-circle';
-        this.container.appendChild(circle);
-
-        this.spawnParticles(25, {
+        this.spawnParticles(40, {
             colors: ['#22c55e', '#fef3c7', '#86efac'],
-            spread: 120,
-            duration: 600,
+            spread: 200,
+            duration: 1000,
             direction: 'up'
         });
 
-        setTimeout(() => circle.remove(), 600);
+        this.flashScreen('#86efac', 300);
     }
 
     playHolyLightEffect(target) {
-        const light = document.createElement('div');
-        light.className = 'vfx-holy-light';
-        this.container.appendChild(light);
-
         this.flashScreen('#fbbf24', 300);
 
-        setTimeout(() => light.remove(), 500);
+        // Raio de luz (partículas caindo ou subindo muito rápido)
+        this.spawnParticles(30, {
+            colors: ['#fbbf24', '#ffffff'],
+            spread: 40,
+            duration: 600,
+            direction: 'up'
+        });
     }
 
     playBlessEffect(source) {
-        const bless = document.createElement('div');
-        bless.className = 'vfx-bless';
-        this.container.appendChild(bless);
-
-        this.spawnParticles(10, {
+        this.spawnParticles(15, {
             colors: ['#fbbf24', '#fffbeb'],
-            spread: 50,
-            duration: 400,
+            spread: 80,
+            duration: 600,
             direction: 'orbit'
         });
-
-        setTimeout(() => bless.remove(), 500);
     }
 
     playPurifyEffect(source) {
-        const purify = document.createElement('div');
-        purify.className = 'vfx-purify';
-        this.container.appendChild(purify);
-
         // Partículas escuras sendo expelidas
-        this.spawnParticles(8, {
+        this.spawnParticles(15, {
             colors: ['#64748b', '#475569', '#334155'],
-            spread: 80,
-            duration: 400,
+            spread: 100,
+            duration: 500,
             direction: 'out'
         });
 
         this.flashScreen('#ffffff', 200);
-
-        setTimeout(() => purify.remove(), 400);
     }
 
     playResurrectEffect(source) {
-        // Pilar de luz
-        const pillar = document.createElement('div');
-        pillar.className = 'vfx-resurrect-pillar';
-        this.container.appendChild(pillar);
-
-        // Asas de anjo
-        setTimeout(() => {
-            const wings = document.createElement('div');
-            wings.className = 'vfx-angel-wings';
-            this.container.appendChild(wings);
-            setTimeout(() => wings.remove(), 600);
-        }, 400);
-
-        // Partículas douradas
-        this.spawnParticles(30, {
+        // Efeito épico
+        this.spawnParticles(50, {
             colors: ['#fbbf24', '#ffffff', '#fef3c7'],
-            spread: 100,
-            duration: 800,
+            spread: 150,
+            duration: 1200,
             direction: 'up'
         });
 
-        this.flashScreen('#fbbf24', 400);
-
-        setTimeout(() => pillar.remove(), 800);
+        this.flashScreen('#fbbf24', 600);
+        this.screenShake('medium');
     }
 
     // ===== EFEITOS DE LADINO =====
@@ -440,136 +662,69 @@ export class CardVFXSystem {
     }
 
     playPoisonEffect(target) {
-        const poison = document.createElement('div');
-        poison.className = 'vfx-poison-cloud';
-        this.container.appendChild(poison);
-
-        this.spawnParticles(10, {
-            colors: ['#22c55e', '#4ade80'],
-            spread: 40,
-            duration: 500,
+        this.spawnParticles(20, {
+            colors: ['#22c55e', '#4ade80', '#166534'],
+            spread: 60,
+            duration: 800,
             style: 'bubble'
         });
-
-        setTimeout(() => poison.remove(), 800);
     }
 
     playDodgeEffect(source) {
-        const dodge = document.createElement('div');
-        dodge.className = 'vfx-dodge';
-        this.container.appendChild(dodge);
-
-        setTimeout(() => dodge.remove(), 300);
+        // Rastro fantasma
+        this.spawnParticles(10, {
+            colors: ['#94a3b8', '#ffffff'],
+            spread: 50,
+            duration: 400,
+            direction: 'out'
+        });
     }
 
     playStealthEffect(source) {
-        const stealth = document.createElement('div');
-        stealth.className = 'vfx-stealth';
-        this.container.appendChild(stealth);
-
-        setTimeout(() => stealth.remove(), 500);
+        // Fumaça negra
+        this.spawnParticles(20, {
+            colors: ['#0f172a', '#1e293b'],
+            spread: 80,
+            duration: 800,
+            direction: 'up'
+        });
     }
 
     playExecuteEffect(target) {
         // Escurece tela
         const darken = document.createElement('div');
         darken.className = 'vfx-darken';
+        darken.style.position = 'fixed';
+        darken.style.inset = '0';
+        darken.style.backgroundColor = 'rgba(0,0,0,0.7)';
+        darken.style.zIndex = '9501';
+        darken.style.transition = 'opacity 0.2s';
         this.container.appendChild(darken);
 
         setTimeout(() => {
             darken.remove();
-            // Slash massivo
-            const slash = document.createElement('div');
-            slash.className = 'vfx-execute-slash';
-            this.container.appendChild(slash);
+            // Slash massivo vermelho
+            const slash = this.slashPool.acquire();
+            slash.style.display = 'block';
+            slash.className = 'vfx-slash vfx-slash-horizontal';
+            slash.style.setProperty('--slash-color', '#dc2626');
+            slash.style.width = '400px';
+            slash.style.height = '10px';
+            slash.style.left = '50%';
+            slash.style.top = '50%';
+
+            this.spawnParticles('50%', '50%', '#dc2626', 50, 'explode');
 
             this.flashScreen('#ffffff', 300);
-            setTimeout(() => slash.remove(), 400);
+            this.screenShake('large');
+
+            setTimeout(() => this.slashPool.release(slash), 300);
         }, 200);
     }
 
     playChargeEffect(source, target) {
-        const charge = document.createElement('div');
-        charge.className = 'vfx-charge';
-        this.container.appendChild(charge);
-
-        setTimeout(() => {
-            charge.remove();
-            this.flashScreen('#ffffff', 150);
-        }, 300);
-    }
-
-    // ===== UTILIDADES =====
-
-    spawnParticles(count, options = {}) {
-        const {
-            colors = ['#ffffff'],
-            spread = 50,
-            duration = 400,
-            direction = 'random',
-            style = 'normal'
-        } = options;
-
-        for (let i = 0; i < count; i++) {
-            const particle = this.particlePool.acquire();
-            particle.style.display = 'block';
-
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            particle.style.backgroundColor = color;
-            particle.style.boxShadow = `0 0 6px ${color}`;
-
-            // Posição inicial central
-            particle.style.left = '50%';
-            particle.style.top = '50%';
-
-            // Direção da animação
-            let tx, ty;
-            switch (direction) {
-                case 'up':
-                    tx = (Math.random() - 0.5) * spread;
-                    ty = -spread - Math.random() * spread;
-                    break;
-                case 'out':
-                    const angle = Math.random() * Math.PI * 2;
-                    tx = Math.cos(angle) * spread;
-                    ty = Math.sin(angle) * spread;
-                    break;
-                default:
-                    tx = (Math.random() - 0.5) * spread * 2;
-                    ty = (Math.random() - 0.5) * spread * 2;
-            }
-
-            particle.style.setProperty('--tx', `${tx}px`);
-            particle.style.setProperty('--ty', `${ty}px`);
-
-            if (style === 'bubble') {
-                particle.style.borderRadius = '50%';
-                particle.style.width = '8px';
-                particle.style.height = '8px';
-            }
-
-            particle.classList.add('vfx-particle-animate');
-
-            setTimeout(() => {
-                particle.classList.remove('vfx-particle-animate');
-                this.particlePool.release(particle);
-            }, duration);
-        }
-    }
-
-    flashScreen(color, duration) {
-        const flash = document.createElement('div');
-        flash.className = 'vfx-screen-flash';
-        flash.style.backgroundColor = color;
-        this.container.appendChild(flash);
-
-        setTimeout(() => flash.remove(), duration);
-    }
-
-    screenShake(duration = 300) {
-        const gameContainer = document.querySelector('.game-container') || document.body;
-        gameContainer.classList.add('vfx-shake');
-        setTimeout(() => gameContainer.classList.remove('vfx-shake'), duration);
+        this.screenShake('small');
+        this.spawnParticles('50%', '50%', '#a855f7', 25, 'explode');
     }
 }
 

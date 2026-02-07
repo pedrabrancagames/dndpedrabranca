@@ -13,31 +13,73 @@
     pointer-events: none;
     z-index: 9500;
     overflow: hidden;
+    /* Perspectiva para elementos 3D CSS se necessário */
+    perspective: 1000px;
 }
 
 /* ===== PARTÍCULAS ===== */
 .vfx-particle {
     position: absolute;
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     display: none;
     transform: translate(-50%, -50%);
+    will-change: transform, opacity;
+    /* Glow padrão */
+    box-shadow: 0 0 10px currentColor;
 }
 
 .vfx-particle-animate {
-    animation: particleFly 0.5s ease-out forwards;
+    animation: particleFly 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+.vfx-particle-explode {
+    animation: particleExplode 0.5s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+.vfx-particle-float {
+    animation: particleFloat 1.2s ease-out forwards;
 }
 
 @keyframes particleFly {
     0% {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
+        transform: translate(-50%, -50%) scale(1.5);
     }
 
     100% {
         opacity: 0;
-        transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, 0px))) scale(0.3);
+        transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, 0px))) scale(0);
+    }
+}
+
+@keyframes particleExplode {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(2);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, 0px))) scale(0) rotate(var(--rot, 180deg));
+    }
+}
+
+@keyframes particleFloat {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+
+    20% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.2);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, calc(-50% - 100px)) scale(0.8);
     }
 }
 
@@ -46,53 +88,192 @@
     position: absolute;
     display: none;
     transform: translate(-50%, -50%);
+    /* Glow intenso no slash */
+    filter: drop-shadow(0 0 15px var(--slash-color, #e5e7eb));
+    will-change: transform, opacity;
 }
 
 .vfx-slash-horizontal {
-    width: 200px;
-    height: 4px;
+    width: 300px;
+    /* Aumentado */
+    height: 6px;
+    /* Aumentado */
     background: linear-gradient(90deg, transparent, var(--slash-color, #e5e7eb), transparent);
-    animation: slashHorizontal 0.2s ease-out forwards;
+    animation: slashHorizontal 0.25s cubic-bezier(0.11, 0, 0.5, 0) forwards;
 }
 
 .vfx-slash-x {
-    width: 150px;
-    height: 150px;
+    width: 250px;
+    /* Aumentado */
+    height: 250px;
+    /* Aumentado */
     background:
         linear-gradient(45deg, transparent 45%, var(--slash-color, #fbbf24) 48%, var(--slash-color, #fbbf24) 52%, transparent 55%),
         linear-gradient(-45deg, transparent 45%, var(--slash-color, #fbbf24) 48%, var(--slash-color, #fbbf24) 52%, transparent 55%);
-    animation: slashX 0.3s ease-out forwards;
+    animation: slashX 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    /* Elastic easing */
 }
 
 @keyframes slashHorizontal {
     0% {
         opacity: 0;
-        transform: translate(-50%, -50%) scaleX(0);
+        transform: translate(-50%, -50%) scaleX(0) rotate(var(--rot, -10deg));
     }
 
-    30% {
+    20% {
         opacity: 1;
+        transform: translate(-50%, -50%) scaleX(1.2) rotate(var(--rot, 0deg));
     }
 
     100% {
         opacity: 0;
-        transform: translate(-50%, -50%) scaleX(1.5);
+        transform: translate(-50%, -50%) scaleX(1.5) rotate(var(--rot, 5deg));
     }
 }
 
 @keyframes slashX {
     0% {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
+        transform: translate(-50%, -50%) scale(0.2) rotate(-45deg);
     }
 
-    50% {
+    40% {
         opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1) rotate(0deg);
     }
 
     100% {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(1.2) rotate(15deg);
+        transform: translate(-50%, -50%) scale(1.3) rotate(45deg);
+    }
+}
+
+/* ===== SCREEN SHAKE & FLASH ===== */
+.vfx-shake-small {
+    animation: shakeSmall 0.3s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+.vfx-shake-medium {
+    animation: shakeMedium 0.4s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+.vfx-shake-large {
+    animation: shakeLarge 0.5s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+@keyframes shakeSmall {
+
+    10%,
+    90% {
+        transform: translate3d(-1px, 0, 0);
+    }
+
+    20%,
+    80% {
+        transform: translate3d(2px, 0, 0);
+    }
+
+    30%,
+    50%,
+    70% {
+        transform: translate3d(-4px, 0, 0);
+    }
+
+    40%,
+    60% {
+        transform: translate3d(4px, 0, 0);
+    }
+}
+
+@keyframes shakeMedium {
+
+    10%,
+    90% {
+        transform: translate3d(-2px, -2px, 0);
+    }
+
+    20%,
+    80% {
+        transform: translate3d(4px, 4px, 0);
+    }
+
+    30%,
+    50%,
+    70% {
+        transform: translate3d(-6px, -6px, 0);
+    }
+
+    40%,
+    60% {
+        transform: translate3d(6px, 6px, 0);
+    }
+}
+
+@keyframes shakeLarge {
+    0% {
+        transform: translate(1px, 1px) rotate(0deg);
+    }
+
+    10% {
+        transform: translate(-1px, -2px) rotate(-1deg);
+    }
+
+    20% {
+        transform: translate(-3px, 0px) rotate(1deg);
+    }
+
+    30% {
+        transform: translate(3px, 2px) rotate(0deg);
+    }
+
+    40% {
+        transform: translate(1px, -1px) rotate(1deg);
+    }
+
+    50% {
+        transform: translate(-1px, 2px) rotate(-1deg);
+    }
+
+    60% {
+        transform: translate(-3px, 1px) rotate(0deg);
+    }
+
+    70% {
+        transform: translate(3px, 1px) rotate(-1deg);
+    }
+
+    80% {
+        transform: translate(-1px, -1px) rotate(1deg);
+    }
+
+    90% {
+        transform: translate(1px, 2px) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(1px, -2px) rotate(-1deg);
+    }
+}
+
+.vfx-flash-white {
+    position: fixed;
+    inset: 0;
+    background: white;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 9600;
+    /* Acima do overlay */
+    mix-blend-mode: overlay;
+    animation: flashWhite 0.2s ease-out forwards;
+}
+
+@keyframes flashWhite {
+    0% {
+        opacity: 0.8;
+    }
+
+    100% {
+        opacity: 0;
     }
 }
 
