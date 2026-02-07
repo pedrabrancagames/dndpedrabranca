@@ -160,8 +160,10 @@ export class CardVFXSystem {
             document.head.appendChild(style);
         }
 
-        document.body.appendChild(testElement);
-        console.log('[VFX] TEST element added to body:', testElement);
+        // IMPORTANTE: Usar #app para funcionar com DOM Overlay do WebXR
+        const app = document.getElementById('app') || document.body;
+        app.appendChild(testElement);
+        console.log('[VFX] TEST element added to #app:', testElement);
 
         setTimeout(() => {
             testElement.remove();
