@@ -177,4 +177,16 @@ export class CardSystem {
 
         return totalDamage;
     }
+    /**
+     * Calcula dano previsto para UI (sem aplicar)
+     */
+    getPredictedDamage(card, source, target) {
+        if (!card.damage) return 0;
+
+        let totalDamage = this.calculateDamage(card.damage, source, target);
+        if (card.fireDamage) totalDamage += card.fireDamage;
+        if (card.holyDamage) totalDamage += card.holyDamage;
+
+        return totalDamage;
+    }
 }

@@ -270,6 +270,46 @@ export class CombatManager {
         ];
     }
 
+    /**
+     * Tenta fugir do combate
+     */
+    attemptEscape(hero) {
+        // Chance base 50% + bônus de agilidade (exemplo simples)
+        // Se falhar, perde o turno. Se sucesso, sai do combate.
+        const baseChance = 0.5;
+        const agiBonus = (hero.agi || 0) * 0.05; // 5% por ponto de agilidade?
+        const chance = Math.min(0.9, baseChance + agiBonus);
+
+        const roll = Math.random();
+        console.log(`Escape attempt: ${roll.toFixed(2)} vs ${chance.toFixed(2)}`);
+
+        if (roll < chance) {
+            // Sucesso
+            eventBus.emit('showMessage', {
+                text: 'Fugiu com sucesso!',
+                type: 'success'
+            });
+
+            // Log analytics event?
+
+            setTimeout(() => {
+                this.handleCombatEnd(false); // Não é vitória, mas sai vivo
+            }, 1000);
+            return true;
+        } else {
+            // Falha
+            eventBus.emit('showMessage', {
+                text: 'Falha ao fugir! Perdeu o turno.',
+                type: 'error'
+            });
+
+            // Perde PA ou turno
+            hero.pa = 0;
+            this.turnManager.nextTurn();
+            return false;
+        }
+    }
+
     isPlayerTurn() {
         return this.gameManager.stateManager.combatState === 'player_turn';
     }

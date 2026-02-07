@@ -21,6 +21,8 @@
   <!-- VFX Styles -->
   <link rel="stylesheet" href="/src/styles/vfx.css">
   <link rel="stylesheet" href="/src/styles/config.css">
+  <link rel="stylesheet" href="/src/styles/inventory.css">
+  <link rel="stylesheet" href="/src/styles/combat_extras.css">
 </head>
 
 <body>
@@ -175,6 +177,17 @@
       <div class="inventory-section-title">
         <span class="section-icon">🎒</span>
         <span class="section-label">Seus Itens</span>
+      </div>
+
+      <!-- Toolbar de Inventário -->
+      <div class="inventory-toolbar">
+        <input type="text" id="inventory-search" placeholder="🔍 Buscar item..." class="inventory-search">
+        <select id="inventory-sort" class="inventory-sort">
+          <option value="name">🔤 Nome</option>
+          <option value="rarity">✨ Raridade</option>
+          <option value="quantity">📦 Quantidade</option>
+          <option value="recent">🕒 Recentes</option>
+        </select>
       </div>
 
       <!-- Filtros de categoria -->
@@ -423,12 +436,19 @@
       <div class="combat-top-bar">
         <button class="hud-btn" id="btn-pause">≡</button>
         <div class="turn-indicator" id="turn-indicator">Turno: Guerreiro</div>
+        <button class="hud-btn escape-btn" id="btn-escape-combat">🏃</button>
       </div>
 
       <!-- Painel de heróis (esquerda) + botão passar turno -->
       <div class="hero-sidebar">
         <div class="hero-panel" id="hero-panel"></div>
         <button class="pass-turn-btn" id="btn-pass-turn">⏭️ Passar</button>
+      </div>
+
+      <!-- Preview de Dano Flutuante -->
+      <div id="damage-preview" class="damage-preview hidden">
+        <span class="preview-value">-20</span>
+        <span class="preview-icon">⚔️</span>
       </div>
 
       <!-- Carrossel de cartas (inferior) -->

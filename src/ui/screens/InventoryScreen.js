@@ -17,6 +17,8 @@ export class InventoryScreen extends BaseScreen {
         super(screenId);
         this.gameManager = gameManager;
         this.currentFilter = 'all';
+        this.searchQuery = '';
+        this.sortMethod = 'recent'; // recent, name, rarity, quantity
         this.selectedItem = null;
         this.selectedIndex = null;
         this.selectedHeroIndex = null;
@@ -37,6 +39,24 @@ export class InventoryScreen extends BaseScreen {
                 if (e.target.classList.contains('filter-tab')) {
                     this.setFilter(e.target.dataset.filter);
                 }
+            });
+        }
+
+        // Setup Search
+        const searchInput = this.findElement('#inventory-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchQuery = e.target.value.toLowerCase();
+                this.renderInventory();
+            });
+        }
+
+        // Setup Sort
+        const sortSelect = this.findElement('#inventory-sort');
+        if (sortSelect) {
+            sortSelect.addEventListener('change', (e) => {
+                this.sortMethod = e.target.value;
+                this.renderInventory();
             });
         }
 
@@ -94,14 +114,51 @@ export class InventoryScreen extends BaseScreen {
     getFilteredItems() {
         const inventory = this.gameManager.gameData.inventory || [];
 
-        if (this.currentFilter === 'all') {
-            return inventory;
-        }
-
-        return inventory.filter(invItem => {
+        // 1. Filter by Category & Search
+        let filtered = inventory.filter(invItem => {
             const itemData = getItemData(invItem.itemId);
-            return itemData && itemData.category === this.currentFilter;
+            if (!itemData) return false;
+
+            // Category Filter
+            if (this.currentFilter !== 'all' && itemData.category !== this.currentFilter) {
+                return false;
+            }
+
+            // Search Filter
+            if (this.searchQuery) {
+                const nameMatch = itemData.name.toLowerCase().includes(this.searchQuery);
+                const descMatch = itemData.description?.toLowerCase().includes(this.searchQuery);
+                if (!nameMatch && !descMatch) return false;
+            }
+
+            return true;
         });
+
+        // 2. Sort Items
+        filtered.sort((a, b) => {
+            const itemA = getItemData(a.itemId);
+            const itemB = getItemData(b.itemId);
+
+            switch (this.sortMethod) {
+                case 'name':
+                    return itemA.name.localeCompare(itemB.name);
+                case 'rarity':
+                    // Assuming rarity enum values equate to power (higher is better)
+                    // If rarity is string, we need a map. Assuming ItemDatabase exports helpers or we define order.
+                    // Simple hack: Rarity length/priority or just string compare for now strictly alphabetical reverse?
+                    // Better: Define rarity weight map.
+                    const rarityWeight = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5 };
+                    return (rarityWeight[itemB.rarity] || 0) - (rarityWeight[itemA.rarity] || 0);
+                case 'quantity':
+                    return b.quantity - a.quantity;
+                case 'recent':
+                default:
+                    // Assuming inventory order is chronological by default push
+                    return 0;
+            }
+        });
+
+        return filtered;
     }
 
     renderInventory() {
@@ -109,19 +166,39 @@ export class InventoryScreen extends BaseScreen {
         if (!grid) return;
 
         const inventory = this.gameManager.gameData.inventory || [];
+        // Note: getFilteredItems returns wrappers around inventory items or the items themselves?
+        // Actually it returns the inventory objects.
         const filteredItems = this.getFilteredItems();
-        const totalSlots = this.currentFilter === 'all' ? this.maxSlots : Math.max(filteredItems.length, 8);
+
+        // If sorting/filtering active, hide empty slots logic or show only filled?
+        // Better UX: Show only filled items when searching/filtering, 
+        // but maintain grid structure if "all" and no search.
+        const isDefaultView = this.currentFilter === 'all' && !this.searchQuery && this.sortMethod === 'recent';
+        const totalSlots = isDefaultView ? Math.max(this.maxSlots, inventory.length) : filteredItems.length;
 
         let html = '';
 
-        for (let i = 0; i < totalSlots; i++) {
-            const invItem = this.currentFilter === 'all' ? inventory[i] : filteredItems[i];
+        if (filteredItems.length === 0 && !isDefaultView) {
+            grid.innerHTML = '<div class="no-items-found">Nenhum item encontrado.</div>';
+            return;
+        }
+
+        // Loop strategy:
+        // If default view: loop 0 to maxSlots, pick from ALL inventory by index.
+        // If filtered view: loop 0 to filtered length, pick from FILTERED array.
+
+        const itemsToRender = isDefaultView ? inventory : filteredItems;
+        const loopCount = isDefaultView ? this.maxSlots : itemsToRender.length;
+
+        for (let i = 0; i < loopCount; i++) {
+            const invItem = itemsToRender[i];
 
             if (invItem) {
                 const itemData = getItemData(invItem.itemId);
                 if (itemData) {
                     const rarityClass = itemData.rarity;
-                    const originalIndex = this.currentFilter === 'all' ? i : inventory.indexOf(invItem);
+                    // We need original index for reference actions
+                    const originalIndex = inventory.indexOf(invItem);
 
                     html += `
                         <div class="inventory-slot has-item ${rarityClass}" 
@@ -129,6 +206,7 @@ export class InventoryScreen extends BaseScreen {
                              data-rarity="${rarityClass}">
                             <div class="item-icon">${itemData.icon || '📦'}</div>
                             ${invItem.quantity > 1 ? `<span class="item-quantity">${invItem.quantity}</span>` : ''}
+                            ${invItem.isFavorite ? '<span class="favorite-indicator">❤️</span>' : ''}
                             <div class="rarity-glow"></div>
                         </div>
                     `;
@@ -146,7 +224,6 @@ export class InventoryScreen extends BaseScreen {
     showItemDetails(index) {
         const inventory = this.gameManager.gameData.inventory || [];
         const invItem = inventory[index];
-
         if (!invItem) return;
 
         const itemData = getItemData(invItem.itemId);
@@ -174,12 +251,12 @@ export class InventoryScreen extends BaseScreen {
         }
         if (descEl) descEl.textContent = itemData.description;
 
-        // Render stats
+        // Render Stats & Comparison
         if (statsEl) {
-            statsEl.innerHTML = this.renderStats(itemData);
+            statsEl.innerHTML = this.renderStats(itemData, invItem);
         }
 
-        // Show/hide action buttons based on item type
+        // Show/hide action buttons
         if (equipBtn) {
             equipBtn.classList.toggle('hidden', !itemData.equipSlot);
         }
@@ -187,29 +264,51 @@ export class InventoryScreen extends BaseScreen {
             useBtn.classList.toggle('hidden', itemData.category !== ItemCategory.CONSUMABLE);
         }
         if (discardBtn) {
-            discardBtn.classList.toggle('hidden', itemData.category === ItemCategory.QUEST);
+            // Can't discard quest items OR FAVORITES
+            const canDiscard = itemData.category !== ItemCategory.QUEST && !invItem.isFavorite;
+            discardBtn.classList.toggle('hidden', !canDiscard);
+
+            // Add FAVORITE toggle functionality via button text/icon state change? 
+            // Or add a dedicated button. For simplicity, let's reuse discard btn area or add new one.
+            // Let's add a toggle button dynamically if not present.
         }
 
-        // Render hero selector if item is equippable
+        this.renderAttributes(invItem, statsEl); // Helper for favorite button injection
+
+        // Render hero selector if equippable
         this.renderHeroSelector(itemData);
 
-        // Show modal
         if (modal) modal.classList.remove('hidden');
     }
 
-    renderStats(itemData) {
+    renderAttributes(invItem, container) {
+        // Inject favorite toggle
+        let favBtn = container.querySelector('.btn-favorite');
+        if (!favBtn) {
+            favBtn = document.createElement('button');
+            favBtn.className = 'action-btn btn-favorite';
+            favBtn.style.marginTop = '10px';
+            favBtn.style.width = '100%';
+            container.appendChild(favBtn);
+
+            favBtn.addEventListener('click', () => {
+                invItem.isFavorite = !invItem.isFavorite;
+                this.renderAttributes(invItem, container); // Re-render btn state
+                this.renderInventory(); // Update grid icon
+                this.gameManager.saveGame();
+            });
+        }
+
+        favBtn.textContent = invItem.isFavorite ? '❤️ Remover dos Favoritos' : '🤍 Adicionar aos Favoritos';
+        favBtn.style.background = invItem.isFavorite ? '#c0392b' : '#333';
+    }
+
+    renderStats(itemData, invItem) {
         let html = '<div class="stats-grid">';
 
+        // 1. Basic Stats
         if (itemData.stats) {
-            const statNames = {
-                atk: '⚔️ Ataque',
-                def: '🛡️ Defesa',
-                mag: '✨ Magia',
-                crit: '💥 Crítico',
-                maxHp: '❤️ HP Máximo',
-                fireDamage: '🔥 Dano de Fogo',
-                holyDamage: '☀️ Dano Sagrado'
-            };
+            const statNames = { atk: '⚔️ Ataque', def: '🛡️ Defesa', mag: '✨ Magia', crit: '💥 Crítico', maxHp: '❤️ HP', pa: '⚡ PA' };
 
             for (const [stat, value] of Object.entries(itemData.stats)) {
                 const name = statNames[stat] || stat;
@@ -217,31 +316,44 @@ export class InventoryScreen extends BaseScreen {
             }
         }
 
-        if (itemData.effects) {
-            if (itemData.effects.heal) {
-                html += `<div class="stat-item"><span class="stat-name">💚 Cura</span><span class="stat-value">${itemData.effects.heal} HP</span></div>`;
-            }
-            if (itemData.effects.restorePA) {
-                html += `<div class="stat-item"><span class="stat-name">🔋 Restaura PA</span><span class="stat-value">+${itemData.effects.restorePA}</span></div>`;
-            }
-        }
+        // 2. Comparison Logic (if equippable)
+        if (itemData.equipSlot) {
+            // Compare with FIRST hero or selected hero if logical
+            const hero = this.gameManager.gameData.heroes[0]; // Default comparison
+            if (hero && hero.equipment && hero.equipment[itemData.equipSlot]) {
+                const equippedId = hero.equipment[itemData.equipSlot];
+                const equippedItem = getItemData(equippedId);
 
-        if (itemData.price) {
-            html += `<div class="stat-item"><span class="stat-name">💰 Preço</span><span class="stat-value">${itemData.price} ouro</span></div>`;
-        }
+                if (equippedItem && equippedItem.stats) {
+                    html += `</div><div class="comparison-section"><span class="comparison-title">Comparando com Equipado (${hero.name}):</span>`;
 
-        if (itemData.classRestriction) {
-            const classNames = {
-                warrior: 'Guerreiro',
-                mage: 'Mago',
-                rogue: 'Ladino',
-                cleric: 'Clérigo'
-            };
-            const classes = itemData.classRestriction.map(c => classNames[c] || c).join(', ');
-            html += `<div class="stat-item class-restriction"><span class="stat-name">🔒 Apenas</span><span class="stat-value">${classes}</span></div>`;
+                    // Compare stats
+                    const allStats = new Set([...Object.keys(itemData.stats || {}), ...Object.keys(equippedItem.stats || {})]);
+
+                    allStats.forEach(stat => {
+                        const newVal = (itemData.stats?.[stat] || 0);
+                        const oldVal = (equippedItem.stats?.[stat] || 0);
+                        const diff = newVal - oldVal;
+
+                        if (diff !== 0) {
+                            const diffClass = diff > 0 ? 'positive' : 'negative';
+                            const sign = diff > 0 ? '+' : '';
+                            const statName = stat.toUpperCase();
+                            html += `<div style="font-size: 0.8rem; margin-top: 4px;">${statName}: <span class="${diffClass}">${sign}${diff}</span></div>`;
+                        }
+                    });
+
+                    html += '</div><div>'; // Close comparison, reopen grid context or empty div to balance
+                }
+            }
         }
 
         html += '</div>';
+
+        // Effects & Info
+        if (itemData.effects) { /** ... existing code ... */ }
+        if (itemData.price) { html += `<div class="stat-item"><span class="stat-name">💰 Preço</span><span class="stat-value">${itemData.price}</span></div>`; }
+
         return html;
     }
 

@@ -1,0 +1,82 @@
+/* Inventory Styles */
+.inventory-toolbar {
+    display: flex;
+    gap: var(--space-sm);
+    padding: 0 var(--space-md);
+    margin-bottom: var(--space-sm);
+}
+
+.inventory-search {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    color: var(--color-text);
+    font-family: var(--font-primary);
+}
+
+.inventory-search:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.inventory-sort {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    color: var(--color-text);
+    font-family: var(--font-primary);
+    cursor: pointer;
+}
+
+.inventory-sort option {
+    background: var(--color-bg-dark);
+    color: var(--color-text);
+}
+
+/* Indicador de Favorito no Slot */
+.favorite-indicator {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 10px;
+    z-index: 2;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+
+/* Comparação de Itens */
+.comparison-section {
+    margin-top: var(--space-md);
+    padding: var(--space-md);
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.comparison-title {
+    font-size: 0.8em;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-xs);
+    display: block;
+}
+
+.stat-diff {
+    font-size: 0.8em;
+    font-weight: bold;
+    margin-left: 6px;
+}
+
+.stat-diff.positive {
+    color: var(--color-success);
+}
+
+.stat-diff.negative {
+    color: var(--color-danger);
+}
+
+.stat-diff.neutral {
+    color: var(--color-text-muted);
+}
