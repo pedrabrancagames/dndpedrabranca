@@ -110,7 +110,53 @@ export class HeroesScreen extends BaseScreen {
     const deckGrid = this.findElement('#deck-grid');
 
     if (portraitEl) portraitEl.textContent = hero.icon;
-    if (nameEl) nameEl.textContent = hero.name;
+    if (nameEl) {
+      // Name Editing Logic
+      nameEl.innerHTML = `
+            <span id="hero-name-text">${hero.name}</span>
+            <button class="edit-name-btn" id="btn-edit-name">✏️</button>
+            <input type="text" id="hero-name-input" class="hidden" value="${hero.name}" maxlength="15">
+            <button class="save-name-btn hidden" id="btn-save-name">💾</button>
+        `;
+
+      // Attach listeners (using simpler inline approach for this specific modal instance or delegate?)
+      // Better to use onclick in HTML string or attach after render.
+      // Since we are replacing innerHTML, we must attach listeners NOW.
+      setTimeout(() => {
+        const btnEdit = nameEl.querySelector('#btn-edit-name');
+        const btnSave = nameEl.querySelector('#btn-save-name');
+        const input = nameEl.querySelector('#hero-name-input');
+        const text = nameEl.querySelector('#hero-name-text');
+
+        if (btnEdit && input && text && btnSave) {
+          btnEdit.onclick = () => {
+            text.classList.add('hidden');
+            btnEdit.classList.add('hidden');
+            input.classList.remove('hidden');
+            btnSave.classList.remove('hidden');
+            input.focus();
+          };
+
+          const save = () => {
+            const newName = input.value.trim();
+            if (newName) {
+              hero.name = newName;
+              text.textContent = newName;
+              this.gameManager.saveGame();
+              this.renderHeroes(); // Refresh grid
+            }
+            input.classList.add('hidden');
+            btnSave.classList.add('hidden');
+            text.classList.remove('hidden');
+            btnEdit.classList.remove('hidden');
+          };
+
+          btnSave.onclick = save;
+          input.onkeypress = (e) => { if (e.key === 'Enter') save(); };
+        }
+      }, 0);
+    }
+
     if (classEl) {
       const classNames = { warrior: 'Guerreiro', mage: 'Mago', rogue: 'Ladino', cleric: 'Clérigo' };
       classEl.textContent = classNames[hero.class] || hero.class;
@@ -126,6 +172,24 @@ export class HeroesScreen extends BaseScreen {
     // Stats
     if (statsGrid) {
       statsGrid.innerHTML = this.renderHeroStats(hero);
+    }
+
+    // Level Up Preview
+    const levelUpPreview = this.findElement('#level-up-preview');
+    if (levelUpPreview) {
+      // Calculate next level stats
+      const bonus = this.gameManager.progressionSystem.getClassLevelUpBonus(hero.class);
+
+      levelUpPreview.innerHTML = `
+            <div class="preview-header">Próximo Nível (${hero.level + 1})</div>
+            <div class="preview-stats">
+                ${bonus.hp ? `<div class="preview-stat"><span class="stat-label">❤️ HP</span> <span class="stat-change">+${bonus.hp}</span></div>` : ''}
+                ${bonus.atk ? `<div class="preview-stat"><span class="stat-label">⚔️ ATK</span> <span class="stat-change">+${bonus.atk}</span></div>` : ''}
+                ${bonus.def ? `<div class="preview-stat"><span class="stat-label">🛡️ DEF</span> <span class="stat-change">+${bonus.def}</span></div>` : ''}
+                ${bonus.mag ? `<div class="preview-stat"><span class="stat-label">✨ MAG</span> <span class="stat-change">+${bonus.mag}</span></div>` : ''}
+                ${bonus.crit ? `<div class="preview-stat"><span class="stat-label">💥 CRIT</span> <span class="stat-change">+${bonus.crit}%</span></div>` : ''}
+            </div>
+        `;
     }
 
     // Deck
@@ -161,7 +225,8 @@ export class HeroesScreen extends BaseScreen {
                     <span class="stat-value">${s.value}</span>
                 </div>
             `).join('')}
-        </div>`;
+        </div>
+        <div id="level-up-preview" class="level-up-preview-container"></div>`; // Container injection
   }
 
   renderDeck(hero) {

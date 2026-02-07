@@ -90,15 +90,7 @@ export class ProgressionSystem {
      * Aplica bônus de level up
      */
     applyLevelUpBonus(hero) {
-        // Bônus por classe
-        const bonuses = {
-            warrior: { hp: 10, atk: 2, def: 2 },
-            mage: { hp: 4, mag: 3, mp: 5 },
-            rogue: { hp: 6, atk: 2, crit: 1 },
-            cleric: { hp: 7, mag: 2, def: 1 }
-        };
-
-        const bonus = bonuses[hero.class] || { hp: 5, atk: 1 };
+        const bonus = this.getClassLevelUpBonus(hero.class);
 
         hero.maxHp += bonus.hp || 0;
         hero.hp = hero.maxHp; // Full heal on level up
@@ -106,6 +98,23 @@ export class ProgressionSystem {
         hero.def = (hero.def || 0) + (bonus.def || 0);
         hero.mag = (hero.mag || 0) + (bonus.mag || 0);
         hero.crit = (hero.crit || 0) + (bonus.crit || 0);
+
+        // MP/Mana handling if applicable
+        if (bonus.mp) hero.maxMp = (hero.maxMp || 0) + bonus.mp;
+    }
+
+    /**
+     * Retorna os bônus de atributos por classe para um level up
+     */
+    getClassLevelUpBonus(heroClass) {
+        const bonuses = {
+            warrior: { hp: 10, atk: 2, def: 2 },
+            mage: { hp: 4, mag: 3, mp: 5 },
+            rogue: { hp: 6, atk: 2, crit: 1 },
+            cleric: { hp: 7, mag: 2, def: 1 }
+        };
+
+        return bonuses[heroClass] || { hp: 5, atk: 1 };
     }
 
     /**
