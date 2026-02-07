@@ -20,6 +20,7 @@
 
   <!-- VFX Styles -->
   <link rel="stylesheet" href="/src/styles/vfx.css">
+  <link rel="stylesheet" href="/src/styles/config.css">
 </head>
 
 <body>
@@ -234,15 +235,69 @@
         <button class="back-btn" id="btn-config-back">←</button>
         <h2>Configurações</h2>
       </header>
-      <div class="config-options">
-        <label class="config-toggle">
-          <span>Modo Teste (sem GPS)</span>
-          <input type="checkbox" id="toggle-test-mode">
-        </label>
-        <label class="config-toggle">
-          <span>Efeitos Sonoros</span>
-          <input type="checkbox" id="toggle-sound" checked>
-        </label>
+
+      <div class="config-content">
+        <!-- Estatísticas do Save -->
+        <div class="save-stats-panel" id="save-stats">
+          <!-- Injetado via JS -->
+        </div>
+
+        <!-- Gerenciamento de Dados -->
+        <div class="config-section">
+          <h3>💾 Gerenciamento de Dados</h3>
+          <div class="config-actions">
+            <button class="menu-btn" id="btn-save-game">
+              <span class="btn-icon">💾</span>
+              <span class="btn-label">Salvar Jogo</span>
+            </button>
+            <button class="menu-btn" id="btn-export-save">
+              <span class="btn-icon">📤</span>
+              <span class="btn-label">Exportar Save</span>
+            </button>
+            <button class="menu-btn" id="btn-import-save-trigger">
+              <span class="btn-icon">📥</span>
+              <span class="btn-label">Importar Save</span>
+            </button>
+            <button class="menu-btn danger" id="btn-reset-progress">
+              <span class="btn-icon">🗑️</span>
+              <span class="btn-label">Resetar Progresso</span>
+            </button>
+          </div>
+          <!-- Input Oculto para Importação -->
+          <input type="file" id="import-save-input" accept=".json" style="display: none;">
+        </div>
+
+        <!-- Opções Gerais (Mantidas do original) -->
+        <div class="config-section">
+          <h3>⚙️ Opções Gerais</h3>
+          <div class="config-options">
+            <label class="config-toggle">
+              <span>Modo Teste (sem GPS)</span>
+              <input type="checkbox" id="toggle-test-mode">
+            </label>
+            <label class="config-toggle">
+              <span>Efeitos Sonoros</span>
+              <input type="checkbox" id="toggle-sound" checked>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Confirmação de Reset -->
+    <div id="reset-confirm-modal" class="modal hidden">
+      <div class="modal-content warning">
+        <div class="modal-header">
+          <h3>⚠️ Atenção!</h3>
+        </div>
+        <div class="modal-body">
+          <p>Você está prestes a <strong>APAGAR TODO O SEU PROGRESSO</strong>.</p>
+          <p>Esta ação não pode ser desfeita. Tem certeza?</p>
+          <div class="modal-actions">
+            <button class="action-btn cancel" id="btn-cancel-reset">Cancelar</button>
+            <button class="action-btn danger" id="btn-confirm-reset">Sim, Resetar Tudo</button>
+          </div>
+        </div>
       </div>
     </div>
 
