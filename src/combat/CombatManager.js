@@ -115,8 +115,30 @@ export class CombatManager {
     /**
      * Aplica dano a uma unidade
      */
+    /**
+     * Aplica dano a uma unidade e verifica fases de boss
+     */
     applyDamage(target, amount) {
+        const previousHpPercent = target.hp / target.maxHp;
+
         target.hp -= amount;
+
+        // Verificação de Fase (apenas para inimigos vivos)
+        if (target.hp > 0 && target.phases && target.phases.length > 0) {
+            const currentHpPercent = target.hp / target.maxHp;
+
+            // Verificar se cruzou algum threshold que ainda não foi ativado
+            const nextPhase = target.phases.find(p =>
+                !p.activated &&
+                currentHpPercent <= p.threshold &&
+                previousHpPercent > p.threshold
+            );
+
+            if (nextPhase) {
+                this.activateBossPhase(target, nextPhase);
+            }
+        }
+
         if (target.hp <= 0) {
             target.hp = 0;
             this.turnManager.killUnit(target.id);
@@ -136,6 +158,43 @@ export class CombatManager {
         console.log(`${target.name} took ${amount} damage. HP: ${target.hp}`);
         // Emitir evento para visual
         eventBus.emit('damageTaken', { targetId: target.id, amount, currentHp: target.hp });
+    }
+
+    activateBossPhase(boss, phase) {
+        phase.activated = true;
+        console.log(`Boss Phase Activated: ${phase.name}`);
+
+        // Mensagem visual
+        eventBus.emit('showMessage', {
+            text: phase.message || `${boss.name} entrou na fase: ${phase.name}!`,
+            type: 'warning',
+            duration: 3000
+        });
+
+        // Aplicar mudanças de stats
+        if (phase.stats) {
+            Object.entries(phase.stats).forEach(([stat, value]) => {
+                boss[stat] = (boss[stat] || 0) + value;
+                // Se for HP, talvez curar? Por enquanto apenas stats de combate.
+                // Se aumentar MaxHP, deve aumentar HP atual proporcionalmente? 
+                // Simplificação: Apenas buffs de atk/def/speed por enquanto.
+            });
+        }
+
+        // Alterar comportamento
+        if (phase.behavior) {
+            boss.behavior = phase.behavior;
+        }
+
+        // Recuperar um pouco de HP? (Opcional, comum em fases)
+        // boss.hp += 20; 
+
+        // Evento específico para efeitos visuais (partículas, som, escala)
+        eventBus.emit('bossPhaseChanged', {
+            bossId: boss.id,
+            phaseName: phase.name,
+            visual: phase.visual
+        });
     }
 
     /**

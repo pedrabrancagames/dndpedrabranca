@@ -96,7 +96,29 @@ export const EnemyDatabase = {
         description: 'Brutamontes furtivo que ataca de surpresa.'
     },
 
-    // ========== HUMANOIDES ==========
+    goblin_king: {
+        name: 'Rei Goblin Grukk',
+        type: EnemyType.HUMANOID,
+        model: '/models/enemies/goblin.glb', // Placeholder model
+        scale: 1.5,
+        isBoss: true,
+        stats: { hp: 100, atk: 15, def: 8, speed: 10 }, // HP aumentado para teste
+        behavior: EnemyBehavior.TACTICAL,
+        abilities: ['ataque_basico', 'comando', 'grito_de_guerra'],
+        phases: [
+            {
+                threshold: 0.5,
+                name: "Fúria de Grukk",
+                message: "Grukk se enfurece e seus olhos brilham em vermelho!",
+                stats: { atk: 5, speed: 5 }, // Bônus cumulativo
+                behavior: EnemyBehavior.BERSERKER,
+                visual: { scale: 1.8, color: '#ff0000' } // Exemplo visual
+            }
+        ],
+        drops: { gold: { min: 50, max: 100 }, fragmentChance: 1.0, items: ['coroa_goblin'] },
+        xpReward: 100,
+        description: 'O autoproclamado Rei dos Goblins.'
+    },
     kobold: {
         name: 'Kobold',
         type: EnemyType.HUMANOID,
