@@ -26,6 +26,9 @@ export class CardSystem {
     executeCard(card, source, target) {
         let resultLog = `${source.name} usou ${card.name}`;
 
+        // Emitir evento para efeitos visuais
+        eventBus.emit('cardPlayed', { card, source, target });
+
         // If targetSelf, use source as target
         const effectTarget = card.targetSelf ? source : target;
 
@@ -124,6 +127,7 @@ export class CardSystem {
             log: resultLog
         };
     }
+
 
     /**
      * Gerencia cartas consumíveis - remove do deck e do inventário

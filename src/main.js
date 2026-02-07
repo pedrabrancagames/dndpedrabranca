@@ -8,11 +8,15 @@ import { GameManager } from './core/GameManager.js';
 import { initPWA } from './pwa/PWAInstaller.js';
 import { getPerformanceMonitor } from './debug/PerformanceMonitor.js';
 import { getWebXRDebugger } from './debug/WebXRDebugger.js';
+import { getCardVFX } from './render/CardVFX.js';
 
 // Inicializar o jogo quando o DOM estiver pronto
 document.addEventListener('DOMContentLoaded', () => {
     const game = new GameManager();
     game.init();
+
+    // Inicializar sistema de VFX para cartas
+    const vfxSystem = getCardVFX();
 
     // Inicializar PWA
     initPWA();
