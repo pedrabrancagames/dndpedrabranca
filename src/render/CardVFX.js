@@ -78,6 +78,8 @@ export class CardVFXSystem {
     onCardPlayed(data) {
         const { card, source, target } = data;
 
+        console.log('[VFX] Card played:', card.id, card.name, card);
+
         // Mapear carta para efeito
         const effectMap = {
             // Guerreiro
@@ -115,7 +117,10 @@ export class CardVFXSystem {
 
         const effect = effectMap[card.id];
         if (effect) {
+            console.log('[VFX] Playing effect for:', card.id);
             effect();
+        } else {
+            console.warn('[VFX] No effect mapped for card:', card.id);
         }
     }
 
