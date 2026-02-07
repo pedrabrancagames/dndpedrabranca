@@ -42,22 +42,15 @@ export class CardVFXSystem {
     }
 
     init() {
-        // Criar container overlay para efeitos
+        // Container VFX - deve estar DENTRO de #app para funcionar com DOM Overlay do WebXR
         this.container = document.getElementById('vfx-overlay');
         if (!this.container) {
-            console.warn('[VFX] Container #vfx-overlay not found, creating dynamically');
+            // Fallback: criar dinamicamente dentro de #app
             this.container = document.createElement('div');
             this.container.id = 'vfx-overlay';
-            document.body.appendChild(this.container);
+            const app = document.getElementById('app') || document.body;
+            app.appendChild(this.container);
         }
-
-        console.log('[VFX] System initialized. Container:', this.container);
-        console.log('[VFX] Container styles:', {
-            display: getComputedStyle(this.container).display,
-            visibility: getComputedStyle(this.container).visibility,
-            zIndex: getComputedStyle(this.container).zIndex,
-            position: getComputedStyle(this.container).position
-        });
 
         // Pools de elementos
         this.particlePool = new VFXPool(() => this.createParticle(), 50);
@@ -86,8 +79,6 @@ export class CardVFXSystem {
      */
     onCardPlayed(data) {
         const { card, source, target } = data;
-
-        console.log('[VFX] Card played:', card.id, card.name, card);
 
         // Mapear carta para efeito - IDs baseados no GameManager.js
         const effectMap = {
@@ -118,7 +109,6 @@ export class CardVFXSystem {
 
         const effect = effectMap[card.id];
         if (effect) {
-            console.log('[VFX] Playing effect for:', card.id);
             effect();
         } else {
             console.warn('[VFX] No effect mapped for card:', card.id);
@@ -128,45 +118,24 @@ export class CardVFXSystem {
     // ===== EFEITOS DE SLASH =====
 
     playSlashEffect(target, options = {}) {
-        const { color = '#e5e7eb', duration = 500 } = options;
+        const { color = '#e5e7eb', duration = 300 } = options;
+        const slash = this.slashPool.acquire();
 
-        // TESTE SIMPLES: criar um elemento grande e óbvio
-        const testElement = document.createElement('div');
-        testElement.style.cssText = `
-            position: fixed;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            width: 200px;
-            height: 200px;
-            background: red;
-            border: 5px solid yellow;
-            z-index: 99999;
-            pointer-events: none;
-            animation: testPulse 0.5s ease-out forwards;
-        `;
+        // Reset para reiniciar animação
+        slash.style.animation = 'none';
+        slash.offsetHeight; // Force reflow
+        slash.style.animation = '';
 
-        // Adicionar keyframe inline
-        if (!document.getElementById('vfx-test-style')) {
-            const style = document.createElement('style');
-            style.id = 'vfx-test-style';
-            style.textContent = `
-                @keyframes testPulse {
-                    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
-                    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-                    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
+        slash.style.display = 'block';
+        slash.style.setProperty('--slash-color', color);
+        slash.className = 'vfx-slash vfx-slash-horizontal';
 
-        // IMPORTANTE: Usar #app para funcionar com DOM Overlay do WebXR
-        const app = document.getElementById('app') || document.body;
-        app.appendChild(testElement);
-        console.log('[VFX] TEST element added to #app:', testElement);
+        // Posição central na tela (combate é overlay)
+        slash.style.left = '50%';
+        slash.style.top = '50%';
 
         setTimeout(() => {
-            testElement.remove();
+            this.slashPool.release(slash);
         }, duration);
     }
 
