@@ -128,26 +128,43 @@ export class CardVFXSystem {
     // ===== EFEITOS DE SLASH =====
 
     playSlashEffect(target, options = {}) {
-        const { color = '#e5e7eb', duration = 200 } = options;
-        const slash = this.slashPool.acquire();
+        const { color = '#e5e7eb', duration = 500 } = options;
 
-        // Reset para reiniciar animação
-        slash.style.animation = 'none';
-        slash.offsetHeight; // Force reflow
-        slash.style.animation = '';
+        // TESTE SIMPLES: criar um elemento grande e óbvio
+        const testElement = document.createElement('div');
+        testElement.style.cssText = `
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            background: red;
+            border: 5px solid yellow;
+            z-index: 99999;
+            pointer-events: none;
+            animation: testPulse 0.5s ease-out forwards;
+        `;
 
-        slash.style.display = 'block';
-        slash.style.setProperty('--slash-color', color);
-        slash.className = 'vfx-slash vfx-slash-horizontal';
+        // Adicionar keyframe inline
+        if (!document.getElementById('vfx-test-style')) {
+            const style = document.createElement('style');
+            style.id = 'vfx-test-style';
+            style.textContent = `
+                @keyframes testPulse {
+                    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+                    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+                    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+                }
+            `;
+            document.head.appendChild(style);
+        }
 
-        // Posição central na tela (combate é overlay)
-        slash.style.left = '50%';
-        slash.style.top = '50%';
-
-        console.log('[VFX] Slash element:', slash, 'Parent:', slash.parentElement);
+        document.body.appendChild(testElement);
+        console.log('[VFX] TEST element added to body:', testElement);
 
         setTimeout(() => {
-            this.slashPool.release(slash);
+            testElement.remove();
         }, duration);
     }
 
