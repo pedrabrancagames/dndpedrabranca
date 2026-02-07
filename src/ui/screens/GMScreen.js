@@ -20,6 +20,7 @@ import {
     getEventTypeColor
 } from '../../data/ExplorationEvents.js';
 import { getItemData } from '../../data/ItemDatabase.js';
+import { EnemyDatabase } from '../../data/EnemyDatabase.js';
 import { eventBus } from '../../core/EventEmitter.js';
 
 export class GMScreen extends BaseScreen {
@@ -122,6 +123,8 @@ export class GMScreen extends BaseScreen {
             this.renderQuests();
         } else if (tab === 'log') {
             this.renderEventLog();
+        } else if (tab === 'bestiary') {
+            this.renderBestiary();
         }
     }
 
@@ -673,6 +676,102 @@ export class GMScreen extends BaseScreen {
                 <span class="log-message">${event.message}</span>
             </div>
         `).join('');
+    }
+
+    // ========== BESTIÁRIO ==========
+
+    renderBestiary() {
+        const bestiaryList = this.findElement('#bestiary-list');
+        if (!bestiaryList) return;
+
+        const bestiaryData = this.gameManager.gameData.bestiary || {};
+        const allEnemies = Object.entries(EnemyDatabase);
+
+        // Filtrar apenas inimigos vistos
+        const knownEnemies = allEnemies.filter(([id, data]) => bestiaryData[id] && bestiaryData[id].seen);
+
+        if (knownEnemies.length === 0) {
+            bestiaryList.innerHTML = '<p class="empty-list">Nenhum inimigo encontrado ainda.</p>';
+            return;
+        }
+
+        bestiaryList.innerHTML = knownEnemies.map(([id, data]) => {
+            const entry = bestiaryData[id];
+            const killCount = entry.kills || 0;
+            const unlockLevel = this.getUnlockLevel(killCount); // 1 = Nome, 2 = Stats, 3 = Full
+
+            return `
+                <div class="bestiary-card" data-enemy-id="${id}">
+                    <div class="bestiary-icon">${unlockLevel >= 1 ? '👹' : '❓'}</div>
+                    <div class="bestiary-info">
+                        <h3>${unlockLevel >= 1 ? data.name : 'Desconhecido'}</h3>
+                        <p class="enemy-type">${unlockLevel >= 1 ? data.type : '???'}</p>
+                        ${unlockLevel >= 2 ? `
+                            <div class="enemy-mini-stats">
+                                <span>❤️ ${data.stats.hp}</span>
+                                <span>⚔️ ${data.stats.atk}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="kill-count">☠️ ${killCount}</div>
+                </div>
+            `;
+        }).join('');
+
+        // Add click listeners
+        bestiaryList.querySelectorAll('.bestiary-card').forEach(card => {
+            card.addEventListener('click', () => this.showBestiaryDetails(card.dataset.enemyId));
+        });
+    }
+
+    getUnlockLevel(kills) {
+        if (kills >= 10) return 3; // Full Lore + Drops
+        if (kills >= 5) return 2;  // Stats
+        if (kills >= 1) return 1;  // Name + Type
+        return 0;
+    }
+
+    showBestiaryDetails(enemyId) {
+        const data = EnemyDatabase[enemyId];
+        const entry = this.gameManager.gameData.bestiary[enemyId];
+        if (!data || !entry) return;
+
+        const unlockLevel = this.getUnlockLevel(entry.kills);
+        const modal = this.findElement('#bestiary-modal');
+        if (!modal) return;
+
+        // Populate details
+        this.findElement('#bestiary-detail-name').textContent = data.name;
+        this.findElement('#bestiary-detail-type').textContent = data.type;
+        this.findElement('#bestiary-detail-kills').textContent = `Derrotados: ${entry.kills}`;
+        this.findElement('#bestiary-detail-desc').textContent = unlockLevel >= 3 ? data.description : 'Derrote mais inimigos deste tipo para saber mais.';
+
+        // Stats
+        const statsEl = this.findElement('#bestiary-detail-stats');
+        if (statsEl) {
+            if (unlockLevel >= 2) {
+                statsEl.innerHTML = `
+                    <div class="stat-box"><span>HP</span>${data.stats.hp}</div>
+                    <div class="stat-box"><span>ATK</span>${data.stats.atk}</div>
+                    <div class="stat-box"><span>DEF</span>${data.stats.def || 0}</div>
+                    <div class="stat-box"><span>SPD</span>${data.stats.speed || 0}</div>
+                `;
+            } else {
+                statsEl.innerHTML = '<p class="locked-info">???</p>';
+            }
+        }
+
+        // Model Placeholder
+        const modelEl = this.findElement('#bestiary-model-preview');
+        if (modelEl) {
+            modelEl.textContent = '👹'; // Placeholder for 3D model or image
+        }
+
+        modal.classList.remove('hidden');
+
+        // Close button
+        const closeBtn = this.findElement('#btn-close-bestiary');
+        if (closeBtn) closeBtn.onclick = () => modal.classList.add('hidden');
     }
 }
 

@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="/src/styles/inventory.css">
   <link rel="stylesheet" href="/src/styles/combat_extras.css">
   <link rel="stylesheet" href="/src/styles/heroes_extras.css">
+  <link rel="stylesheet" href="/src/styles/bestiary.css">
 </head>
 
 <body>
@@ -325,6 +326,7 @@
       <!-- Abas de navegação -->
       <div class="gm-tabs" id="gm-tabs">
         <button class="gm-tab active" data-tab="quests">📜 Missões</button>
+        <button class="gm-tab" data-tab="bestiary">👹 Bestiário</button>
         <button class="gm-tab" data-tab="rumors">🎲 Eventos</button>
         <button class="gm-tab" data-tab="log">📖 Log</button>
       </div>
@@ -344,6 +346,14 @@
           <div class="quest-list" id="quest-list"></div>
         </div>
 
+        <!-- Aba de Bestiário -->
+        <div class="gm-tab-content" id="gm-bestiary">
+          <div class="scroll-container bestiary-list" id="bestiary-list">
+            <!-- Bestiary Cards Injected Here -->
+            <p class="empty-message">O bestiário está vazio.</p>
+          </div>
+        </div>
+
         <!-- Aba de Eventos -->
         <div class="gm-tab-content" id="gm-rumors">
           <div class="events-panel">
@@ -357,7 +367,7 @@
 
         <!-- Aba de Log -->
         <div class="gm-tab-content" id="gm-log">
-          <div class="event-log" id="event-log">
+          <div class="scroll-container log-list" id="event-log">
             <p class="log-empty">Nenhum evento registrado ainda.</p>
           </div>
         </div>
@@ -427,6 +437,25 @@
             <button class="action-btn abandon-btn hidden" id="btn-abandon-quest">❌ Abandonar</button>
             <button class="action-btn complete-btn hidden" id="btn-complete-quest">🏆 Completar</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Detalhes do Bestiário -->
+    <div id="bestiary-modal" class="modal hidden">
+      <div class="modal-content bestiary-detail-content">
+        <button class="modal-close" id="btn-close-bestiary">&times;</button>
+        <div class="bestiary-header">
+          <div class="bestiary-model-preview" id="bestiary-model-preview"></div>
+          <div class="bestiary-title">
+            <h2 id="bestiary-detail-name">Nome</h2>
+            <span id="bestiary-detail-type">Tipo</span>
+          </div>
+        </div>
+        <div class="bestiary-stats-grid" id="bestiary-detail-stats"></div>
+        <p id="bestiary-detail-desc" class="bestiary-desc"></p>
+        <div class="bestiary-footer">
+          <span id="bestiary-detail-kills"></span>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@
  * Gerencia diálogos, eventos e narrativa do jogo
  */
 import { eventBus } from '../core/EventEmitter.js';
+import { EnemyDatabase } from '../data/EnemyDatabase.js';
 import {
     getChapterIntro,
     getCombatIntro,
@@ -36,6 +37,11 @@ export class GameMaster {
 
         eventBus.on('combatDefeat', () => {
             this.showDefeatMessage();
+        });
+
+        // Evento de Inimigo Derrotado (Bestiário)
+        eventBus.on('enemyDied', ({ enemyId }) => {
+            this.unlockBestiaryEntry(enemyId);
         });
 
         // Eventos de Quest completada via diálogo
@@ -408,6 +414,65 @@ export class GameMaster {
         const eventIds = Object.keys(ExplorationEvents);
         const randomId = eventIds[Math.floor(Math.random() * eventIds.length)];
         return this.showChoiceEvent(randomId);
+    }
+
+    /**
+     * Desbloqueia ou atualiza entrada no Bestiário
+     */
+    unlockBestiaryEntry(enemyInstanceId) {
+        // Precisamos descobrir o TIPO do inimigo, não o ID da instância.
+        // O ID da instância geralmente é "goblin_123", o tipo é "goblin".
+        // O CombatManager ou EnemyDatabase deve ter essa info.
+        // Vamos tentar inferir ou pegar do CombatManager se possível.
+
+        const combatManager = this.gameManager.combatManager;
+        if (!combatManager) return;
+
+        // Tentar achar o inimigo morto na lista de inimigos (pode já ter sido removido, mas o evento tem o ID)
+        // Se foi removido, talvez o CombatManager tenha um histórico ou a gente parseie o ID.
+        // Assumindo convenção: type_id ou apenas type se único.
+        // Melhor: O CombatManager deve passar o TIPO no evento enemyDied, vou ajustar o CombatManager depois?
+        // Por enquanto, vamos tentar achar nos inimigos do encontro (inclusive mortos se não limpou ainda)
+
+        let enemyType = null;
+
+        // Hack: Tentar extrair do ID se for string (ex: "goblin_1", "orc_3")
+        if (typeof enemyInstanceId === 'string') {
+            const parts = enemyInstanceId.split('_');
+            // Remove o último número se for sufixo
+            if (parts.length > 1 && !isNaN(parts[parts.length - 1])) {
+                parts.pop();
+                enemyType = parts.join('_');
+            } else {
+                enemyType = enemyInstanceId;
+            }
+        }
+
+        // Verificar se existe no DB
+        if (!EnemyDatabase[enemyType]) {
+            // Tentar procurar nas chaves do EnemyDatabase quem tem esse prefixo
+            const match = Object.keys(EnemyDatabase).find(key => enemyInstanceId.startsWith(key));
+            if (match) enemyType = match;
+            else return; // Não achou tipo válido
+        }
+
+        if (!this.gameManager.gameData.bestiary) {
+            this.gameManager.gameData.bestiary = {};
+        }
+
+        const entry = this.gameManager.gameData.bestiary[enemyType] || { kills: 0, seen: false };
+        entry.kills = (entry.kills || 0) + 1;
+        entry.seen = true;
+
+        // Notificar desbloqueio na primeira vez ou em marcos (1, 5, 10)
+        if (entry.kills === 1) {
+            this.showGMMessage(`Nova entrada no Bestiário: ${EnemyDatabase[enemyType].name}`, 'success');
+        } else if (entry.kills === 5 || entry.kills === 10) {
+            this.showGMMessage(`Informações atualizadas no Bestiário: ${EnemyDatabase[enemyType].name}`, 'info');
+        }
+
+        this.gameManager.gameData.bestiary[enemyType] = entry;
+        this.gameManager.saveGame();
     }
 
     /**
