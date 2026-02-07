@@ -131,6 +131,11 @@ export class CardVFXSystem {
         const { color = '#e5e7eb', duration = 200 } = options;
         const slash = this.slashPool.acquire();
 
+        // Reset para reiniciar animação
+        slash.style.animation = 'none';
+        slash.offsetHeight; // Force reflow
+        slash.style.animation = '';
+
         slash.style.display = 'block';
         slash.style.setProperty('--slash-color', color);
         slash.className = 'vfx-slash vfx-slash-horizontal';
@@ -138,6 +143,8 @@ export class CardVFXSystem {
         // Posição central na tela (combate é overlay)
         slash.style.left = '50%';
         slash.style.top = '50%';
+
+        console.log('[VFX] Slash element:', slash, 'Parent:', slash.parentElement);
 
         setTimeout(() => {
             this.slashPool.release(slash);
