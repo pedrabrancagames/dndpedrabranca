@@ -185,8 +185,10 @@ export class HeroesScreen extends BaseScreen {
   renderHeroTabs(hero) {
     // Encontrar containers originais e esconder/mostrar baseado na aba
     const statsGrid = this.findElement('#hero-stats-grid');
-    const deckGrid = this.findElement('#deck-grid');
-    const equipmentGrid = this.findElement('#equipment-grid');
+
+    // Buscar SEÇÕES inteiras para esconder títulos também
+    const equipmentSection = this.findElement('.equipment-section');
+    const deckSection = this.findElement('.deck-section');
 
     // Criar ou atualizar barra de abas
     let tabBar = this.findElement('.hero-tabs');
@@ -212,34 +214,37 @@ export class HeroesScreen extends BaseScreen {
     });
 
     // Content Rendering
-    const contentContainer = this.findElement('.hero-detail-content-body'); // Precisaria criar esse container no HTML ou limpar e reinjetar
-
-    // Simplificação: Manipular display dos containers existentes
-    // O HTML atual tem grids espalhados. Vamos consolidar visualmente.
-
     if (this.currentHeroTab === 'general') {
       if (statsGrid) {
         statsGrid.style.display = 'grid';
         statsGrid.innerHTML = this.renderGeneralStats(hero);
       }
-      if (equipmentGrid) {
-        equipmentGrid.style.display = 'flex';
-        equipmentGrid.innerHTML = this.renderEquipment(hero);
+      if (equipmentSection) {
+        equipmentSection.style.display = 'block';
+        const grid = equipmentSection.querySelector('#equipment-grid');
+        if (grid) {
+          grid.innerHTML = this.renderEquipment(hero);
+          grid.style.display = 'flex';
+        }
       }
-      if (deckGrid) deckGrid.style.display = 'none';
+      if (deckSection) deckSection.style.display = 'none';
     } else if (this.currentHeroTab === 'stats') {
       if (statsGrid) {
         statsGrid.style.display = 'grid';
         statsGrid.innerHTML = this.renderDetailedStats(hero);
       }
-      if (equipmentGrid) equipmentGrid.style.display = 'none';
-      if (deckGrid) deckGrid.style.display = 'none';
+      if (equipmentSection) equipmentSection.style.display = 'none';
+      if (deckSection) deckSection.style.display = 'none';
     } else if (this.currentHeroTab === 'deck') {
       if (statsGrid) statsGrid.style.display = 'none';
-      if (equipmentGrid) equipmentGrid.style.display = 'none';
-      if (deckGrid) {
-        deckGrid.style.display = 'grid';
-        deckGrid.innerHTML = this.renderDeck(hero);
+      if (equipmentSection) equipmentSection.style.display = 'none';
+      if (deckSection) {
+        deckSection.style.display = 'block';
+        const grid = deckSection.querySelector('#deck-grid');
+        if (grid) {
+          grid.innerHTML = this.renderDeck(hero);
+          grid.style.display = 'grid';
+        }
       }
     }
   }
