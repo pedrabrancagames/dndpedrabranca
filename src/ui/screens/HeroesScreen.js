@@ -97,6 +97,7 @@ export class HeroesScreen extends BaseScreen {
     if (!hero) return;
 
     this.selectedHero = hero;
+    this.currentHeroTab = 'general'; // Default tab
 
     // Populate modal
     const modal = this.findElement('#hero-detail-modal');
@@ -106,55 +107,24 @@ export class HeroesScreen extends BaseScreen {
     const levelEl = this.findElement('#hero-detail-level');
     const xpFill = this.findElement('#xp-fill');
     const xpText = this.findElement('#xp-text');
-    const statsGrid = this.findElement('#hero-stats-grid');
-    const deckGrid = this.findElement('#deck-grid');
 
+    // Setup Tabs
+    const contentContainer = this.findElement('.hero-detail-body') || modal.querySelector('.modal-content');
+
+    // Inject Tab Navigation if not exists (or replace body structure)
+    // Vamos alterar a estrutura do modal via JS para suportar abas sem mexer muito no HTML base se possível
+    // Mas o ideal é injetar a estrutura de abas.
+
+    // Atualizar Header
     if (portraitEl) portraitEl.textContent = hero.icon;
     if (nameEl) {
-      // Name Editing Logic
       nameEl.innerHTML = `
-            <span id="hero-name-text">${hero.name}</span>
-            <button class="edit-name-btn" id="btn-edit-name">✏️</button>
-            <input type="text" id="hero-name-input" class="hidden" value="${hero.name}" maxlength="15">
-            <button class="save-name-btn hidden" id="btn-save-name">💾</button>
-        `;
-
-      // Attach listeners (using simpler inline approach for this specific modal instance or delegate?)
-      // Better to use onclick in HTML string or attach after render.
-      // Since we are replacing innerHTML, we must attach listeners NOW.
-      setTimeout(() => {
-        const btnEdit = nameEl.querySelector('#btn-edit-name');
-        const btnSave = nameEl.querySelector('#btn-save-name');
-        const input = nameEl.querySelector('#hero-name-input');
-        const text = nameEl.querySelector('#hero-name-text');
-
-        if (btnEdit && input && text && btnSave) {
-          btnEdit.onclick = () => {
-            text.classList.add('hidden');
-            btnEdit.classList.add('hidden');
-            input.classList.remove('hidden');
-            btnSave.classList.remove('hidden');
-            input.focus();
-          };
-
-          const save = () => {
-            const newName = input.value.trim();
-            if (newName) {
-              hero.name = newName;
-              text.textContent = newName;
-              this.gameManager.saveGame();
-              this.renderHeroes(); // Refresh grid
-            }
-            input.classList.add('hidden');
-            btnSave.classList.add('hidden');
-            text.classList.remove('hidden');
-            btnEdit.classList.remove('hidden');
-          };
-
-          btnSave.onclick = save;
-          input.onkeypress = (e) => { if (e.key === 'Enter') save(); };
-        }
-      }, 0);
+                <span id="hero-name-text">${hero.name}</span>
+                <button class="edit-name-btn" id="btn-edit-name">✏️</button>
+                <input type="text" id="hero-name-input" class="hidden" value="${hero.name}" maxlength="15">
+                <button class="save-name-btn hidden" id="btn-save-name">💾</button>
+            `;
+      this.setupNameEditing(nameEl, hero);
     }
 
     if (classEl) {
@@ -169,45 +139,112 @@ export class HeroesScreen extends BaseScreen {
     if (xpFill) xpFill.style.width = `${this.getXPProgress(hero)}%`;
     if (xpText) xpText.textContent = `${hero.xp || 0} / ${xpNeeded} XP`;
 
-    // Stats
-    if (statsGrid) {
-      statsGrid.innerHTML = this.renderHeroStats(hero);
-    }
-
-    // Level Up Preview
-    const levelUpPreview = this.findElement('#level-up-preview');
-    if (levelUpPreview) {
-      // Calculate next level stats
-      const bonus = this.gameManager.progressionSystem.getClassLevelUpBonus(hero.class);
-
-      levelUpPreview.innerHTML = `
-            <div class="preview-header">Próximo Nível (${hero.level + 1})</div>
-            <div class="preview-stats">
-                ${bonus.hp ? `<div class="preview-stat"><span class="stat-label">❤️ HP</span> <span class="stat-change">+${bonus.hp}</span></div>` : ''}
-                ${bonus.atk ? `<div class="preview-stat"><span class="stat-label">⚔️ ATK</span> <span class="stat-change">+${bonus.atk}</span></div>` : ''}
-                ${bonus.def ? `<div class="preview-stat"><span class="stat-label">🛡️ DEF</span> <span class="stat-change">+${bonus.def}</span></div>` : ''}
-                ${bonus.mag ? `<div class="preview-stat"><span class="stat-label">✨ MAG</span> <span class="stat-change">+${bonus.mag}</span></div>` : ''}
-                ${bonus.crit ? `<div class="preview-stat"><span class="stat-label">💥 CRIT</span> <span class="stat-change">+${bonus.crit}%</span></div>` : ''}
-            </div>
-        `;
-    }
-
-    // Deck
-    if (deckGrid) {
-      deckGrid.innerHTML = this.renderDeck(hero);
-    }
-
-    // Equipment
-    const equipmentGrid = this.findElement('#equipment-grid');
-    if (equipmentGrid) {
-      equipmentGrid.innerHTML = this.renderEquipment(hero);
-    }
+    // Render Tabs
+    this.renderHeroTabs(hero);
 
     // Show modal
     if (modal) modal.classList.remove('hidden');
   }
 
-  renderHeroStats(hero) {
+  setupNameEditing(nameEl, hero) {
+    setTimeout(() => {
+      const btnEdit = nameEl.querySelector('#btn-edit-name');
+      const btnSave = nameEl.querySelector('#btn-save-name');
+      const input = nameEl.querySelector('#hero-name-input');
+      const text = nameEl.querySelector('#hero-name-text');
+
+      if (btnEdit && input && text && btnSave) {
+        btnEdit.onclick = () => {
+          text.classList.add('hidden');
+          btnEdit.classList.add('hidden');
+          input.classList.remove('hidden');
+          btnSave.classList.remove('hidden');
+          input.focus();
+        };
+
+        const save = () => {
+          const newName = input.value.trim();
+          if (newName) {
+            hero.name = newName;
+            text.textContent = newName;
+            this.gameManager.saveGame();
+            this.renderHeroes();
+          }
+          input.classList.add('hidden');
+          btnSave.classList.add('hidden');
+          text.classList.remove('hidden');
+          btnEdit.classList.remove('hidden');
+        };
+
+        btnSave.onclick = save;
+        input.onkeypress = (e) => { if (e.key === 'Enter') save(); };
+      }
+    }, 0);
+  }
+
+  renderHeroTabs(hero) {
+    // Encontrar containers originais e esconder/mostrar baseado na aba
+    const statsGrid = this.findElement('#hero-stats-grid');
+    const deckGrid = this.findElement('#deck-grid');
+    const equipmentGrid = this.findElement('#equipment-grid');
+
+    // Criar ou atualizar barra de abas
+    let tabBar = this.findElement('.hero-tabs');
+    if (!tabBar) {
+      const header = this.findElement('.hero-detail-header');
+      tabBar = document.createElement('div');
+      tabBar.className = 'hero-tabs';
+      header.after(tabBar);
+    }
+
+    tabBar.innerHTML = `
+            <button class="hero-tab ${this.currentHeroTab === 'general' ? 'active' : ''}" data-tab="general">Geral</button>
+            <button class="hero-tab ${this.currentHeroTab === 'stats' ? 'active' : ''}" data-tab="stats">Estatísticas</button>
+            <button class="hero-tab ${this.currentHeroTab === 'deck' ? 'active' : ''}" data-tab="deck">Deck</button>
+        `;
+
+    // Add Listeners
+    tabBar.querySelectorAll('.hero-tab').forEach(btn => {
+      btn.onclick = () => {
+        this.currentHeroTab = btn.dataset.tab;
+        this.renderHeroTabs(hero); // Re-render content
+      };
+    });
+
+    // Content Rendering
+    const contentContainer = this.findElement('.hero-detail-content-body'); // Precisaria criar esse container no HTML ou limpar e reinjetar
+
+    // Simplificação: Manipular display dos containers existentes
+    // O HTML atual tem grids espalhados. Vamos consolidar visualmente.
+
+    if (this.currentHeroTab === 'general') {
+      if (statsGrid) {
+        statsGrid.style.display = 'grid';
+        statsGrid.innerHTML = this.renderGeneralStats(hero);
+      }
+      if (equipmentGrid) {
+        equipmentGrid.style.display = 'flex';
+        equipmentGrid.innerHTML = this.renderEquipment(hero);
+      }
+      if (deckGrid) deckGrid.style.display = 'none';
+    } else if (this.currentHeroTab === 'stats') {
+      if (statsGrid) {
+        statsGrid.style.display = 'grid';
+        statsGrid.innerHTML = this.renderDetailedStats(hero);
+      }
+      if (equipmentGrid) equipmentGrid.style.display = 'none';
+      if (deckGrid) deckGrid.style.display = 'none';
+    } else if (this.currentHeroTab === 'deck') {
+      if (statsGrid) statsGrid.style.display = 'none';
+      if (equipmentGrid) equipmentGrid.style.display = 'none';
+      if (deckGrid) {
+        deckGrid.style.display = 'grid';
+        deckGrid.innerHTML = this.renderDeck(hero);
+      }
+    }
+  }
+
+  renderGeneralStats(hero) {
     const stats = [
       { icon: '⚔️', name: 'Ataque', value: hero.atk },
       { icon: '🛡️', name: 'Defesa', value: hero.def },
@@ -218,15 +255,58 @@ export class HeroesScreen extends BaseScreen {
     if (hero.mag) stats.push({ icon: '✨', name: 'Magia', value: hero.mag });
     if (hero.crit) stats.push({ icon: '💥', name: 'Crítico', value: `${hero.crit}%` });
 
-    return `<div class="stats-grid">
+    // Level Up Preview Container
+    const bonus = this.gameManager.progressionSystem.getClassLevelUpBonus(hero.class);
+    const levelUpHtml = `
+            <div id="level-up-preview" class="level-up-preview-container" style="grid-column: 1 / -1; margin-top: 10px;">
+                <div class="preview-header">Próximo Nível (${hero.level + 1})</div>
+                <div class="preview-stats">
+                    ${bonus.hp ? `<div class="preview-stat"><span class="stat-label">❤️ HP</span> <span class="stat-change">+${bonus.hp}</span></div>` : ''}
+                    ${bonus.atk ? `<div class="preview-stat"><span class="stat-label">⚔️ ATK</span> <span class="stat-change">+${bonus.atk}</span></div>` : ''}
+                    ${bonus.def ? `<div class="preview-stat"><span class="stat-label">🛡️ DEF</span> <span class="stat-change">+${bonus.def}</span></div>` : ''}
+                    ${bonus.mag ? `<div class="preview-stat"><span class="stat-label">✨ MAG</span> <span class="stat-change">+${bonus.mag}</span></div>` : ''}
+                </div>
+            </div>
+        `;
+
+    return `
             ${stats.map(s => `
                 <div class="stat-item">
                     <span class="stat-name">${s.icon} ${s.name}</span>
                     <span class="stat-value">${s.value}</span>
                 </div>
             `).join('')}
-        </div>
-        <div id="level-up-preview" class="level-up-preview-container"></div>`; // Container injection
+            ${levelUpHtml}
+        `;
+  }
+
+  renderDetailedStats(hero) {
+    // Mock de stats derivados baseados em atributos primários + equipamentos
+    const evasion = Math.floor((hero.dex || 10) / 2) + (hero.equipment?.accessory ? 5 : 0);
+    const block = hero.str ? Math.floor(hero.str / 2) : 0;
+    const magicResist = hero.wis ? Math.floor(hero.wis / 2) : 0;
+
+    const detailedStats = [
+      { name: 'Chance de Crítico', value: `${hero.crit || 5}%`, icon: '💥' },
+      { name: 'Dano Crítico', value: '150%', icon: '🗡️' },
+      { name: 'Evasão', value: `${evasion}%`, icon: '💨' },
+      { name: 'Bloqueio', value: `${block}%`, icon: '🛡️' },
+      { name: 'Resistência Mágica', value: `${magicResist}%`, icon: '🔮' },
+      { name: 'Regeneração de HP', value: '1/turno', icon: '❤️' },
+      { name: 'Iniciativa', value: hero.speed || 10, icon: '⚡' }
+    ];
+
+    return detailedStats.map(s => `
+            <div class="stat-item detailed">
+                <span class="stat-name">${s.icon} ${s.name}</span>
+                <span class="stat-value">${s.value}</span>
+            </div>
+        `).join('');
+  }
+
+  renderHeroStats(hero) {
+    // Deixar vazio ou redirecionar, pois renderHeroTabs cuida disso
+    return '';
   }
 
   renderDeck(hero) {

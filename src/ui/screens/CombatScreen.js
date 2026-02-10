@@ -45,97 +45,238 @@ export class CombatScreen extends BaseScreen {
 
         eventBus.on('cardSelected', (card) => this.showDamagePreviewByCardData(card));
         eventBus.on('cardDeselected', () => this.hideDamagePreview());
+
+        // VFX Events
+        eventBus.on('combatAttack', (data) => this.handleCombatAttackVFX(data));
+        eventBus.on('combatHit', (data) => this.handleCombatHitVFX(data));
+        eventBus.on('combatSkill', (data) => this.handleCombatSkillVFX(data));
     }
 
-    onShow(data) {
-        const firstHero = this.gameManager.gameData.heroes[0];
-        if (firstHero) this.updateTurnInfo(firstHero);
-    }
+    // ... (restante do código existente)
 
-    updateTurnInfo(unit) {
-        // Seletor correto baseado no HTML
-        const turnIndicator = this.findElement('#turn-indicator');
-        if (turnIndicator) {
-            turnIndicator.textContent = `Turno: ${unit.name}`;
+    // ========== VFX SYSTEM ==========
+
+    handleCombatAttackVFX(data) {
+        // Ex: { attacker, target, type: 'melee' | 'range' | 'magic' }
+        const type = data.type || 'melee';
+
+        if (type === 'melee') {
+            // Animação de corte
+            this.playVFX('slash-horizontal', data.target);
+        } else if (type === 'range') {
+            // Projétil
+            this.playVFX('projectile', data.target);
+        } else if (type === 'magic') {
+            // Depende do elemento, mas genérico:
+            this.playVFX('arcane-shield', data.attacker); // Cast effect
         }
-        console.log('UI Updated for:', unit.name);
     }
 
-    togglePauseMenu() {
-        const pauseMenu = this.findElement('#pause-menu');
-        if (pauseMenu) pauseMenu.classList.toggle('hidden');
-    }
-
-    exitCombat() {
-        const pauseMenu = this.findElement('#pause-menu');
-        if (pauseMenu) pauseMenu.classList.add('hidden');
-
-        if (this.gameManager.arSceneManager) {
-            this.gameManager.arSceneManager.endSession();
-        }
-
-        this.gameManager.stateManager.setState(GameState.HOME);
-    }
-
-    passTurn() {
-        eventBus.emit('passTurn');
-    }
-
-    attemptEscape() {
-        const heroes = this.gameManager.gameData.heroes;
-        // Assume first hero is leader/active for escape check
-        const hero = heroes[0];
-
-        if (this.gameManager.combatManager.isPlayerTurn()) {
-            this.gameManager.combatManager.attemptEscape(hero);
+    handleCombatHitVFX(data) {
+        // Ex: { target, amount, isCritical, element }
+        if (data.isCritical) {
+            this.shakeScreen('medium');
+            this.flashScreen('white');
+            this.playVFX('explosion', data.target);
         } else {
-            this.gameManager.showToast('Espere seu turno para fugir!', 'warning');
+            this.shakeScreen('small');
+            // Efeito de impacto simples?
+        }
+
+        // Element specific
+        if (data.element === 'fire') this.playVFX('fire-aura', data.target);
+        if (data.element === 'ice') this.playVFX('ice-cone', data.target);
+        if (data.element === 'lightning') this.playVFX('lightning', data.target);
+        if (data.element === 'holy') this.playVFX('holy-light', data.target);
+    }
+
+    handleCombatSkillVFX(data) {
+        // Ex: { skillName, target }
+        const skill = data.skillName.toLowerCase();
+
+        if (skill.includes('cura') || skill.includes('heal')) {
+            this.playVFX('heal-circle', data.target);
+        } else if (skill.includes('fogo') || skill.includes('fire')) {
+            this.playVFX('fireball', data.target);
+        } else if (skill.includes('meteoro')) {
+            this.playVFX('meteor', data.target);
+        } else if (skill.includes('escudo') || skill.includes('shield')) {
+            this.playVFX('shield', data.target);
         }
     }
 
-    showDamagePreview(cardEl) {
-        // This relies on card data being attached to DOM or retrieval via ID
-        const cardId = cardEl.dataset.id;
-        // Fetch card data... logic usually requires knowing WHICH card instance.
-        // Assuming CardSystem/UI renders sets data-index
-    }
+    playVFX(effectName, target) {
+        const overlay = document.getElementById('vfx-overlay');
+        if (!overlay) return;
 
-    showDamagePreviewByCardData(card) {
-        const previewEl = this.findElement('#damage-preview');
-        const valueEl = previewEl.querySelector('.preview-value');
+        const el = document.createElement('div');
 
-        if (!previewEl || !card) return;
+        // Mapeamento de classes do CSS vfx.css
+        const vfxMap = {
+            'slash-horizontal': 'vfx-slash-horizontal',
+            'slash-x': 'vfx-slash-x',
+            'projectile': ['vfx-projectile', 'vfx-projectile-animate'],
+            'fireball': ['vfx-fireball', 'vfx-fireball-animate'],
+            'explosion': 'vfx-explosion',
+            'meteor': ['vfx-meteor', 'vfx-meteor-fall'],
+            'lightning': 'vfx-lightning',
+            'ice-cone': 'vfx-ice-cone',
+            'shield': 'vfx-shield',
+            'arcane-shield': 'vfx-arcane-shield',
+            'fire-aura': 'vfx-fire-aura',
+            'heal-circle': 'vfx-heal-circle',
+            'holy-light': 'vfx-holy-light'
+        };
 
-        // Get active encounter target
-        const encounter = this.gameManager.combatManager.activeEncounter;
-        if (!encounter || !encounter.enemies || encounter.enemies.length === 0) return;
+        const classes = vfxMap[effectName];
+        if (!classes) return;
 
-        // Predict on first enemy (default target)
-        // In full impl, we'd check selected target
-        const target = encounter.enemies[0];
-        const hero = encounter.heroes[0];
-
-        const dmg = this.gameManager.combatManager.cardSystem.getPredictedDamage(card, hero, target);
-
-        if (dmg > 0) {
-            valueEl.textContent = `-${dmg}`;
-            previewEl.classList.remove('hidden', 'heal');
-
-            // Position preview over target if possible, or center screen
-            // For now, center fixed is fine via CSS
-        } else if (card.heal) {
-            valueEl.textContent = `+${card.heal}`;
-            previewEl.classList.add('heal');
-            previewEl.classList.remove('hidden');
+        if (Array.isArray(classes)) {
+            el.classList.add(...classes);
         } else {
-            this.hideDamagePreview();
+            el.classList.add(classes);
         }
+
+        // Posicionamento
+        // Se target for um elemento DOM, pegar coordenadas.
+        // Se for um objeto de jogo (hero/enemy), tentar achar o elemento no DOM pelo ID.
+        let targetEl = target;
+        if (target && target.id) {
+            // Tentar achar pelo ID do modelo 3D ou carta UI?
+            // No contexto AR, talvez usar coordenadas de tela projetadas.
+            // Simplificação: Centralizar se não tiver alvo específico UI
+        }
+
+        // Se tiver alvo DOM, posicionar
+        if (targetEl instanceof HTMLElement) {
+            const rect = targetEl.getBoundingClientRect();
+            el.style.left = `${rect.left + rect.width / 2}px`;
+            el.style.top = `${rect.top + rect.height / 2}px`;
+            el.style.transform = 'translate(-50%, -50%)'; // Resetar transform padrão e ajustar
+        } else {
+            // Center screen fallback
+            el.style.left = '50%';
+            el.style.top = '50%';
+        }
+
+        overlay.appendChild(el);
+
+        // Remover após animação
+        setTimeout(() => {
+            el.remove();
+        }, 1000); // 1s de segurança, a maioria dura menos
     }
 
-    hideDamagePreview() {
-        const previewEl = this.findElement('#damage-preview');
-        if (previewEl) previewEl.classList.add('hidden');
+    shakeScreen(intensity = 'small') {
+        const app = document.getElementById('app');
+        if (!app) return;
+
+        app.classList.remove('vfx-shake-small', 'vfx-shake-medium', 'vfx-shake-large');
+        void app.offsetWidth; // Trigger reflow
+        app.classList.add(`vfx-shake-${intensity}`);
     }
+
+    flashScreen(color = 'white') {
+        const overlay = document.getElementById('vfx-overlay');
+        if (!overlay) return;
+
+        const flash = document.createElement('div');
+        flash.classList.add(`vfx-flash-${color}`);
+        overlay.appendChild(flash);
+
+        setTimeout(() => flash.remove(), 300);
+    }
+}
+
+onShow(data) {
+    const firstHero = this.gameManager.gameData.heroes[0];
+    if (firstHero) this.updateTurnInfo(firstHero);
+}
+
+updateTurnInfo(unit) {
+    // Seletor correto baseado no HTML
+    const turnIndicator = this.findElement('#turn-indicator');
+    if (turnIndicator) {
+        turnIndicator.textContent = `Turno: ${unit.name}`;
+    }
+    console.log('UI Updated for:', unit.name);
+}
+
+togglePauseMenu() {
+    const pauseMenu = this.findElement('#pause-menu');
+    if (pauseMenu) pauseMenu.classList.toggle('hidden');
+}
+
+exitCombat() {
+    const pauseMenu = this.findElement('#pause-menu');
+    if (pauseMenu) pauseMenu.classList.add('hidden');
+
+    if (this.gameManager.arSceneManager) {
+        this.gameManager.arSceneManager.endSession();
+    }
+
+    this.gameManager.stateManager.setState(GameState.HOME);
+}
+
+passTurn() {
+    eventBus.emit('passTurn');
+}
+
+attemptEscape() {
+    const heroes = this.gameManager.gameData.heroes;
+    // Assume first hero is leader/active for escape check
+    const hero = heroes[0];
+
+    if (this.gameManager.combatManager.isPlayerTurn()) {
+        this.gameManager.combatManager.attemptEscape(hero);
+    } else {
+        this.gameManager.showToast('Espere seu turno para fugir!', 'warning');
+    }
+}
+
+showDamagePreview(cardEl) {
+    // This relies on card data being attached to DOM or retrieval via ID
+    const cardId = cardEl.dataset.id;
+    // Fetch card data... logic usually requires knowing WHICH card instance.
+    // Assuming CardSystem/UI renders sets data-index
+}
+
+showDamagePreviewByCardData(card) {
+    const previewEl = this.findElement('#damage-preview');
+    const valueEl = previewEl.querySelector('.preview-value');
+
+    if (!previewEl || !card) return;
+
+    // Get active encounter target
+    const encounter = this.gameManager.combatManager.activeEncounter;
+    if (!encounter || !encounter.enemies || encounter.enemies.length === 0) return;
+
+    // Predict on first enemy (default target)
+    // In full impl, we'd check selected target
+    const target = encounter.enemies[0];
+    const hero = encounter.heroes[0];
+
+    const dmg = this.gameManager.combatManager.cardSystem.getPredictedDamage(card, hero, target);
+
+    if (dmg > 0) {
+        valueEl.textContent = `-${dmg}`;
+        previewEl.classList.remove('hidden', 'heal');
+
+        // Position preview over target if possible, or center screen
+        // For now, center fixed is fine via CSS
+    } else if (card.heal) {
+        valueEl.textContent = `+${card.heal}`;
+        previewEl.classList.add('heal');
+        previewEl.classList.remove('hidden');
+    } else {
+        this.hideDamagePreview();
+    }
+}
+
+hideDamagePreview() {
+    const previewEl = this.findElement('#damage-preview');
+    if (previewEl) previewEl.classList.add('hidden');
+}
 
     // Override or Extend updateTurnInfo if needed, but logic seems fine.
     // However, we need to ensure Status Icons are rendered in updateHeroPanel (not shown in this file, likely in CombatManager or here?)

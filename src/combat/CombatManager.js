@@ -118,10 +118,18 @@ export class CombatManager {
     /**
      * Aplica dano a uma unidade e verifica fases de boss
      */
-    applyDamage(target, amount) {
+    applyDamage(target, amount, source = null, isCritical = false, element = 'physical') {
         const previousHpPercent = target.hp / target.maxHp;
 
         target.hp -= amount;
+
+        // Emitir evento para VFX
+        eventBus.emit('combatHit', {
+            target: target,
+            amount: amount,
+            isCritical: isCritical,
+            element: element
+        });
 
         // Verificação de Fase (apenas para inimigos vivos)
         if (target.hp > 0 && target.phases && target.phases.length > 0) {
