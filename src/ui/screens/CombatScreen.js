@@ -186,97 +186,96 @@ export class CombatScreen extends BaseScreen {
 
         setTimeout(() => flash.remove(), 300);
     }
-}
 
-onShow(data) {
-    const firstHero = this.gameManager.gameData.heroes[0];
-    if (firstHero) this.updateTurnInfo(firstHero);
-}
-
-updateTurnInfo(unit) {
-    // Seletor correto baseado no HTML
-    const turnIndicator = this.findElement('#turn-indicator');
-    if (turnIndicator) {
-        turnIndicator.textContent = `Turno: ${unit.name}`;
-    }
-    console.log('UI Updated for:', unit.name);
-}
-
-togglePauseMenu() {
-    const pauseMenu = this.findElement('#pause-menu');
-    if (pauseMenu) pauseMenu.classList.toggle('hidden');
-}
-
-exitCombat() {
-    const pauseMenu = this.findElement('#pause-menu');
-    if (pauseMenu) pauseMenu.classList.add('hidden');
-
-    if (this.gameManager.arSceneManager) {
-        this.gameManager.arSceneManager.endSession();
+    onShow(data) {
+        const firstHero = this.gameManager.gameData.heroes[0];
+        if (firstHero) this.updateTurnInfo(firstHero);
     }
 
-    this.gameManager.stateManager.setState(GameState.HOME);
-}
-
-passTurn() {
-    eventBus.emit('passTurn');
-}
-
-attemptEscape() {
-    const heroes = this.gameManager.gameData.heroes;
-    // Assume first hero is leader/active for escape check
-    const hero = heroes[0];
-
-    if (this.gameManager.combatManager.isPlayerTurn()) {
-        this.gameManager.combatManager.attemptEscape(hero);
-    } else {
-        this.gameManager.showToast('Espere seu turno para fugir!', 'warning');
+    updateTurnInfo(unit) {
+        // Seletor correto baseado no HTML
+        const turnIndicator = this.findElement('#turn-indicator');
+        if (turnIndicator) {
+            turnIndicator.textContent = `Turno: ${unit.name}`;
+        }
+        console.log('UI Updated for:', unit.name);
     }
-}
 
-showDamagePreview(cardEl) {
-    // This relies on card data being attached to DOM or retrieval via ID
-    const cardId = cardEl.dataset.id;
-    // Fetch card data... logic usually requires knowing WHICH card instance.
-    // Assuming CardSystem/UI renders sets data-index
-}
-
-showDamagePreviewByCardData(card) {
-    const previewEl = this.findElement('#damage-preview');
-    const valueEl = previewEl.querySelector('.preview-value');
-
-    if (!previewEl || !card) return;
-
-    // Get active encounter target
-    const encounter = this.gameManager.combatManager.activeEncounter;
-    if (!encounter || !encounter.enemies || encounter.enemies.length === 0) return;
-
-    // Predict on first enemy (default target)
-    // In full impl, we'd check selected target
-    const target = encounter.enemies[0];
-    const hero = encounter.heroes[0];
-
-    const dmg = this.gameManager.combatManager.cardSystem.getPredictedDamage(card, hero, target);
-
-    if (dmg > 0) {
-        valueEl.textContent = `-${dmg}`;
-        previewEl.classList.remove('hidden', 'heal');
-
-        // Position preview over target if possible, or center screen
-        // For now, center fixed is fine via CSS
-    } else if (card.heal) {
-        valueEl.textContent = `+${card.heal}`;
-        previewEl.classList.add('heal');
-        previewEl.classList.remove('hidden');
-    } else {
-        this.hideDamagePreview();
+    togglePauseMenu() {
+        const pauseMenu = this.findElement('#pause-menu');
+        if (pauseMenu) pauseMenu.classList.toggle('hidden');
     }
-}
 
-hideDamagePreview() {
-    const previewEl = this.findElement('#damage-preview');
-    if (previewEl) previewEl.classList.add('hidden');
-}
+    exitCombat() {
+        const pauseMenu = this.findElement('#pause-menu');
+        if (pauseMenu) pauseMenu.classList.add('hidden');
+
+        if (this.gameManager.arSceneManager) {
+            this.gameManager.arSceneManager.endSession();
+        }
+
+        this.gameManager.stateManager.setState(GameState.HOME);
+    }
+
+    passTurn() {
+        eventBus.emit('passTurn');
+    }
+
+    attemptEscape() {
+        const heroes = this.gameManager.gameData.heroes;
+        // Assume first hero is leader/active for escape check
+        const hero = heroes[0];
+
+        if (this.gameManager.combatManager.isPlayerTurn()) {
+            this.gameManager.combatManager.attemptEscape(hero);
+        } else {
+            this.gameManager.showToast('Espere seu turno para fugir!', 'warning');
+        }
+    }
+
+    showDamagePreview(cardEl) {
+        // This relies on card data being attached to DOM or retrieval via ID
+        const cardId = cardEl.dataset.id;
+        // Fetch card data... logic usually requires knowing WHICH card instance.
+        // Assuming CardSystem/UI renders sets data-index
+    }
+
+    showDamagePreviewByCardData(card) {
+        const previewEl = this.findElement('#damage-preview');
+        const valueEl = previewEl.querySelector('.preview-value');
+
+        if (!previewEl || !card) return;
+
+        // Get active encounter target
+        const encounter = this.gameManager.combatManager.activeEncounter;
+        if (!encounter || !encounter.enemies || encounter.enemies.length === 0) return;
+
+        // Predict on first enemy (default target)
+        // In full impl, we'd check selected target
+        const target = encounter.enemies[0];
+        const hero = encounter.heroes[0];
+
+        const dmg = this.gameManager.combatManager.cardSystem.getPredictedDamage(card, hero, target);
+
+        if (dmg > 0) {
+            valueEl.textContent = `-${dmg}`;
+            previewEl.classList.remove('hidden', 'heal');
+
+            // Position preview over target if possible, or center screen
+            // For now, center fixed is fine via CSS
+        } else if (card.heal) {
+            valueEl.textContent = `+${card.heal}`;
+            previewEl.classList.add('heal');
+            previewEl.classList.remove('hidden');
+        } else {
+            this.hideDamagePreview();
+        }
+    }
+
+    hideDamagePreview() {
+        const previewEl = this.findElement('#damage-preview');
+        if (previewEl) previewEl.classList.add('hidden');
+    }
 
     // Override or Extend updateTurnInfo if needed, but logic seems fine.
     // However, we need to ensure Status Icons are rendered in updateHeroPanel (not shown in this file, likely in CombatManager or here?)
