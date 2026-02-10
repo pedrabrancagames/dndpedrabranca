@@ -10,7 +10,6 @@ export class CombatScreen extends BaseScreen {
 
     setupEvents() {
         this.bindClick('#btn-pause', () => this.togglePauseMenu());
-        this.bindClick('#btn-exit-combat', () => this.exitCombat());
 
         this.bindClick('#btn-resume', () => this.togglePauseMenu());
         this.bindClick('#btn-exit-to-home', () => this.exitCombat());
