@@ -56,6 +56,7 @@ export const CardDatabase = {
         type: CardType.BUFF,
         rarity: CardRarity.COMMON,
         class: 'warrior',
+        targetSelf: true,
         levels: [
             { cost: 1, defense: 10, description: '+10 defesa este turno' },
             { cost: 1, defense: 15, description: '+15 defesa este turno' },
@@ -80,6 +81,7 @@ export const CardDatabase = {
         type: CardType.SKILL,
         rarity: CardRarity.RARE,
         class: 'warrior',
+        targetSelf: true,
         levels: [
             { cost: 1, taunt: true, defense: 5, description: 'Força inimigos a atacar você' },
             { cost: 1, taunt: true, defense: 10, description: 'Provocação +' },
@@ -92,6 +94,7 @@ export const CardDatabase = {
         type: CardType.BUFF,
         rarity: CardRarity.EPIC,
         class: 'warrior',
+        targetSelf: true,
         levels: [
             { cost: 2, buff: { atk: 10 }, duration: 3, description: '+10 ATK por 3 turnos' },
             { cost: 2, buff: { atk: 15 }, duration: 3, description: '+15 ATK por 3 turnos' },
@@ -142,6 +145,7 @@ export const CardDatabase = {
         type: CardType.BUFF,
         rarity: CardRarity.UNCOMMON,
         class: 'mage',
+        targetSelf: true,
         levels: [
             { cost: 1, defense: 15, description: 'Barreira mágica' },
             { cost: 1, defense: 20, description: 'Barreira reforçada' },
@@ -216,6 +220,7 @@ export const CardDatabase = {
         type: CardType.SKILL,
         rarity: CardRarity.UNCOMMON,
         class: 'rogue',
+        targetSelf: true,
         levels: [
             { cost: 1, dodge: 1, description: 'Esquiva o próximo ataque' },
             { cost: 1, dodge: 2, description: 'Esquiva 2 ataques' },
@@ -228,6 +233,7 @@ export const CardDatabase = {
         type: CardType.BUFF,
         rarity: CardRarity.RARE,
         class: 'rogue',
+        targetSelf: true,
         levels: [
             { cost: 2, stealth: true, duration: 2, description: 'Invisível por 2 turnos' },
             { cost: 2, stealth: true, duration: 3, description: 'Invisível por 3 turnos' },
@@ -254,6 +260,7 @@ export const CardDatabase = {
         type: CardType.HEAL,
         rarity: CardRarity.COMMON,
         class: 'cleric',
+        targetAlly: true,
         levels: [
             { cost: 1, heal: 20, description: 'Cura leve' },
             { cost: 1, heal: 30, description: 'Cura menor +' },
@@ -266,6 +273,7 @@ export const CardDatabase = {
         type: CardType.HEAL,
         rarity: CardRarity.RARE,
         class: 'cleric',
+        targetSelf: true,
         levels: [
             { cost: 2, heal: 15, aoe: true, description: 'Cura todos os aliados' },
             { cost: 2, heal: 25, aoe: true, description: 'Cura em grupo +' },
@@ -290,6 +298,7 @@ export const CardDatabase = {
         type: CardType.BUFF,
         rarity: CardRarity.UNCOMMON,
         class: 'cleric',
+        targetSelf: true,
         levels: [
             { cost: 1, buff: { atk: 5, def: 5 }, duration: 3, description: '+5 ATK/DEF' },
             { cost: 1, buff: { atk: 8, def: 8 }, duration: 3, description: '+8 ATK/DEF' },
@@ -302,6 +311,7 @@ export const CardDatabase = {
         type: CardType.SKILL,
         rarity: CardRarity.UNCOMMON,
         class: 'cleric',
+        targetAlly: true,
         levels: [
             { cost: 1, cleanse: 1, description: 'Remove 1 debuff' },
             { cost: 1, cleanse: 2, description: 'Remove 2 debuffs' },
@@ -314,6 +324,7 @@ export const CardDatabase = {
         type: CardType.HEAL,
         rarity: CardRarity.LEGENDARY,
         class: 'cleric',
+        targetAlly: true,
         levels: [
             { cost: 3, revive: 0.25, description: 'Revive aliado com 25% HP' },
             { cost: 3, revive: 0.50, description: 'Revive aliado com 50% HP' },

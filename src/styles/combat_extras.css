@@ -57,3 +57,24 @@
     margin-left: auto;
     /* Push to right if inside flex container */
 }
+
+/* Targetable Hero Styles */
+.hero-portrait.targetable {
+    border: 2px solid #44ff44;
+    box-shadow: 0 0 10px #44ff44;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    animation: pulseTargetable 1.5s infinite;
+}
+
+.hero-portrait.targetable:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px #44ff44;
+    background: rgba(68, 255, 68, 0.1);
+}
+
+@keyframes pulseTargetable {
+    0% { box-shadow: 0 0 5px #44ff44; }
+    50% { box-shadow: 0 0 15px #44ff44; }
+    100% { box-shadow: 0 0 5px #44ff44; }
+}

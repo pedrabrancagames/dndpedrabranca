@@ -56,7 +56,8 @@ export class CombatHUD {
 
             return `
                 <div class="hero-portrait ${isActive ? 'active' : ''}" 
-                     data-hero-id="${hero.id}">
+                     data-hero-id="${hero.id}"
+                     data-hero-index="${index}">
                     <div class="hero-icon">${hero.icon}</div>
                     <div class="hero-info">
                         <div class="hero-name">${hero.name}</div>
@@ -69,6 +70,14 @@ export class CombatHUD {
                 </div>
             `;
         }).join('');
+
+        // Add click events for hero targeting
+        this.heroPanel.querySelectorAll('.hero-portrait').forEach(portrait => {
+            portrait.addEventListener('click', () => {
+                const heroId = portrait.dataset.heroId;
+                this.onHeroPortraitClick(heroId);
+            });
+        });
     }
 
     /**
@@ -139,6 +148,24 @@ export class CombatHUD {
     }
 
     /**
+     * Checks if a card targets allies (heroes)
+     */
+    isAllyTargetCard(card) {
+        return !!card.targetAlly;
+    }
+
+    /**
+     * Highlights hero portraits as valid targets
+     */
+    highlightHeroTargets(show) {
+        if (!this.heroPanel) return;
+        const portraits = this.heroPanel.querySelectorAll('.hero-portrait');
+        portraits.forEach(p => {
+            p.classList.toggle('targetable', show);
+        });
+    }
+
+    /**
      * Atualiza o indicador de PA no herói ativo
      */
     updatePA(pa) {
@@ -161,19 +188,116 @@ export class CombatHUD {
         const cardEl = e.currentTarget;
         const index = parseInt(cardEl.dataset.cardIndex);
 
+        const heroes = this.gameManager.gameData.heroes || [];
+        const currentHero = heroes[this.currentHeroIndex];
+        const sortedDeck = this.getSortedDeck(currentHero);
+        const card = sortedDeck?.[index];
+
         // Toggle seleção
         if (this.selectedCard === index) {
             this.selectedCard = null;
             cardEl.classList.remove('selected');
-        } else {
-            // Desselecionar anterior
-            this.cardCarousel.querySelectorAll('.combat-card').forEach(c => c.classList.remove('selected'));
+            this.highlightHeroTargets(false);
+            eventBus.emit('cardDeselected');
+            return;
+        }
 
-            this.selectedCard = index;
-            cardEl.classList.add('selected');
+        // Desselecionar anterior
+        this.cardCarousel.querySelectorAll('.combat-card').forEach(c => c.classList.remove('selected'));
+        this.highlightHeroTargets(false);
+
+        this.selectedCard = index;
+        cardEl.classList.add('selected');
+
+        // Auto-cast: targetSelf cards execute immediately on the active hero
+        if (card && card.targetSelf) {
+            this.executeCardOnHero(card, currentHero);
+            return;
+        }
+
+        // targetAlly: highlight hero portraits as valid targets
+        if (card && this.isAllyTargetCard(card)) {
+            this.highlightHeroTargets(true);
         }
 
         eventBus.emit('cardSelected', { index, card: this.getSelectedCard() });
+    }
+
+    /**
+     * Returns sorted deck (same logic used in renderCards)
+     */
+    getSortedDeck(hero) {
+        if (!hero?.deck) return [];
+        return [...hero.deck].sort((a, b) => {
+            const typeOrder = { 'class': 0, 'equipment': 1, 'consumable': 2 };
+            const orderA = typeOrder[a.sourceType || a.cardType || 'class'] ?? 0;
+            const orderB = typeOrder[b.sourceType || b.cardType || 'class'] ?? 0;
+            return orderA - orderB;
+        });
+    }
+
+    /**
+     * Executes a card targeting a hero (self or ally)
+     */
+    executeCardOnHero(card, targetHero) {
+        const heroes = this.gameManager.gameData.heroes || [];
+        const currentHero = heroes[this.currentHeroIndex];
+
+        // Check PA
+        if (currentHero.pa < card.cost) {
+            console.log('PA insuficiente');
+            eventBus.emit('showMessage', { text: 'PA insuficiente!', type: 'error' });
+            return;
+        }
+
+        // Spend PA
+        currentHero.pa -= card.cost;
+        this.updatePA(currentHero.pa);
+
+        // Execute via CardSystem
+        const combatManager = this.gameManager.combatManager;
+        if (combatManager?.cardSystem) {
+            combatManager.cardSystem.executeCard(card, currentHero, targetHero);
+        }
+
+        // AoE heal: apply to all heroes
+        if (card.aoe && card.heal) {
+            heroes.forEach(hero => {
+                if (hero.id !== targetHero.id && hero.hp > 0) {
+                    hero.hp = Math.min(hero.maxHp, hero.hp + card.heal);
+                    eventBus.emit('damageTaken', {
+                        targetId: hero.id,
+                        amount: -card.heal,
+                        currentHp: hero.hp
+                    });
+                }
+            });
+        }
+
+        // Deselect and re-render
+        this.selectedCard = null;
+        this.highlightHeroTargets(false);
+        this.renderCards();
+        this.renderHeroPanel();
+
+        console.log(`${currentHero.name} usou ${card.name} em ${targetHero.name}`);
+    }
+
+    /**
+     * Handler when a hero portrait is clicked
+     */
+    onHeroPortraitClick(heroId) {
+        const card = this.getSelectedCard();
+        if (!card) return;
+
+        // Only allow if card targets allies
+        if (!this.isAllyTargetCard(card)) return;
+
+        const heroes = this.gameManager.gameData.heroes || [];
+        const targetHero = heroes.find(h => h.id === heroId);
+        if (!targetHero) return;
+
+        this.executeCardOnHero(card, targetHero);
     }
 
     getSelectedCard() {
@@ -181,7 +305,8 @@ export class CombatHUD {
 
         const heroes = this.gameManager.gameData.heroes || [];
         const currentHero = heroes[this.currentHeroIndex];
-        return currentHero?.deck?.[this.selectedCard];
+        const sortedDeck = this.getSortedDeck(currentHero);
+        return sortedDeck?.[this.selectedCard];
     }
 
     /**
@@ -191,6 +316,12 @@ export class CombatHUD {
         const card = this.getSelectedCard();
         if (!card) {
             console.log('Nenhuma carta selecionada');
+            return;
+        }
+
+        // Block ally-target cards from being used on enemies
+        if (this.isAllyTargetCard(card) || card.targetSelf) {
+            eventBus.emit('showMessage', { text: 'Esta carta não pode ser usada em inimigos!', type: 'warning' });
             return;
         }
 
