@@ -12,13 +12,6 @@ import {
     canAcceptQuest
 } from '../../data/QuestDatabase.js';
 import { getNPCData } from '../../data/NPCDatabase.js';
-import {
-    ExplorationEvents,
-    ConsequenceType,
-    getRandomEvent,
-    getEventTypeName,
-    getEventTypeColor
-} from '../../data/ExplorationEvents.js';
 import { getItemData } from '../../data/ItemDatabase.js';
 import { EnemyDatabase } from '../../data/EnemyDatabase.js';
 import { eventBus } from '../../core/EventEmitter.js';
@@ -30,21 +23,12 @@ export class GMScreen extends BaseScreen {
         this.currentTab = 'quests';
         this.currentFilter = 'active';
         this.selectedQuest = null;
-        // Eventos
-        this.currentEvent = null;
-        this.selectedChoice = null;
     }
 
     setupEvents() {
         this.bindClick('#btn-gm-back', () => this.gameManager.stateManager.setState(GameState.HOME));
         this.bindClick('#btn-close-quest-modal', () => this.closeQuestModal());
-        this.bindClick('#btn-accept-quest', () => this.acceptQuest());
-        this.bindClick('#btn-abandon-quest', () => this.abandonQuest());
         this.bindClick('#btn-complete-quest', () => this.completeQuest());
-
-        // Eventos de Exploração
-        this.bindClick('#btn-explore', () => this.triggerRandomEvent());
-        this.bindClick('#btn-continue-event', () => this.closeEventResultModal());
 
         // Setup tab clicks
         const tabs = this.findElement('#gm-tabs');
@@ -73,17 +57,6 @@ export class GMScreen extends BaseScreen {
                 const questCard = e.target.closest('.quest-card');
                 if (questCard && questCard.dataset.questId) {
                     this.showQuestDetails(questCard.dataset.questId);
-                }
-            });
-        }
-
-        // Setup event choices clicks
-        const eventChoices = this.findElement('#event-choices');
-        if (eventChoices) {
-            eventChoices.addEventListener('click', (e) => {
-                const choiceBtn = e.target.closest('.event-choice-btn');
-                if (choiceBtn && choiceBtn.dataset.choiceId) {
-                    this.selectChoice(choiceBtn.dataset.choiceId);
                 }
             });
         }
@@ -215,7 +188,7 @@ export class GMScreen extends BaseScreen {
 
         if (quests.length === 0) {
             const emptyMessages = {
-                active: 'Nenhuma missão ativa. Aceite uma missão disponível!',
+                active: 'Nenhuma missão ativa no momento.',
                 available: 'Nenhuma missão disponível no momento.',
                 completed: 'Nenhuma missão concluída ainda.'
             };
@@ -312,13 +285,8 @@ export class GMScreen extends BaseScreen {
             rewardsGrid.innerHTML = rewards.join('');
         }
 
-        // Action buttons
-        const acceptBtn = this.findElement('#btn-accept-quest');
-        const abandonBtn = this.findElement('#btn-abandon-quest');
+        // Action buttons (only complete is available — accept happens via NPC dialogue in AR)
         const completeBtn = this.findElement('#btn-complete-quest');
-
-        acceptBtn.classList.toggle('hidden', isActive || isCompleted);
-        abandonBtn.classList.toggle('hidden', !isActive || isCompleted);
         completeBtn.classList.toggle('hidden', !isActive || progress < 100);
 
         if (modal) modal.classList.remove('hidden');
@@ -328,55 +296,6 @@ export class GMScreen extends BaseScreen {
         const modal = this.findElement('#quest-detail-modal');
         if (modal) modal.classList.add('hidden');
         this.selectedQuest = null;
-    }
-
-    acceptQuest() {
-        if (!this.selectedQuest) return;
-
-        const quests = this.gameManager.gameData.quests;
-        if (!quests.active.includes(this.selectedQuest.id)) {
-            quests.active.push(this.selectedQuest.id);
-
-            // Inicializar progresso
-            quests.progress[this.selectedQuest.id] = {};
-            this.selectedQuest.objectives.forEach(obj => {
-                quests.progress[this.selectedQuest.id][obj.id] = 0;
-            });
-
-            eventBus.emit('showMessage', {
-                text: `Missão "${this.selectedQuest.title}" aceita!`,
-                type: 'success'
-            });
-
-            this.addToEventLog(`📜 Aceitou a missão: ${this.selectedQuest.title}`);
-        }
-
-        this.closeQuestModal();
-        this.setFilter('active');
-        this.gameManager.saveGame();
-    }
-
-    abandonQuest() {
-        if (!this.selectedQuest) return;
-
-        const quests = this.gameManager.gameData.quests;
-        const index = quests.active.indexOf(this.selectedQuest.id);
-
-        if (index > -1) {
-            quests.active.splice(index, 1);
-            delete quests.progress[this.selectedQuest.id];
-
-            eventBus.emit('showMessage', {
-                text: `Missão "${this.selectedQuest.title}" abandonada.`,
-                type: 'info'
-            });
-
-            this.addToEventLog(`❌ Abandonou a missão: ${this.selectedQuest.title}`);
-        }
-
-        this.closeQuestModal();
-        this.renderQuests();
-        this.gameManager.saveGame();
     }
 
     completeQuest() {
@@ -416,199 +335,6 @@ export class GMScreen extends BaseScreen {
         this.closeQuestModal();
         this.setFilter('completed');
         this.gameManager.saveGame();
-    }
-
-    // ========== EVENTOS DE EXPLORAÇÃO ==========
-
-    triggerRandomEvent() {
-        this.currentEvent = getRandomEvent();
-        this.showEventModal();
-    }
-
-    showEventModal() {
-        if (!this.currentEvent) return;
-
-        const modal = this.findElement('#exploration-event-modal');
-        const event = this.currentEvent;
-
-        // Header
-        const typeBadge = this.findElement('#event-type-badge');
-        typeBadge.textContent = getEventTypeName(event.type);
-        typeBadge.style.backgroundColor = getEventTypeColor(event.type);
-
-        this.findElement('#event-icon').textContent = event.icon;
-        this.findElement('#event-title').textContent = event.title;
-        this.findElement('#event-narration').textContent = event.description;
-
-        // Choices
-        const choicesContainer = this.findElement('#event-choices');
-        if (choicesContainer) {
-            choicesContainer.innerHTML = event.choices.map(choice => {
-                // Verificar requisitos
-                let disabled = false;
-                let tooltip = '';
-
-                if (choice.requirements) {
-                    if (choice.requirements.gold && this.gameManager.gameData.gold < choice.requirements.gold) {
-                        disabled = true;
-                        tooltip = `Requer ${choice.requirements.gold} ouro`;
-                    }
-                }
-
-                return `
-                    <button class="event-choice-btn ${disabled ? 'disabled' : ''}" 
-                            data-choice-id="${choice.id}"
-                            ${disabled ? 'disabled' : ''}
-                            ${tooltip ? `title="${tooltip}"` : ''}>
-                        ${choice.text}
-                        ${choice.skillCheck ? `<span class="skill-check-indicator">🎲</span>` : ''}
-                    </button>
-                `;
-            }).join('');
-        }
-
-        if (modal) modal.classList.remove('hidden');
-        this.addToEventLog(`🎲 Evento: ${event.title}`);
-    }
-
-    selectChoice(choiceId) {
-        if (!this.currentEvent) return;
-
-        const choice = this.currentEvent.choices.find(c => c.id === choiceId);
-        if (!choice) return;
-
-        this.selectedChoice = choice;
-
-        // Verificar skill check se existir
-        let success = true;
-        let rollResult = null;
-
-        if (choice.skillCheck) {
-            rollResult = this.performSkillCheck(choice.skillCheck);
-            success = rollResult.success;
-        }
-
-        // Aplicar consequências
-        const consequences = success ? choice.consequences : (choice.failConsequences || []);
-        this.applyConsequences(consequences);
-
-        // Mostrar resultado
-        this.showEventResult(choice, success, rollResult);
-    }
-
-    performSkillCheck(check) {
-        // Rolagem D20 + modificador
-        const roll = Math.floor(Math.random() * 20) + 1;
-
-        // Pegar modificador do herói principal
-        const heroes = this.gameManager.gameData.heroes;
-        const hero = heroes[0];
-
-        let modifier = 0;
-        switch (check.stat) {
-            case 'str': modifier = Math.floor((hero.atk - 10) / 2); break;
-            case 'dex': modifier = Math.floor(((hero.dex || 10) - 10) / 2); break;
-            case 'con': modifier = Math.floor(((hero.con || 12) - 10) / 2); break;
-            case 'int': modifier = Math.floor(((hero.int || 10) - 10) / 2); break;
-            case 'cha': modifier = Math.floor(((hero.cha || 10) - 10) / 2); break;
-            default: modifier = 0;
-        }
-
-        const total = roll + modifier;
-        const success = total >= check.difficulty;
-
-        return { roll, modifier, total, difficulty: check.difficulty, success };
-    }
-
-    applyConsequences(consequences) {
-        consequences.forEach(consequence => {
-            switch (consequence.type) {
-                case ConsequenceType.GOLD:
-                    this.gameManager.gameData.gold = Math.max(0, this.gameManager.gameData.gold + consequence.value);
-                    break;
-                case ConsequenceType.XP:
-                    this.giveXPToHeroes(consequence.value);
-                    break;
-                case ConsequenceType.HEAL:
-                    this.healHeroes(consequence.value);
-                    break;
-                case ConsequenceType.DAMAGE:
-                    this.damageHeroes(consequence.value);
-                    break;
-                case ConsequenceType.ITEM:
-                    this.addItemToInventory(consequence.itemId);
-                    break;
-                case ConsequenceType.COMBAT:
-                    // TODO: Integrar com sistema de combate
-                    eventBus.emit('showMessage', { text: 'Combate iniciado!', type: 'warning' });
-                    break;
-            }
-        });
-
-        this.gameManager.saveGame();
-    }
-
-    healHeroes(amount) {
-        this.gameManager.gameData.heroes.forEach(hero => {
-            hero.hp = Math.min(hero.maxHp, hero.hp + amount);
-        });
-    }
-
-    damageHeroes(amount) {
-        this.gameManager.gameData.heroes.forEach(hero => {
-            hero.hp = Math.max(1, hero.hp - Math.floor(amount / this.gameManager.gameData.heroes.length));
-        });
-    }
-
-    showEventResult(choice, success, rollResult) {
-        // Fechar modal do evento
-        const eventModal = this.findElement('#exploration-event-modal');
-        if (eventModal) eventModal.classList.add('hidden');
-
-        // Mostrar modal de resultado
-        const resultModal = this.findElement('#event-result-modal');
-
-        // Ícone
-        const resultIcon = this.findElement('#result-icon');
-        resultIcon.textContent = success ? '✨' : '💔';
-
-        // Texto
-        const resultText = this.findElement('#result-text');
-        resultText.textContent = choice.followUp;
-
-        // Consequências
-        const consequencesEl = this.findElement('#result-consequences');
-        const consequences = success ? choice.consequences : (choice.failConsequences || []);
-
-        if (consequencesEl) {
-            // Adicionar info de skill check se houver
-            let html = '';
-
-            if (rollResult) {
-                html += `
-                    <div class="roll-result ${success ? 'success' : 'failure'}">
-                        🎲 Rolou ${rollResult.roll} + ${rollResult.modifier} = ${rollResult.total} 
-                        vs DC ${rollResult.difficulty}
-                        <span class="roll-outcome">${success ? '✅ Sucesso!' : '❌ Falha!'}</span>
-                    </div>
-                `;
-            }
-
-            html += consequences.map(c => `
-                <div class="consequence-item ${c.type}">${c.message}</div>
-            `).join('');
-
-            consequencesEl.innerHTML = html;
-        }
-
-        if (resultModal) resultModal.classList.remove('hidden');
-    }
-
-    closeEventResultModal() {
-        const modal = this.findElement('#event-result-modal');
-        if (modal) modal.classList.add('hidden');
-        this.currentEvent = null;
-        this.selectedChoice = null;
     }
 
     // ========== HELPERS ==========
